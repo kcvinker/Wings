@@ -2,87 +2,63 @@
 //import std.conv;
 import std.stdio : log = writeln;
 import std.stdio ;
-//import intinc;
+import std.algorithm;
 import std.typecons ;
+import std.traits ;
+import core.vararg ;
+import std.conv ;
+import std.array;
+import std.process;
+//import std.container;
 
 int global = 1000;
+immutable int sams = 41;
+alias int_ptr = int* ;
 
-
-void main() {
+void main() {   
     
     
-    writeln("Vinod is learning 'D' in Sublime Text 4 !");
-    //alias Person = tuple!(string, "name", int, "age", double, "salary") ;
+	
+	// string conEmu = r"E:\cmder\vendor\conemu-maximus5\ConEmu64.exe" ;
+	// string wDir = r"E:\OneDrive Folder\OneDrive\Programming\D Lang\WinGLib" ;
+	// string wfDir = r"E:\OneDrive Folder\OneDrive\Programming\Odin\Winforms";
+	// //auto cmu = execute([conEmu, "-run", "dmd -i -run", "app.d"], null, Config.none, size_t.max, wDir);
+	// auto cmu = execute([conEmu, "-run", "odin run", "app.odin", "-file"], null, Config.none, size_t.max, wfDir);
+	//test();
     
-    cont(50) ;
-    
-
-}
-
-void cont(int tv) 
-in {assert(tv == 50);} do
-{
-    writeln("value of tv is ",tv);
-}
-
-struct PostBlit {
-    int[] foo;
-     
-    this(this) {foo = foo.dup;}
-}
-void printPtr(PostBlit cpb) {
-    writeln("Inside: ", cpb.foo.ptr);
-}
-
-struct Person {
-    string name = "Sample" ;
-    int age = 5;
-    int salary = 40000;
-
-   this(int x, int y) {this.age = x ; this.salary = y;}
-
-}
-
-class Animal {
-    int age = 2;
-    string name = "fluffy";
-
-    static Animal ani ;
-
-    this(){}
-
-    this(int a, string s) 
-    {
-        this.name = s;
-        this.age = a ;
-        writeln("Animal is constructed");
-    }
-
-    static this() {
-        writeln("static constructed") ;
-        ani = new Animal() ;
-        ani.name = "Static";
-
-    }
-
-    void scp(ref int y){
-        //int x = 45;
-        writeln("x is ", y);
-        scope(exit) y = 4;
-        writeln("x is ", y);
-
-    }
-
-
-    ~this(){writeln("Animal is destroyed");}
-    void print(){writeln("Animal is printing");}
-
-
+    double val = 46;
+	double pre = 0.2;
+	double re = val + pre;
+	log(re);
+   
 }
 
 
+void test() {
+	auto smp = new Sample;
+	log("We are doing some processings");
+	log("Okay we can close now");
+
+}
+
+class Sample {
+	this() {
+		this.mToken = 100;
+		log("Sample created and mToken is - ", this.mToken);
+	}
+	
+	~this() {
+		log("destroyed");
+	}
+	
+	private :
+		uint mToken ;
+}
 
 
-//static ~this() {writeln("Static destroyed");} // Module destructer
+enum Colors : uint {red, green = 50, blue, yellow, orange, white}
 
+void sample(uint clr) {
+	log("the color is - ", clr + 9);
+}
 
