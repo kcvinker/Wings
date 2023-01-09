@@ -18,7 +18,12 @@ public import wings.groupbox ;
 public import wings.label ;
 public import wings.listbox ;
 public import wings.listview ;
+public import wings.menubar ;
 public import wings.numberpicker ;
+public import wings.radiobutton ;
+public import wings.textbox ;
+public import wings.trackbar ;
+public import wings.treeview ;
 
 
 

@@ -19,7 +19,7 @@ enum WindowPos {
 }
 
 /// display style
-enum WindowStyle {fixedSingle, fixed3D, fixedDialog, normalWin, fixedTool, sizableTool }
+enum WindowStyle {fixedSingle, fixed3D, fixedDialog, normalWin, fixedTool, sizableTool, hidden }
 enum ButtonStyle {normal, flat, gradient} // For Button
 package enum BtnDrawMode {normal, textOnly, bkgOnly, textBkg, gradient, gradientText} // For Button
 enum ViewMode {month, year, decade, centuary}  // for calander
@@ -42,24 +42,19 @@ enum MouseButton {
     xButton2 = 167_77_216
 }
 
-enum MouseButtonState {released, pressed } 
+enum MouseButtonState {released, pressed }
 
 /// Public enum for describing control types
 enum ControlType {
-    none = 0,
-    window,
-    button, calendar, checkBox, 
-    comboBox, dateTimePicker, groupBox, 
-    label, listBox, listView, 
-    numberPicker, panel, pictureBox, 
-    radioButton, textBox, treeView, 
-    trackBar, upDown 
+    none, window, button, contextMenu, calendar, checkBox, comboBox, dateTimePicker, groupBox,
+    label, listBox, listView, numberPicker, panel, pictureBox, radioButton, textBox, treeView,
+    trackBar, upDown
 }
 
 enum SizedPosition {
-    LeftEdge = 1, 
-    RightEdge, 
-    TopEdge, 
+    LeftEdge = 1,
+    RightEdge,
+    TopEdge,
     TopLeftCorner,
     TopRightCorner,
     BottomEdge,
@@ -70,12 +65,17 @@ enum SizedPosition {
 enum DropDownStyle {textCombo, labelCombo} // For combo box
 enum LabelBorder {noBorder, singleLine, sunkenBorder} // For label
 enum TextAlignment {    // For label & ...
-    topLeft, topCenter, topRight, midLeft, 
+    topLeft, topCenter, topRight, midLeft,
     center, midRight, bottomLeft, bottomCenter, bottomRight}
 
-enum ColumnAlignment {left, right, center} // For ListView
-enum TextPosition {left, right, center}
+enum Alignment {left, right, center} // For ListView, textbox
+enum TextType {normal, numberOnly, passwordChar} // For textbox
+enum TextCase {normal, lowerCase, upperCase} // For textbox
 enum ListViewStyle {largeIcon, report, smallIcon, list, tile}
+enum TicPosition {downSide, upSide, leftSide, rightSide, bothSide} // For trackBar.
+enum ChannelStyle {classic, outline} // For Trackbar
+enum TrackChange {none, arrowLow, arrowHigh, pageLow, pageHigh, mouseClick, mouseDrag}
+
 
 enum ColorOptions { // For ImageList
     defaultColor,
@@ -89,56 +89,59 @@ enum ColorOptions { // For ImageList
 
 enum ImageType {normalImage, smallImage, stateImage} // For ImageList
 enum ImageOptions {
-    none, 
-    maskImage = 1, 
-    mirrorImage = 8192, 
+    none,
+    maskImage = 1,
+    mirrorImage = 8192,
     maskMirror = 8193,
     stateImage = 32_768,
     maskState = 32_769,
     mirrorState = 40_960,
-    useAll = 40_961    
+    useAll = 40_961
 } // For ImageList
 
-enum NumPickOp {none, opAdd, opSub}
+enum NumPickOp { none, opAdd, opSub}
+enum HeaderColorStatus { bcOnly, fcOnly, bothColors } // for list view header color drawing
+enum HotKeyId { hotSnapWindow = -2, hotSnapDeskTop = -1} // For using in wm_hotkey message handler
+enum ModifierKeys { altKey = 1, ctrlKey = 2, shiftKey = 4, winKey = 8 } // ,,
 
 
 
 
 enum Key {
     modifier = -65_536,
-    none = 0, 
-    lButton, rButton, cancel, mButton, xButtonOne, xButtonTwo, 
+    none = 0,
+    lButton, rButton, cancel, mButton, xButtonOne, xButtonTwo,
     backSpace = 8,
-    tab, lineFeed, 
+    tab, lineFeed,
     clear = 12,
-    enter, 
+    enter,
     shift = 16,
-    ctrl, alt, pause, capsLock, 
+    ctrl, alt, pause, capsLock,
     escape = 27,
     space = 32,
     pageUp, pageDown, end, home, leftArrow, upArrow, rightArrow, downArrow,
     select, print, execute, printScreen, insert, del, help,
-    d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, 
-    a = 65, 
-    b, c, d, e, f, g, h, i, j, k, l, m, n, 
+    d0, d1, d2, d3, d4, d5, d6, d7, d8, d9,
+    a = 65,
+    b, c, d, e, f, g, h, i, j, k, l, m, n,
     o, p, q, r, s, t, u, v, w, x, y, z,
-    leftWin, rightWin, apps, 
+    leftWin, rightWin, apps,
     sleep = 95,
-    numPad0, numPad1, numPad2, numPad3, numPad4, numPad5, numPad6, numPad7, numPad8, numPad9, 
-    multiply, add, seperator, subtract, decimal, divide, 
-    f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, 
-    f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, 
-    f21, f22, f23, f24, 
+    numPad0, numPad1, numPad2, numPad3, numPad4, numPad5, numPad6, numPad7, numPad8, numPad9,
+    multiply, add, seperator, subtract, decimal, divide,
+    f1, f2, f3, f4, f5, f6, f7, f8, f9, f10,
+    f11, f12, f13, f14, f15, f16, f17, f18, f19, f20,
+    f21, f22, f23, f24,
     numLock = 144,
-    scroll, 
+    scroll,
     leftShift = 160,
-    rightShift, leftCtrl, rightCtrl, leftMenu, rightmenu, 
-    browserBack, browserForward, browerRefresh, browserStop, browserSearch, browserFavorites, browserHome, 
-    volumeMute, volumeDown, volumeUp, 
-    mediaNextTrack, mediaPrevTrack, mediaStop, mediaPlayPause, launchMail, selectMedia, 
-    launchApp1, launchApp2, 
+    rightShift, leftCtrl, rightCtrl, leftMenu, rightmenu,
+    browserBack, browserForward, browerRefresh, browserStop, browserSearch, browserFavorites, browserHome,
+    volumeMute, volumeDown, volumeUp,
+    mediaNextTrack, mediaPrevTrack, mediaStop, mediaPlayPause, launchMail, selectMedia,
+    launchApp1, launchApp2,
     oem1 = 186,
-    oemPlus, oemComma, oemMinus, oemPeriod, oemQuestion, oemTilde, 
+    oemPlus, oemComma, oemMinus, oemPeriod, oemQuestion, oemTilde,
     oemOpenBracket = 219,
     oemPipe, oemCloseBracket, oemQuotes, oem8,
     oemBackSlash = 226,

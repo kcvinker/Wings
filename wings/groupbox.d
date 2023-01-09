@@ -9,22 +9,23 @@ int gbNumber = 1 ;
 
 class GroupBox : Control {
 
-    this(Window parent, string txt, int x, int y, int w, int h) {              
-        mWidth = w ;
-        mHeight = h ;
-        mXpos = x ;
-        mYpos = y ;
-        mParent = parent ;
-        mFont = parent.font ;        
-        mControlType = ControlType.groupBox ;   
-        mText = txt ; 
+    this(Window parent, string txt, int x, int y, int w, int h) {
+        //mWidth = w ;
+        //mHeight = h ;
+        //mXpos = x ;
+        //mYpos = y ;
+        //mParent = parent ;
+        //mFont = parent.font ;
+        mixin(repeatingCode);
+        mControlType = ControlType.groupBox ;
+        mText = txt ;
         mStyle = WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TEXT | BS_TOP ;
-        mExStyle =WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT ;       
-        mBackColor = parent.backColor ;
-        mBClrRef = getClrRef(parent.backColor) ;
-        mFClrRef = getClrRef(this.mForeColor) ;
-        mClsName = WC_BUTTON.toUTF16z() ;    
-        ++gbNumber;        
+        mExStyle =WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT ;
+        mBackColor = parent.mBackColor ;
+
+        mClsName = "Button" ;
+        this.mName = format("%s_%d", "GroupBox_", gbNumber);
+        ++gbNumber;
     }
 
     this(Window parent, string txt, int x, int y) {
@@ -34,95 +35,71 @@ class GroupBox : Control {
     this(Window parent, string txt) {
         this(parent, txt, 20, 20, 150, 150);
     }
-    
+
     final void create() {
-        if (this.mBackColor == this.parent.backColor) this.isPaintBkg = true;
+        if (this.mBackColor.value == this.parent.mBackColor.value) this.isPaintBkg = true;
         this.createHandle();
-        if (this.mHandle) {            
-            this.setSubClass(&gbWndProc) ;            
-            //this.setCbSize() ;           
-        }    
+        if (this.mHandle) {
+            this.setSubClass(&gbWndProc) ;
+            //this.setCbSize() ;
+        }
     }
 
-    package :
+    private :
         HBRUSH mBkBrush ;
         bool isPaintBkg ;
 
-        final void finalize() { // Package
+        void finalize(UINT_PTR scID) { // private
             // This is our destructor. Clean all the dirty stuff
             DeleteObject(this.mBkBrush) ;
+            this.remSubClass(scID);
         }
 
-    
+
 } // End of GroupBox class
 
 extern(Windows)
 private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
-    try {   
-        GroupBox gb = getControl!GroupBox(refData) ; 
+    try {
+        GroupBox gb = getControl!GroupBox(refData) ;
         switch (message) {
-            case WM_DESTROY :
-                gb.finalize() ;
-                gb.remSubClass(scID);
-                break ;
-            case WM_PAINT :
-                if (gb.onPaint) {
-                    PAINTSTRUCT  ps ;
-                    BeginPaint(hWnd, &ps) ;
-                    auto pea = new PaintEventArgs(&ps) ;
-                    gb.onPaint(gb, pea) ;
-                    EndPaint(hWnd, &ps) ;
-                    return 0 ;
-                }  break ;
-            case CM_CTLCOLOR :            
+            case WM_DESTROY : gb.finalize(scID); break;
+            case WM_PAINT : gb.paintHandler(); break;
+            case WM_SETFOCUS : gb.setFocusHandler(); break;
+            case WM_KILLFOCUS : gb.killFocusHandler(); break;
+            case WM_LBUTTONDOWN : gb.mouseDownHandler(message, wParam, lParam); break ;
+            case WM_LBUTTONUP : gb.mouseUpHandler(message, wParam, lParam); break ;
+            case CM_LEFTCLICK : gb.mouseClickHandler(); break;
+            case WM_RBUTTONDOWN : gb.mouseRDownHandler(message, wParam, lParam); break;
+            case WM_RBUTTONUP : gb.mouseRUpHandler(message, wParam, lParam); break;
+            case CM_RIGHTCLICK : gb.mouseRClickHandler(); break;
+            case WM_MOUSEWHEEL : gb.mouseWheelHandler(message, wParam, lParam); break;
+            case WM_MOUSEMOVE : gb.mouseMoveHandler(message, wParam, lParam); break;
+            case WM_MOUSELEAVE : gb.mouseLeaveHandler(); break;
+
+            case CM_CTLCOLOR :
                 auto hdc = cast(HDC) wParam;
-                SetBkMode(hdc, TRANSPARENT) ;           
-                gb.mBkBrush = CreateSolidBrush(gb.mBClrRef);
-                if (gb.mForeColor != 0x000000) SetTextColor(hdc, gb.mFClrRef) ;      
+                SetBkMode(hdc, TRANSPARENT) ;
+                gb.mBkBrush = CreateSolidBrush(gb.mBackColor.reff);
+                if (gb.mForeColor.value != 0x000000) SetTextColor(hdc, gb.mForeColor.reff) ;
                 return cast(LRESULT) gb.mBkBrush;
-                break ;
-            case WM_ERASEBKGND :  
+            break ;
+
+            case WM_ERASEBKGND :  // TODO : We don't need to do this. Use WM_CTLCOLORSTATIC, and return an HBRUSH
                 if (gb.isPaintBkg) {
                     auto hdc = cast(HDC) wParam;
                     RECT rc ;
-                    GetClientRect(gb.handle, &rc);
-                    rc.bottom -= 2  ;       
-                    FillRect(hdc, &rc, CreateSolidBrush(gb.mBClrRef))  ;             
-                    return 1 ;                    
-                }                  
-                break ;
+                    GetClientRect(gb.mHandle, &rc);
+                    rc.bottom -= 2  ;
+                    FillRect(hdc, &rc, CreateSolidBrush(gb.mBackColor.reff))  ;
+                    return 1 ;
+                }
+            break ;
 
-            case WM_MOUSEWHEEL :
-                if (gb.onMouseWheel) {
-                    auto mea = new MouseEventArgs(message, wParam, lParam) ;
-                    gb.onMouseWheel(gb, mea) ; 
-                } break ;
-
-            case WM_MOUSEMOVE :
-                if (gb.isMouseEntered) {
-                    if (gb.onMouseMove) {
-                        auto mea = new MouseEventArgs(message, wParam, lParam) ;
-                        gb.onMouseMove(gb, mea) ;
-                    }
-                } else {
-                    gb.isMouseEntered = true ;
-                    if (gb.onMouseEnter) {
-                        auto ea = new EventArgs() ;
-                        gb.onMouseEnter(gb, ea) ;
-                    }
-                } break ;
-
-            case WM_MOUSELEAVE :
-                gb.isMouseEntered = false ;
-                if (gb.onMouseLeave) {
-                    auto ea = new EventArgs() ;
-                    gb.onMouseLeave(gb, ea) ;
-                } break ;
-        
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam) ; break;
         }
     }
-    catch (Exception e) {}     
+    catch (Exception e) {}
     return DefSubclassProc(hWnd, message, wParam, lParam);
 }
 

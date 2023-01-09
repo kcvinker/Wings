@@ -1,5 +1,4 @@
-module wings.wings_essentials;
-
+module wings.basics;
 
 public {
     import wings.commons ; 
@@ -8,5 +7,10 @@ public {
     import wings.enums ;
     import wings.colors ;
     import wings.controls ;
-    import wings.window : Window; 
+    import wings.window ; 
+    import wings.buttons;
+    import wings.label;
+    
+    
+    
 }

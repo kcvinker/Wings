@@ -1,5 +1,5 @@
 module wings.gdiplus; // Created on : 04-Jun-22 11:16:02 PM
-pragma(lib, "Gdiplus"); // Required for linker to find the right lib.
+//pragma(lib, "Gdiplus"); // Required for linker to find the right lib.
 /*
  Note : Microsoft developed Gdi+ as a successor of old GDI functions.
         Gdi+ is a set of 40 C++ classes and it's methods.
@@ -117,7 +117,7 @@ class GdiPlus {
 
     uint getImageWidth(void* img) { // Private
         uint result = 0;
-        print("I reached here");
+        //print("I reached here");
         auto res = GdipGetImageWidth(img, &result);
         if (res == Status.Ok) return result ;
         return result;

@@ -5,20 +5,75 @@ import std.stdio ;
 
 private import core.sys.windows.windows ;
 
+struct Color
+{
+    uint value;
+    COLORREF reff;
+
+    void opCall(uint clr) {
+        this.value = clr;
+        auto red = clr >> 16 ;
+        auto green = (clr & 0x00ff00) >> 8;
+        auto blue = clr & 0x0000ff ;
+        this.reff = cast(COLORREF) ((blue << 16) | (green << 8) | red);
+    }
+
+    void opCall(int red, int green, int blue) {
+        this.value = cast(uint) (red << 16) | (green << 8) | blue ;
+        this.reff = cast(COLORREF) ((blue << 16) | (green << 8) | red);
+    }
+
+    void opCall(Color clr) { // Initiate with existing color
+        this.value = clr.value;
+        this.reff = clr.reff;
+    }
+
+    Color changeShade(double changeValue) {
+        Color clr;
+        auto red = clip((this.value >> 16) * changeValue) ;
+        auto green = clip(((this.value & 0x00ff00) >> 8) * changeValue);
+        auto blue = clip((this.value & 0x0000ff) * changeValue) ;
+        clr(red, green, blue);
+        return clr;
+    }
+
+    HBRUSH getHotBrush(double adj) {
+        /* Sometimes, we need to use a special color for mouse hover event.
+        In such cases, we have already a back color. But we need to make...
+        an hbrush with slightly different color. This function create...
+        an hbrush for that purpose. It will create a different color with...
+        given value 'adj'. Try with a 1.2 */
+
+        auto red = clip((this.value >> 16) + (adj * 8));
+        auto green = clip(((this.value & 0x00ff00) >> 8) + (adj * 16));
+        auto blue = clip((this.value & 0x0000ff) + (adj * 32));
+        auto cref = cast(COLORREF) ((blue << 16) | (green << 8) | red);
+        return CreateSolidBrush(cref);
+    }
+
+
+} // End Color
+
+int clip(double num) {
+    import std.algorithm : clamp;
+    import std.math;
+    return cast(int) round(clamp(num, 0, 255));
+}
+
 /// To hold color value
 struct RgbColor {
     uint red;
     uint green ;
     uint blue ;
-    float alpha; 
+    float alpha;
     uint singleValue;
-   
+
     this(uint clr) {
         this.singleValue = clr ;
         this.red = clr >> 16 ;
         this.green = (clr & 0x00ff00) >> 8;
         this.blue = clr & 0x0000ff ;
-    }   
+    }
 
     this(float r, float g, float b) {
         this.red = cast(uint) r ;
@@ -27,46 +82,69 @@ struct RgbColor {
         this.singleValue = cast(uint) (this.red << 16) | (this.green << 8) | this.blue ;
     }
 
-    COLORREF clrRef() const {return cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red) ;}    
+    COLORREF clrRef() const {return cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red) ;}
 
     uint getUint() const {return cast(uint) (this.red << 16) | (this.green << 8) | this.blue ;}
 
     void printRgb() { writefln("Red - %d, Green - %d, Blue - %d", this.red, this.green, this.blue) ;}
 
-    void lighter(float al) {
-        this.alpha = al ;         
-        immutable float bkg = 255 ;
-        this.red = cast(uint) ((1 - al) * cast(float) bkg  + al * cast(float) this.red) ;
-        this.green = cast(uint) ((1 - al) * cast(float) bkg + al * cast(float) this.green) ;
-        this.blue = cast(uint) ((1 - al) * cast(float) bkg  + al * cast(float) this.blue) ;  
-        if (this.red > 255) this.red = 255;       
-        if (this.green > 255) this.green = 255;
-        if (this.blue > 255) this.blue = 255;
+    void lighter(double al) {
+        this.alpha = al ;
+        immutable double bkg = 255 ;
+        this.red = clip(cast(uint) ((1 - al) * cast(double) bkg  + al * cast(double) this.red));
+        this.green = clip(cast(uint) ((1 - al) * cast(double) bkg + al * cast(double) this.green)) ;
+        this.blue = clip(cast(uint) ((1 - al) * cast(double) bkg  + al * cast(double) this.blue)) ;
+        //if (this.red > 255) this.red = 255;
+        //if (this.green > 255) this.green = 255;
+        //if (this.blue > 255) this.blue = 255;
     }
 
-    void darker(float al) {
-        this.alpha = al ;         
-        immutable float bkg = 0 ;
-        this.red = cast(uint) ((1 - al) * cast(float) bkg  + al * cast(float) this.red) ;
-        this.green = cast(uint) ((1 - al) * cast(float) bkg + al * cast(float) this.green) ;
-        this.blue = cast(uint) ((1 - al) * cast(float) bkg  + al * cast(float) this.blue) ;         
-    }      
+    void darker(double al) {
+        this.alpha = al ;
+        immutable double bkg = 0 ;
+        this.red = cast(uint) ((1 - al) * cast(double) bkg  + al * cast(double) this.red) ;
+        this.green = cast(uint) ((1 - al) * cast(double) bkg + al * cast(double) this.green) ;
+        this.blue = cast(uint) ((1 - al) * cast(double) bkg  + al * cast(double) this.blue) ;
+    }
 
-    // Change the RGB intesity with given adj value. 
+    /* Buttons and headers are drawing with two colors.
+        top side with lighter color and botton side with darker color.
+        This makes a 3D effect. So this function will make the bottom
+        color for a given color. */
+    RgbColor bottomColor(int adj) {
+        RgbColor rc;
+        rc.red = this.red - adj;
+        rc.green = this.green - adj;
+        rc.blue = this.blue - adj;
+        return rc;
+    }
+
+    RgbColor getLighterColor(int adj) {
+        RgbColor rc ;
+        rc.red = clip(this.red + adj);
+        rc.green = clip(this.green + adj);
+        rc.blue = clip(this.blue + adj);
+        //rc.red = rc.red > 255 ? 255 : rc.red;
+        //rc.green = rc.green > 255 ? 255 : rc.green;
+        //rc.blue = rc.blue > 255 ? 255 : rc.blue;
+        return rc;
+    }
+
+    // Change the RGB intesity with given adj value.
     // Between 0-1 for reduce & above 1 to increase.
-    RgbColor changeColor(double value) const {        
+    RgbColor changeColor(double value) const {
         double r, g, b ;
-        r = this.red * value ;
-        g = this.green * value ;
-        b = this.blue * value ;
-        if (r < 0 ) r = 0 ;
-        if (r > 255) r = 255 ;
-        if (g < 0 ) g = 0 ;
-        if (g > 255) g = 255 ;
-        if (b < 0 ) b = 0 ;
-        if (b > 255) b = 255 ;
+        r = clip(this.red * value) ;
+        g = clip(this.green * value) ;
+        b = clip(this.blue * value) ;
+        //if (r < 0 ) r = 0 ;
+        //if (r > 255) r = 255 ;
+        //if (g < 0 ) g = 0 ;
+        //if (g > 255) g = 255 ;
+        //if (b < 0 ) b = 0 ;
+        //if (b > 255) b = 255 ;
         return RgbColor(r, g, b) ;
-    }  
+    }
 
 
 } // End struct RgbColor
@@ -75,22 +153,25 @@ RgbColor getRgbColor(uint value) {
     RgbColor rst ;
     rst.red = value >> 16 ;
     rst.green = (value & 0x00ff00) >> 8;
-    rst.blue = value & 0x0000ff ;     
+    rst.blue = value & 0x0000ff ;
     return rst ;
 }
 
 COLORREF getClrRef(uint value ) {
-    RgbColor rgbc = RgbColor(value) ;    
-    return rgbc.clrRef ;    
+    RgbColor rgbc = RgbColor(value) ;
+    return rgbc.clrRef ;
 }
 
 COLORREF getClrRef(uint r, uint g, uint b ) {return cast(COLORREF) ((b << 16) | (g << 8) | r) ;}
+
 uint fromRgb(uint red, uint green, uint blue) { return ((red << 16) | (green << 8) | blue) ;}
-//uint fromRgb(uint red, uint green, uint blue) {}
 
 
 
-void rgbToHsl() {               
+
+
+
+void rgbToHsl() {
      import std.math : isNaN ;
      import std.stdio;
     const RgbColor r1 = getRgbColor(0xff0000) ;
@@ -153,9 +234,9 @@ enum Colors {
     almond = 0xefdecd,
     amaranth = 0xe52b50,
     amber = 0xffbf00,
-    amberSaeEce = 0xff7e00,
+    amberSeaFace = 0xff7e00,
     americanRose = 0xff033e,
-    amethyst = 0x96c,
+    amethyst = 0x96c000,
     androidGreen = 0xa4c639,
     antiFlashWhite = 0xf2f3f4,
     antiqueBrass = 0xcd9575,
@@ -165,14 +246,14 @@ enum Colors {
     aoEnglish = 0x008000,
     appleGreen = 0x8db600,
     apricot = 0xfbceb1,
-    aqua = 0x0ff,
+    aqua = 0x0ff000,
     aquamarine = 0x7fffd4,
     armyGreen = 0x4b5320,
     arsenic = 0x3b444b,
     arylideYellow = 0xe9d66b,
     ashGrey = 0xb2beb5,
     asparagus = 0x87a96b,
-    atomicTangerine = 0xf96,
+    atomicTangerine = 0xf96000,
     auburn = 0xa52a2a,
     aureolin = 0xfdee00,
     aurometalsaurus = 0x6e7f80,
@@ -191,12 +272,12 @@ enum Colors {
     beauBlue = 0xbcd4e6,
     beaver = 0x9f8170,
     beige = 0xf5f5dc,
-    bigDipORuby = 0x9c2542,
+    bigDipRuby = 0x9c2542,
     bisque = 0xffe4c4,
     bistre = 0x3d2b1f,
     bittersweet = 0xfe6f5e,
-    bittersweetShimmer = 0xbf4f51,
-    black = 0x000,
+    bitterSweetShimmer = 0xbf4f51,
+    black = 0x000000,
     blackBean = 0x3d0c02,
     blackLeatherJacket = 0x253529,
     blackOlive = 0x3b3c36,
@@ -205,14 +286,14 @@ enum Colors {
     bleuDeFrance = 0x318ce7,
     blizzardBlue = 0xace5ee,
     blond = 0xfaf0be,
-    blue = 0x00f,
+    blue = 0x0000ff,
     blueBell = 0xa2a2d0,
     blueCrayola = 0x1f75fe,
-    blueGray = 0x69c,
+    blueGray = 0x69c000,
     blueGreen = 0x0d98ba,
     blueMunsell = 0x0093af,
     blueNcs = 0x0087bd,
-    bluePigment = 0x339,
+    bluePigment = 0x339000,
     blueRyb = 0x0247fe,
     blueSapphire = 0x126180,
     blueViolet = 0x8a2be2,
@@ -220,14 +301,14 @@ enum Colors {
     bole = 0x79443b,
     bondiBlue = 0x0095b6,
     bone = 0xe3dac9,
-    bostonUniversityRed = 0xc00,
+    bostonUniversityRed = 0xc00000,
     bottleGreen = 0x006a4e,
     boysenberry = 0x873260,
     brandeisBlue = 0x0070ff,
     brass = 0xb5a642,
     brickRed = 0xcb4154,
     brightCerulean = 0x1dacd6,
-    brightGreen = 0x6f0,
+    brightGreen = 0x6f0000,
     brightLavender = 0xbf94e4,
     brightMaroon = 0xc32148,
     brightPink = 0xff007f,
@@ -246,7 +327,7 @@ enum Colors {
     bulgarianRose = 0x480607,
     burgundy = 0x800020,
     burlywood = 0xdeb887,
-    burntOrange = 0xc50,
+    burntOrange = 0xc50000,
     burntSienna = 0xe97451,
     burntUmber = 0x8a3324,
     byzantine = 0xbd33a4,
@@ -260,6 +341,7 @@ enum Colors {
     cadmiumYellow = 0xfff600,
     cafAuLait = 0xa67b5b,
     cafNoir = 0x4b3621,
+    californiaGold = 0xb78727,
     calPolyGreen = 0x1e4d2b,
     cambridgeBlue = 0xa3c1ad,
     camel = 0xc19a6b,
@@ -271,7 +353,7 @@ enum Colors {
     capri = 0x00bfff,
     caputMortuum = 0x592720,
     cardinal = 0xc41e3a,
-    caribbeanGreen = 0x0c9,
+    caribbeanGreen = 0x0c9000,
     carmine = 0x960018,
     carmineMP = 0xd70040,
     carminePink = 0xeb4c42,
@@ -325,7 +407,7 @@ enum Colors {
     copperCrayola = 0xda8a67,
     copperPenny = 0xad6f69,
     copperRed = 0xcb6d51,
-    copperRose = 0x966,
+    copperRose = 0x966000,
     coquelicot = 0xff3800,
     coral = 0xff7f50,
     coralPink = 0xf88379,
@@ -340,7 +422,7 @@ enum Colors {
     cream = 0xfffdd0,
     crimson = 0xdc143c,
     crimsonGlory = 0xbe0032,
-    cyan = 0x0ff,
+    cyan = 0x0ff000,
     cyanProcess = 0x00b7eb,
     daffodil = 0xffff31,
     dandelion = 0xf0e130,
@@ -362,7 +444,7 @@ enum Colors {
     darkLava = 0x483c32,
     darkLavender = 0x734f96,
     darkMagenta = 0x8b008b,
-    darkMidnightBlue = 0x036,
+    darkMidnightBlue = 0x036000,
     darkOliveGreen = 0x556b2f,
     darkOrange = 0xff8c00,
     darkOrchid = 0x9932cc,
@@ -371,7 +453,7 @@ enum Colors {
     darkPastelPurple = 0x966fd6,
     darkPastelRed = 0xc23b22,
     darkPink = 0xe75480,
-    darkPowderBlue = 0x039,
+    darkPowderBlue = 0x039000,
     darkRaspberry = 0x872657,
     darkRed = 0x8b0000,
     darkSalmon = 0xe9967a,
@@ -389,7 +471,7 @@ enum Colors {
     darkViolet = 0x9400d3,
     darkYellow = 0x9b870c,
     dartmouthGreen = 0x00703c,
-    davySGrey = 0x555,
+    davySGrey = 0x555000,
     debianRed = 0xd70a53,
     deepCarmine = 0xa9203e,
     deepCarminePink = 0xef3038,
@@ -400,12 +482,12 @@ enum Colors {
     deepCoffee = 0x704241,
     deepFuchsia = 0xc154c1,
     deepJungleGreen = 0x004b49,
-    deepLilac = 0x95b,
-    deepMagenta = 0xc0c,
+    deepLilac = 0x95b000,
+    deepMagenta = 0xc0c000,
     deepPeach = 0xffcba4,
     deepPink = 0xff1493,
     deepRuby = 0x843f5b,
-    deepSaffron = 0xf93,
+    deepSaffron = 0xf93000,
     deepSkyBlue = 0x00bfff,
     deepTuscanRed = 0x66424d,
     denim = 0x1560bd,
@@ -425,15 +507,15 @@ enum Colors {
     egyptianBlue = 0x1034a6,
     electricBlue = 0x7df9ff,
     electricCrimson = 0xff003f,
-    electricCyan = 0x0ff,
-    electricGreen = 0x0f0,
+    electricCyan = 0x0ff000,
+    electricGreen = 0x0f0000,
     electricIndigo = 0x6f00ff,
     electricLavender = 0xf4bbff,
-    electricLime = 0xcf0,
+    electricLime = 0xcf0000,
     electricPurple = 0xbf00ff,
     electricUltramarine = 0x3f00ff,
     electricViolet = 0x8f00ff,
-    electricYellow = 0xff0,
+    electricYellow = 0xff0000,
     emerald = 0x50c878,
     englishLavender = 0xb48395,
     etonBlue = 0x96c8a2,
@@ -455,28 +537,32 @@ enum Colors {
     floralWhite = 0xfffaf0,
     fluorescentOrange = 0xffbf00,
     fluorescentPink = 0xff1493,
-    fluorescentYellow = 0xcf0,
+    fluorescentYellow = 0xcf0000,
     folly = 0xff004f,
     forestGreenTraditional = 0x014421,
     forestGreenWeb = 0x228b22,
     frenchBeige = 0xa67b5b,
     frenchBlue = 0x0072bb,
     frenchLilac = 0x86608e,
-    frenchLime = 0xcf0,
+    frenchLime = 0xcf0000,
     frenchRaspberry = 0xc72c48,
     frenchRose = 0xf64a8a,
-    fuchsia = 0xf0f,
+    fuchsia = 0xf0f000,
     fuchsiaCrayola = 0xc154c1,
-    fuchsiaPink = 0xf7f,
+    fuchsiaPink = 0xf7f000,
     fuchsiaRose = 0xc74375,
     fulvous = 0xe48400,
-    fuzzyWuzzy = 0xc66,
+    fuzzyWuzzy = 0xc66000,
     gainsboro = 0xdcdcdc,
     gamboge = 0xe49b0f,
     ghostWhite = 0xf8f8ff,
     ginger = 0xb06500,
     glaucous = 0x6082b6,
     glitter = 0xe6e8fa,
+    globalKleinBlue = 0x002fa7,
+    globalOrangeAerospace = 0xff4f00,
+    globalOrangeEngineering = 0xba160c,
+    globalOrangeGoldenGate = 0xc0362c,
     goldMetallic = 0xd4af37,
     goldWebGolden = 0xffd700,
     goldenBrown = 0x996515,
@@ -486,11 +572,11 @@ enum Colors {
     grannySmithApple = 0xa8e4a0,
     gray = 0x808080,
     grayAsparagus = 0x465945,
-    grayHtmlCssGray = 0x808080,
-    grayX11Gray = 0xbebebe,
-    greenColorWheelX11Green = 0x0f0,
+    grayHtmlCss = 0x808080,
+    grayX11 = 0xbebebe,
+    greenColorWheelX11 = 0x0f0000,
     greenCrayola = 0x1cac78,
-    greenHtmlCssGreen = 0x008000,
+    greenHtmlCss = 0x008000,
     greenMunsell = 0x00a877,
     greenNcs = 0x009f6b,
     greenPigment = 0x00a550,
@@ -524,10 +610,6 @@ enum Colors {
     indigo = 0x6f00ff,
     indigoDye = 0x00416a,
     indigoWeb = 0x4b0082,
-    internationalKleinBlue = 0x002fa7,
-    internationalOrangeAerospace = 0xff4f00,
-    internationalOrangeEngineering = 0xba160c,
-    internationalOrangeGoldenGateBridge = 0xc0362c,
     iris = 0x5a4fcf,
     isabelline = 0xf4f0ec,
     islamicGreen = 0x009000,
@@ -551,7 +633,7 @@ enum Colors {
     laserLemon = 0xfefe22,
     laurelGreen = 0xa9ba9d,
     lava = 0xcf1020,
-    lavenderBlue = 0xccf,
+    lavenderBlue = 0xccf000,
     lavenderBlush = 0xfff0f5,
     lavenderFloral = 0xb57edc,
     lavenderGray = 0xc4c3d0,
@@ -576,7 +658,7 @@ enum Colors {
     lightCrimson = 0xf56991,
     lightCyan = 0xe0ffff,
     lightFuchsiaPink = 0xf984ef,
-    lightGoldenrodYellow = 0xfafad2,
+    lightGoldenRodYellow = 0xfafad2,
     lightGray = 0xd3d3d3,
     lightGreen = 0x90ee90,
     lightKhaki = 0xf0e68c,
@@ -584,17 +666,17 @@ enum Colors {
     lightPink = 0xffb6c1,
     lightRedOchre = 0xe97451,
     lightSalmon = 0xffa07a,
-    lightSalmonPink = 0xf99,
+    lightSalmonPink = 0xf99000,
     lightSeaGreen = 0x20b2aa,
     lightSkyBlue = 0x87cefa,
-    lightSlateGray = 0x789,
+    lightSlateGray = 0x789000,
     lightTaupe = 0xb38b6d,
     lightThulianPink = 0xe68fac,
     lightYellow = 0xffffe0,
     lilac = 0xc8a2c8,
     limeColorWheel = 0xbfff00,
     limeGreen = 0x32cd32,
-    limeWebX11Green = 0x0f0,
+    limeWebX11Green = 0x0f0000,
     limerick = 0x9dc209,
     lincolnGreen = 0x195905,
     linen = 0xfaf0e6,
@@ -602,7 +684,7 @@ enum Colors {
     littleBoyBlue = 0x6ca0dc,
     liver = 0x534b4f,
     lust = 0xe62020,
-    magenta = 0xf0f,
+    magenta = 0xf0f000,
     magentaDye = 0xca1f7b,
     magentaProcess = 0xff0090,
     magicMint = 0xaaf0d1,
@@ -623,7 +705,7 @@ enum Colors {
     mauvelous = 0xef98aa,
     mayaBlue = 0x73c2fb,
     meatBrown = 0xe5b73b,
-    mediumAquamarine = 0x6da,
+    mediumAquamarine = 0x6da000,
     mediumBlue = 0x0000cd,
     mediumCandyAppleRed = 0xe2062c,
     mediumCarmine = 0xaf4035,
@@ -678,7 +760,7 @@ enum Colors {
     nonPhotoBlue = 0xa4dded,
     northTexasGreen = 0x059033,
     oceanBoatBlue = 0x0077be,
-    ochre = 0xc72,
+    ochre = 0xc72000,
     officeGreen = 0x008000,
     oldGold = 0xcfb53b,
     oldLace = 0xfdf5e6,
@@ -686,8 +768,8 @@ enum Colors {
     oldMauve = 0x673147,
     oldRose = 0xc08081,
     olive = 0x808000,
-    oliveDrab_7 = 0x3c341f,
-    oliveDrabWebOliveDrab_3 = 0x6b8e23,
+    oliveDrab7 = 0x3c341f,
+    oliveDrabWeb1 = 0x6b8e23,
     olivine = 0x9ab973,
     onyx = 0x353839,
     operaMauve = 0xb784a7,
@@ -698,11 +780,10 @@ enum Colors {
     orangeWebColor = 0xffa500,
     orchid = 0xda70d6,
     otterBrown = 0x654321,
-    ouCrimsonRed = 0x900,
     outerSpace = 0x414a4c,
     outrageousOrange = 0xff6e4a,
     oxfordBlue = 0x002147,
-    pakistanGreen = 0x060,
+    pakistanGreen = 0x060000,
     palatinateBlue = 0x273be2,
     palatinatePurple = 0x682860,
     paleAqua = 0xbcd4e6,
@@ -732,7 +813,7 @@ enum Colors {
     pastelBlue = 0xaec6cf,
     pastelBrown = 0x836953,
     pastelGray = 0xcfcfc4,
-    pastelGreen = 0x7d7,
+    pastelGreen = 0x7d7000,
     pastelMagenta = 0xf49ac2,
     pastelOrange = 0xffb347,
     pastelPink = 0xdea5a4,
@@ -744,7 +825,7 @@ enum Colors {
     payneSGrey = 0x536878,
     peach = 0xffe5b4,
     peachCrayola = 0xffcba4,
-    peachOrange = 0xfc9,
+    peachOrange = 0xfc9000,
     peachPuff = 0xffdab9,
     peachYellow = 0xfadfad,
     pear = 0xd1e231,
@@ -752,14 +833,14 @@ enum Colors {
     pearlAqua = 0x88d8c0,
     pearlyPurple = 0xb768a2,
     peridot = 0xe6e200,
-    periwinkle = 0xccf,
+    periwinkle = 0xccf000,
     persianBlue = 0x1c39bb,
     persianGreen = 0x00a693,
     persianIndigo = 0x32127a,
     persianOrange = 0xd99058,
     persianPink = 0xf77fbe,
     persianPlum = 0x701c1c,
-    persianRed = 0xc33,
+    persianRed = 0xc33000,
     persianRose = 0xfe28a2,
     persimmon = 0xec5800,
     peru = 0xcd853f,
@@ -770,7 +851,7 @@ enum Colors {
     pineGreen = 0x01796f,
     pink = 0xffc0cb,
     pinkLace = 0xffddf4,
-    pinkOrange = 0xf96,
+    pinkOrange = 0xf96000,
     pinkPearl = 0xe7accf,
     pinkSherbet = 0xf78fa7,
     pistachio = 0x93c572,
@@ -783,7 +864,7 @@ enum Colors {
     prune = 0x701c1c,
     prussianBlue = 0x003153,
     psychedelicPurple = 0xdf00ff,
-    puce = 0xc89,
+    puce = 0xc89000,
     pumpkin = 0xff7518,
     purpleHeart = 0x69359c,
     purpleHtmlCss = 0x800080,
@@ -801,9 +882,9 @@ enum Colors {
     raspberryPink = 0xe25098,
     raspberryRose = 0xb3446c,
     rawUmber = 0x826644,
-    razzleDazzleRose = 0xf3c,
+    razzleDazzleRose = 0xf3c000,
     razzmatazz = 0xe3256b,
-    red = 0xf00,
+    red = 0xf00000,
     redBrown = 0xa52a2a,
     redDevil = 0x860111,
     redMunsell = 0xf2003c,
@@ -823,13 +904,13 @@ enum Colors {
     richLilac = 0xb666d2,
     richMaroon = 0xb03060,
     rifleGreen = 0x414833,
-    robinEggBlue = 0x0cc,
+    robinEggBlue = 0x0cc000,
     rose = 0xff007f,
     roseBonbon = 0xf9429e,
     roseEbony = 0x674846,
     roseGold = 0xb76e79,
     roseMadder = 0xe32636,
-    rosePink = 0xf6c,
+    rosePink = 0xf6c000,
     roseQuartz = 0xaa98a9,
     roseTaupe = 0x905d5d,
     roseVale = 0xab4e52,
@@ -890,7 +971,7 @@ enum Colors {
     skyMagenta = 0xcf71af,
     slateBlue = 0x6a5acd,
     slateGray = 0x708090,
-    smaltDarkPowderBlue = 0x039,
+    smaltDarkPowderBlue = 0x039000,
     smokeyTopaz = 0x933d41,
     smokyBlack = 0x100c08,
     snow = 0xfffafa,
@@ -900,15 +981,15 @@ enum Colors {
     stPatrickSBlue = 0x23297a,
     steelBlue = 0x4682b4,
     stilDeGrainYellow = 0xfada5e,
-    stizza = 0x900,
+    stizza = 0x900000,
     stormcloud = 0x4f666a,
     straw = 0xe4d96f,
-    sunglow = 0xfc3,
+    sunglow = 0xfc3000,
     sunset = 0xfad6a5,
     tan = 0xd2b48c,
     tangelo = 0xf94d00,
     tangerine = 0xf28500,
-    tangerineYellow = 0xfc0,
+    tangerineYellow = 0xfc0000,
     tangoPink = 0xe4717a,
     taupe = 0x483c32,
     taupeGray = 0x8b8589,
@@ -944,7 +1025,7 @@ enum Colors {
     tuscanRed = 0x7c4848,
     twilightLavender = 0x8a496b,
     tyrianPurple = 0x66023c,
-    uaBlue = 0x03a,
+    uaBlue = 0x03a000,
     uaRed = 0xd9004c,
     ube = 0x8878c3,
     uclaBlue = 0x536895,
@@ -956,15 +1037,13 @@ enum Colors {
     umber = 0x635147,
     unbleachedSilk = 0xffddca,
     unitedNationsBlue = 0x5b92e5,
-    universityOfCaliforniaGold = 0xb78727,
-    unmellowYellow = 0xff6,
+    unmellowYellow = 0xff6000,
     upForestGreen = 0x014421,
     upMaroon = 0x7b1113,
     upsdellRed = 0xae2029,
     urobilin = 0xe1ad21,
     usafaBlue = 0x004f98,
-    uscCardinal = 0x900,
-    uscGold = 0xfc0,
+    uscGold = 0xfc0000,
     utahCrimson = 0xd3003f,
     vanilla = 0xf3e5ab,
     vegasGold = 0xc5b358,
@@ -988,7 +1067,7 @@ enum Colors {
     waterspout = 0xa4f4f9,
     wenge = 0x645452,
     wheat = 0xf5deb3,
-    white = 0xfff,
+    white = 0xffffff,
     whiteSmoke = 0xf5f5f5,
     wildBlueYonder = 0xa2add0,
     wildStrawberry = 0xff43a4,
@@ -999,7 +1078,7 @@ enum Colors {
     woodBrown = 0xc19a6b,
     xanadu = 0x738678,
     yaleBlue = 0x0f4d92,
-    yellow = 0xff0,
+    yellow = 0xff0000,
     yellowGreen = 0x9acd32,
     yellowMunsell = 0xefcc00,
     yellowNcs = 0xffd300,

@@ -17,77 +17,98 @@ import wings.commons;
 import wings.window ;
 import wings.colors;
 
+enum repeatingCode = "  mWidth = w ;
+                        mHeight = h ;
+                        mXpos = x ;
+                        mYpos = y ;
+                        mParent = parent ;
+                        mFont = parent.font;"; /// Setting size, position, and parent font.
+
+mixin template finalProperty(string pName, alias obj) {
+    mixin(`final typeof(obj) `, pName, `() { return obj; }`);
+    mixin(`final void `, pName, `(typeof(obj) value) { obj = value; }`);
+}
 
 
 /// A base class for all controls
-class Control {    
+class Control {
 
     /// Set the text of control
-        final void text(string value) {this.mText = value ;}       
+        void text(string value) {
+            this.mText = value ;
+            if (this.mIsCreated) {
+                // TODO
+            }
+        }
 
         /// Returns the control text
-        final string text() {return this.mText ;} 
+        string text() {return this.mText ;}
 
-        /// Set the width of the control
-        final void width(int value) {this.mWidth = value ;}
+        void visible(bool value) {
+            this.mVisible = value;
+            if (this.mIsCreated) {
+                DWORD flag = value ? SW_SHOW : SW_HIDE;
+                ShowWindow(this.mHandle, flag) ;
+            }
+        }
+        bool visible() {return this.mVisible;}
 
-        /// Return the width of control
-        final int width() {return this.mWidth ;} 
+        /// Set & get the width of the control
+        mixin finalProperty!("width", this.mWidth);
 
-        /// Set the height of control
-        final void height(int value) {this.mHeight = value ; }
+        /// Set & get the height of control
+        mixin finalProperty!("height", this.mHeight);
 
-        /// Returns the height of control
-        final int height() {return this.mHeight ;} 
+        /// Set & get the X position of control
+        mixin finalProperty!("xPos", this.mXpos);
 
-        /// Set the X position of control
-        final void xPos(int value) {this.mXpos = value ;}
-
-        /// Return the x position of control
-        final int xPos() {return this.mXpos ; } 
-
-        /// Set the y position of control
-        final void yPos(int value) {this.mYpos = value ;}
-
-        /// Returns the y position of control
-        final int yPos() {return this.mYpos ;} 
+        /// Set & get the y position of control
+        mixin finalProperty!("yPos", this.mYpos);
 
         /// Returns the window handle
-        final HWND handle() {return this.mHandle ;} 
+        final HWND handle() {return this.mHandle ;}
 
-        /// Set the name of the control
-        final void name(string value) {this.mName = value ;}
+        /// Set & get the name of the control
+        mixin finalProperty!("name", this.mName);
 
-        /// Return the name of control
-        final string name() {return this.mName ; }    
-    
-        /// Returns the type of a control
-        final ControlType controlType() {return this.mControlType;}
+        // /// Returns the type of a control
+        // final ControlType controlType() {return this.mControlType;}
 
-        /// Set the control type of a control
-        final void controlType(ControlType value) {this.mControlType = value;}
+        // /// Set the control type of a control
+        // final void controlType(ControlType value) {this.mControlType = value;}
+         mixin finalProperty!("controlType", this.mControlType);
 
         /// Returns the font object
-        Font font() {return this.mFont;}        
+        Font font() {return this.mFont;}
 
         /// Set the font for a control
         void font(Font value) {
             this.mBaseFontChanged = true;
             this.mFont = value;
-            if (this.mIsCreated) this.setFontInternal();
+            if (this.mIsCreated) this.setFontInternal(); // Setting font if the control is created already.
         }
 
         /// Set the font of a control.
-        void setFont(   string fName, int fSize, 
-                        FontWeight fWeight = FontWeight.normal, 
-                        bool fItal = false, bool fUnder = false ) 
+        void setFont(   wstring fName, int fSize,
+                        FontWeight fWeight = FontWeight.normal,
+                        bool fItal = false, bool fUnder = false )
         {
             this.mFont = new Font(fName, fSize, fWeight, fItal, fUnder) ;
             this.mBaseFontChanged = true ;
             if (this.mIsCreated) {
                 this.mFont.createFontHandle(this.mHandle) ;
                 this.sendMsg(WM_SETFONT, this.mFont.handle, 1) ;
-            }        
+            }
+        }
+
+        void printNotifs() {
+            enum TRBN_FIRST = -1501U;
+            enum TRBN_THUMBPOSCHANGING = TRBN_FIRST-1 ;
+            writefln("NM_CUSTOMDRAW %d", TRBN_THUMBPOSCHANGING);
+            writefln("CDDS_ITEM %d", CDDS_ITEM);
+            writefln("MCN_LAST %d", CDDS_ITEM );
+            writefln("DTN_FIRST %d", DTN_FIRST);
+            writefln("DTN_DATETIMECHANGE %d", DTN_DATETIMECHANGE);
         }
 
         /// Returns true if control is created
@@ -101,21 +122,22 @@ class Control {
         final int controlID() {return this.mCtlId;}
 
         void backColor(uint value) {
-            this.mBackColor = value;
-            this.mBClrRef = getClrRef(value);
-            this.reDraw();
+            this.mBackColor(value);
+            if ((this.mDrawFlag & 2) != 2 ) this.mDrawFlag += 2;
+            if (this.mIsCreated) this.mBkBrush = CreateSolidBrush(this.mBackColor.reff);
+            this.checkRedrawNeeded();
         }
 
-        uint backColor() {return this.mBackColor;}
+        uint backColor() {return this.mBackColor.value;}
 
         void foreColor(uint value) {
-            this.mForeColor = value ;
-            this.mFClrRef = getClrRef(value) ;
-            this.reDraw();
+            this.mForeColor(value) ;
+            if ((this.mDrawFlag & 1) != 1) this.mDrawFlag += 1;
+            this.checkRedrawNeeded();
         }
-        uint foreColor() {return this.mForeColor;}
+        uint foreColor() {return this.mForeColor.value;}
 
-        
+
 
 
      // end properties
@@ -123,102 +145,107 @@ class Control {
 
     ///EventHandler onLeftDown ;
     EventHandler onMouseEnter, onMouseClick, onMouseLeave, onRightClick, onDoubleClick ;
-    MouseEventHandler onMouseWheel, onMouseHover, onMouseMove, onMouseDown, onMouseUp ; 
-    MouseEventHandler onRightMouseDown, onRightMouseUp ; 
+    MouseEventHandler onMouseWheel, onMouseHover, onMouseMove, onMouseDown, onMouseUp ;
+    MouseEventHandler onRightMouseDown, onRightMouseUp ;
     KeyEventHandler onKeyDown, onKeyUp ;
-    PaintEventHandler onPaint ; 
+    PaintEventHandler onPaint ;
     EventHandler onKeyPress, onGotFocus, onLostFocus, wndProc ;
 
     /// Hide a control.
     void hide() { ShowWindow(this.mHandle, SW_HIDE);}
 
-    
-   
-    protected :    
-		DWORD mStyle ;
-        DWORD mExStyle ;
-        Wstring mClsName ;
-        string mText ;
-        int mWidth ;
-        int mHeight ;
-        int mXpos ;
-        int mYpos ;
+
+
+    protected :
+		DWORD mStyle;
+        DWORD mExStyle;
+        wstring mClsName;
+        string mText;
+        string mName;
+        int mWidth;
+        int mHeight;
+        int mXpos;
+        int mYpos;
+
         static int stCtlId = 100 ;
         Window mParent ;
         bool mIsCreated;
         bool mBaseFontChanged ;
+        bool mVisible = true;
         Font mFont;
-        
-        HWND mHandle ;            
-        string mName ;         
+
+
+
         ControlType mControlType;
-        static int mSubClassId = 1000 ;       
+        static int mSubClassId = 1000 ;
         int mCtlId ;
 
-        
+
 
         // A simple helper function for convert a control to DWORD_PTR
         final DWORD_PTR toDwPtr() {return cast(DWORD_PTR) (cast(void*) this);} // Protected
 
         // Helper function to invalidate & redraw a control.
-        final void reDraw() {if (this.mIsCreated) InvalidateRect(this.mHandle, null, true);} // Protected
-        
-        
-            
-        
-    package :
-        bool lDownHappened ;
-        bool rDownHappened ;
-        bool isMouseEntered ;
-        COLORREF mBClrRef ;
-        COLORREF mFClrRef ;
-        uint mBackColor ;
-        uint mForeColor ;
+        final void checkRedrawNeeded() {if (this.mIsCreated) InvalidateRect(this.mHandle, null, true);} // Protected
+
+
+
+
+    package:
+        bool lDownHappened;
+        bool rDownHappened;
+        bool isMouseEntered;
+        Color mBackColor;
+        Color mForeColor;
+        uint mDrawFlag;
         SUBCLASSPROC wndProcPtr;
+        HWND mHandle;
+        HBRUSH mBkBrush;
 
         final void createHandle() {  // protected
-            // This function works for almost all controls except combo box. 
-            // This will save us 150+ lines of code. 
+            // This function works for almost all controls except combo box.
+            // This will save us 150+ lines of code.
             this.mCtlId = Control.stCtlId ;
-            this.mHandle = CreateWindowEx(  this.mExStyle, 
-                                    this.mClsName, 
-                                    this.mText.toUTF16z, 
-                                    this.mStyle, 
-                                    this.mXpos, 
-                                    this.mYpos,
-                                    this.mWidth,
-                                    this.mHeight, 
-                                    this.mParent.handle, 
-                                    cast(HMENU) this.mCtlId, 
-                                    appData.hInstance, 
-                                    null); 
+            this.mHandle = CreateWindowEx(  this.mExStyle,
+                                            this.mClsName.ptr,
+                                            this.mText.toUTF16z,
+                                            this.mStyle,
+                                            this.mXpos,
+                                            this.mYpos,
+                                            this.mWidth,
+                                            this.mHeight,
+                                            this.mParent.handle,
+                                            cast(HMENU) this.mCtlId,
+                                            appData.hInstance,
+                                            null);
             if (this.mHandle) {
                 ++Control.stCtlId; // Increasing protected static member for next control iD
                 this.mIsCreated = true;
                 if (!this.mBaseFontChanged) this.mFont = this.mParent.font ;
-                this.setFontInternal() ;                               
-            }      
+                //this.setFontInternal() ;
+                this.createLogFontInternal();
+            }
         }
 
         final void setFontInternal() {   // Package
             // This function is used for setting font for a control right after it created
-            if (!this.mFont.isCreated) this.mFont.createFontHandle(this.mHandle) ;           
-            this.sendMsg(WM_SETFONT, this.mFont.handle, 1) ;                            
-        }        
+            if (!this.mFont.isCreated) {this.mFont.createFontHandle(this.mHandle) ; }
+            this.sendMsg(WM_SETFONT, this.mFont.handle, 1) ;
+        }
 
-        final void setSubClass(SUBCLASSPROC ctlWndProc) {    // Protected   
+        final void setSubClass(SUBCLASSPROC ctlWndProc) {    // Protected
             /*  We need to implement a special WndProc function for each control.
             In order to do that, we need to subclass a control. Here, subclassing means...
-            just replacing the parent's own WndProc with our function. */            
+            just replacing the parent's own WndProc with our function. */
             SetWindowSubclass(this.mHandle, ctlWndProc, UINT_PTR(mSubClassId), this.toDwPtr);
-            this.wndProcPtr = ctlWndProc;           
-            ++mSubClassId ;             
-        }         
+            this.wndProcPtr = ctlWndProc;
+            ++mSubClassId ;
+        }
 
         final void remSubClass(UINT_PTR subClsId) { // Package
             // We must remove the subclass when a control destroyed
-            RemoveWindowSubclass(this.mHandle, this.wndProcPtr, subClsId); 
-            //writeln("Removed subclass of - ", this.mControlType) ;
+            auto res = RemoveWindowSubclass(this.mHandle, this.wndProcPtr, subClsId);
+            writefln("Removing subclass of %s and result - %d ", this.mName, res) ;
         }
 
         final auto sendMsg(wpt, lpt)(uint uMsg, wpt wp, lpt lp) { // Package
@@ -226,20 +253,184 @@ class Control {
             return SendMessage(this.mHandle, uMsg, cast(WPARAM) wp, cast(LPARAM) lp);
         }
 
-        final string getControlText(HWND hw) {            
-            auto txtLen = GetWindowTextLengthW(hw) + 1;            
+        final void createLogFontInternal() { // Package
+            if (!this.mFont.isCreated) {
+                import wings.wingdi : CreateFontIndirect, LOGFONTW;
+                HDC dcHandle = GetDC(this.mHandle);
+                immutable int iHeight = MulDiv(this.mFont.size, GetDeviceCaps(dcHandle, LOGPIXELSY), 72) ;
+                ReleaseDC(this.mHandle, dcHandle);
+                LOGFONTW lf;
+                lf.lfFaceName = this.mFont.name;
+                lf.lfHeight = iHeight;
+                lf.lfWeight = this.mFont.weight;
+                lf.lfCharSet = DEFAULT_CHARSET;
+                lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
+                lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
+                lf.lfQuality = DEFAULT_QUALITY;
+                auto res = CreateFontIndirect(&lf);
+                this.mFont.setHandle(res);
+
+            }
+            this.sendMsg(WM_SETFONT, this.mFont.handle, 1) ;
+        }
+
+        final string getControlText(HWND hw) {
+            auto txtLen = GetWindowTextLengthW(hw) + 1;
             wchar[] buffer = new wchar[](txtLen);
             GetWindowTextW(hw, buffer.ptr, txtLen );
             return buffer.to!string;
         }
 
+        final string getControlTextANSI(HWND hw) {
+            auto txtLen = GetWindowTextLengthW(hw) + 1;
+            char[] buffer = new char[](txtLen);
+            GetWindowTextA(hw, buffer.ptr, txtLen );
+            return buffer.to!string;
+        }
+
+        final RECT clientRect() {
+            RECT rc ;
+            GetClientRect(this.mHandle, &rc);
+            return rc;
+        }
+        final RECT clientRect(HWND hw) {
+            RECT rc ;
+            GetClientRect(hw, &rc);
+            return rc;
+        }
+
+        final RECT windowRect(HWND hw) {
+            RECT rc ;
+            GetWindowRect(hw, &rc);
+            return rc;
+        }
+
+        final log(T)(T obj, string msg = "") {
+            writefln("%s log [%d]  %s - %s", this.mName, this.mLogNum, msg, obj);
+            ++this.mLogNum;
+        }
+
+        final log(T)(string msg = "") {
+            writefln("%s log [%d]  %s", this.mName, this.mLogNum);
+            ++this.mLogNum;
+        }
+
+
+        // Common WndProc Message Handlers.=================================
+            LRESULT paintHandler() {
+                if (this.onPaint) {
+                    PAINTSTRUCT  ps ;
+                    BeginPaint(this.mHandle, &ps) ;
+                    auto pea = new PaintEventArgs(&ps) ;
+                    this.onPaint(this, pea) ;
+                    EndPaint(this.mHandle, &ps) ;
+                    return 0 ;
+                }
+                return 0 ;
+            }
+
+            void setFocusHandler() {
+                if (this.onGotFocus) this.onGotFocus(this, new EventArgs());
+            }
+
+            void killFocusHandler() {
+                 if (this.onLostFocus) this.onLostFocus(this, new EventArgs());
+            }
+
+            void mouseDownHandler(UINT msg, WPARAM wp, LPARAM lp) {
+                this.lDownHappened = true ;
+                if (this.onMouseDown) {
+                    auto mea = new MouseEventArgs(msg, wp, lp);
+                    this.onMouseDown(this, mea);
+                }
+            }
+
+            void mouseUpHandler(UINT msg, WPARAM wp, LPARAM lp) {
+                if (this.onMouseUp) {
+                    auto mea = new MouseEventArgs(msg, wp, lp) ;
+                    this.onMouseUp(this, mea) ;
+                }
+                if (this.lDownHappened) {
+                    this.lDownHappened = false ;
+                    this.sendMsg(CM_LEFTCLICK, 0, 0) ;
+                }
+            }
+
+            void mouseClickHandler() {
+                if (this.onMouseClick) this.onMouseClick(this, new EventArgs());
+            }
+
+            void mouseRDownHandler(UINT msg, WPARAM wp, LPARAM lp) {
+                this.rDownHappened = true ;
+                if (this.onRightMouseDown) {
+                    auto mea = new MouseEventArgs(msg, wp, lp) ;
+                    this.onRightMouseDown(this, mea) ;
+                }
+            }
+
+            void mouseRUpHandler(UINT msg, WPARAM wp, LPARAM lp) {
+                if (this.onRightMouseUp) {
+                    auto mea = new MouseEventArgs(msg, wp, lp) ;
+                    this.onRightMouseUp(this, mea) ;
+                }
+                if (this.rDownHappened) {
+                    this.rDownHappened = false ;
+                    this.sendMsg(CM_RIGHTCLICK, 0, 0) ;
+                }
+            }
+
+            void mouseRClickHandler() {
+                if (this.onRightClick) this.onRightClick(this, new EventArgs());
+            }
+
+            void mouseWheelHandler(UINT msg, WPARAM wp, LPARAM lp) {
+                if (this.onMouseWheel) {
+                    auto mea = new MouseEventArgs(msg, wp, lp) ;
+                    this.onMouseWheel(this, mea) ;
+                }
+            }
+
+            void mouseMoveHandler(UINT msg, WPARAM wp, LPARAM lp) {
+                if (this.isMouseEntered) {
+                    if (this.onMouseMove) {
+                        auto mea = new MouseEventArgs(msg, wp, lp) ;
+                        this.onMouseMove(this, mea) ;
+                    }
+                } else {
+                    this.isMouseEntered = true ;
+                    if (this.onMouseEnter) this.onMouseEnter(this, new EventArgs());
+                }
+            }
+
+            void mouseLeaveHandler() {
+                this.isMouseEntered = false ;
+                if (this.onMouseLeave) this.onMouseLeave(this, new EventArgs());
+            }
+
+            void keyDownHandler(WPARAM wpm) {
+                if (this.onKeyDown) this.onKeyDown(this, new KeyEventArgs(wpm));
+            }
+
+            void keyUpHandler(WPARAM wpm) {
+                if (this.onKeyUp) this.onKeyUp(this, new KeyEventArgs(wpm));
+            }
+
+            void keyPressHandler(WPARAM wpm) {
+                if (this.onKeyPress) this.onKeyPress(this, new KeyEventArgs(wpm));
+            }
+
+
+
+        // End of common message handlers.
+
     private :
-        int widthOffset = 20; // Might be useless
-        int heightOffset = 3;
+        int mLogNum = 1;
+        // int widthOffset = 20; // Might be useless
+        // int heightOffset = 3;
 
-       
 
-            
+
+
 
 
 } // End Control Class

@@ -18,6 +18,7 @@ enum DWORD MCS_NOTRAILINGDATES = 0x40 ;
 enum DWORD MCS_SHORTDAYSOFWEEK = 0x80 ;
 enum DWORD DTM_SETMCSTYLE = DTM_FIRST + 11 ;
 enum DWORD DTN_USERSTRING = DTN_FIRST - 5 ;
+enum DWORD DTM_GETIDEALSIZE = (DTM_FIRST + 15);
 
 struct NMDATETIMESTRINGW {
     NMHDR nmhdr ;
@@ -38,51 +39,35 @@ class DateTimePicker : Control {
     /// Set the format string of DateTimPicker
     final void formatString(string value) {this.setFormatString(value);  }
     /// Returns the format of DateTimPicker
-    final DtpFormat format() {return this.mFormat;}
-    /// Set the format of DateTimPicker
-    final void format(DtpFormat value) {this.mFormat = value;}
-    final bool rightAligned() {return this.mRightAlign;}
-    final void rightAligned(bool value) {this.mRightAlign = value;}
-    final bool fourDigitYear() {return this.mFourDigitYear;}
-    final void fourDigitYear(bool value) {this.mFourDigitYear = value;}
-    final bool showWeekNumber() {return this.mShowWeekNum;}
-    final void showWeekNumber(bool value) {this.mShowWeekNum = value;}
-    final bool noTodayCircle() {return this.mNotdCircle;}
-    final void noTodayCircle(bool value) {this.mNotdCircle = value;}
-    final bool noToday() {return this.mNoToday;}
-    final void noToday(bool value) {this.mNoToday = value;}
-    final bool noTrailingDates() {return this.mNoTrlDates;}
-    final void noTrailingDates(bool value) {this.mNoTrlDates = value;}
-    final bool shortDateNames() {return this.mShortDnames;}
-    final void shortDateNames(bool value) {this.mShortDnames = value;}
-    final bool showUpDown() {return this.mShowUpdown;}
-    final void showUpDown(bool value) {this.mShowUpdown = value;}
-    final DateTime value() {return this.mValue;}
-    final void value(bool value) {this.mShowUpdown = value;}
-    
+    mixin finalProperty!("format", this.mFormat);    
+    mixin finalProperty!("rightAligned", this.mRightAlign);
+    mixin finalProperty!("fourDigitYear", this.mFourDigitYear);
+    mixin finalProperty!("showWeekNumber", this.mShowWeekNum);
+    mixin finalProperty!("noTodayCircle", this.mNotdCircle);
+    mixin finalProperty!("noToday", this.mNoToday);
+    mixin finalProperty!("noTrailingDates", this.mNoTrlDates);
+    mixin finalProperty!("shortDateNames", this.mShortDnames);
+    mixin finalProperty!("showUpDown", this.mShowUpdown);
+    mixin finalProperty!("value", this.mValue);    
 
 	EventHandler onCalendarOpened ;
 	EventHandler onValueChanged ;
 	EventHandler onCalendarClosed ;
 	DateTimeEventHandler onTextChanged ;
 
-	this(Window p, int x, int y, int w, int h) {   
+	this(Window parent, int x, int y, int w, int h) {   
         if (!appData.isDtpInit) {
             appData.isDtpInit = true;
             appData.iccEx.dwICC = ICC_DATE_CLASSES;
             InitCommonControlsEx(&appData.iccEx);
         }            
-        mWidth = w ;
-        mHeight = h ;
-        mXpos = x ;
-        mYpos = y ;
-        mParent = p ;
-        mFont = p.font ;
+        
+        mixin(repeatingCode);
         mControlType = ControlType.dateTimePicker ;   
         this.mExStyle = 0 ;
         this.mFormat = DtpFormat.custom ;
         this.mFormatString = " dd-MMM-yyyy";
-        this.mClsName = DATETIMEPICK_CLASS.toUTF16z() ;
+        this.mClsName = "SysDateTimePick32" ;
         ++dtpNumber ;        
     }
 
@@ -156,9 +141,14 @@ class DateTimePicker : Control {
                     But it won't work. For some unknown reason, only DTM_SETFORMATA is working here. So we need...
                     to pass a null terminated c string ptr to this function. Why MS, why ?
                 */
-                this.sendMsg(DTM_SETFORMATA, 0, this.mFormatString.ptr) ;                
+                this.sendMsg(DTM_SETFORMATA, 0, this.mFormatString.ptr);                
             }
-            if (this.mCalStyle > 0 ) this.sendMsg(DTM_SETMCSTYLE, 0, this.mCalStyle) ;            
+            if (this.mCalStyle > 0 ) this.sendMsg(DTM_SETMCSTYLE, 0, this.mCalStyle);  
+            SIZE ss;
+            this.sendMsg(DTM_GETIDEALSIZE, 0, &ss);
+            this.mWidth = ss.cx + 2;
+            this.mHeight = ss.cy + 5;
+            SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOZORDER);        
         }
 
         void setFormatString(string fmt) { // Private
@@ -174,24 +164,25 @@ class DateTimePicker : Control {
 extern(Windows)
 private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
     try {   
-        DateTimePicker dtp = getControl!DateTimePicker(refData) ;
-         
+        DateTimePicker dtp = getControl!DateTimePicker(refData) ;         
         switch (message) {
-            case WM_DESTROY :
-                dtp.remSubClass(scID);
-                break ;
-            case WM_PAINT :
-                if (dtp.onPaint) {
-                    PAINTSTRUCT ps ;
-                    auto hdc = BeginPaint(hWnd, &ps) ;
-                    auto pea = new PaintEventArgs(&ps) ;
-                    dtp.onPaint(dtp, pea) ;
-                    return 0 ;
-                } 
-                break ;
+            case WM_DESTROY : dtp.remSubClass(scID); break;            
+            case WM_PAINT : dtp.paintHandler(); break;
+            case WM_SETFOCUS : dtp.setFocusHandler(); break;
+            case WM_KILLFOCUS : dtp.killFocusHandler(); break;
+            case WM_LBUTTONDOWN : dtp.mouseDownHandler(message, wParam, lParam); break;
+            case WM_LBUTTONUP : dtp.mouseUpHandler(message, wParam, lParam); break;
+            case CM_LEFTCLICK : dtp.mouseClickHandler(); break;
+            case WM_RBUTTONDOWN : dtp.mouseRDownHandler(message, wParam, lParam); break;
+            case WM_RBUTTONUP : dtp.mouseRUpHandler(message, wParam, lParam); break;
+            case CM_RIGHTCLICK : dtp.mouseRClickHandler(); break;
+            case WM_MOUSEWHEEL : dtp.mouseWheelHandler(message, wParam, lParam); break;
+            case WM_MOUSEMOVE : dtp.mouseMoveHandler(message, wParam, lParam); break;
+            case WM_MOUSELEAVE : dtp.mouseLeaveHandler(); break;
+
             case CM_NOTIFY :
                 auto nm = cast(NMHDR *) lParam ;  
-                print("nm.code", nm.code) ;              
+                //print("nm.code", nm.code) ;              
                 switch (nm.code) {
                     case DTN_USERSTRING :
                         if (dtp.onTextChanged) {                            
@@ -202,14 +193,16 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                 sendMsg(hWnd, DTM_SETSYSTEMTIME, 0, dea.dateStruct) ;
                             }
                         }
-                        break ;
+                    break ;
+
                     case DTN_DROPDOWN :
                         if (dtp.onCalendarOpened) {
                             auto ea = new EventArgs();
                             dtp.onCalendarOpened(dtp, ea) ;
                             return 0 ;
                         }
-                        break ;
+                    break ;
+
                     case DTN_DATETIMECHANGE :
                         //print("time change arrived");
                         if (dtp.dropDownCount == 0) {
@@ -225,7 +218,8 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                             dtp.dropDownCount = 0 ;
                             return 0;
                         }
-                        break ;
+                    break ;
+
                     case DTN_FORMATQUERY :
                         
                     case DTN_CLOSEUP :
@@ -233,87 +227,9 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                             auto ea = new EventArgs();
                             dtp.onCalendarClosed(dtp, ea);
                         }
-                        break ;
+                    break ;
                     //--------------------------------------
-                    case WM_LBUTTONDOWN : 
-                        //print("in main wnd proc", 1) ;
-                        dtp.lDownHappened = true ;  
-                        if (dtp.onMouseDown) {
-                        auto mea = new MouseEventArgs(message, wParam, lParam);
-                        dtp.onMouseDown(dtp, mea) ;
-                        return 0 ;
-                        }
-                        break ;
                     
-
-                    case WM_LBUTTONUP :
-                        if (dtp.onMouseUp) {
-                            auto mea = new MouseEventArgs(message, wParam, lParam) ;
-                            dtp.onMouseUp(dtp, mea) ;                    
-                        }
-                        if (dtp.lDownHappened) {
-                            dtp.lDownHappened = false ;
-                            sendMsg(dtp.handle, CM_LEFTCLICK, 0, 0) ;                    
-                        } break ;
-
-                    case CM_LEFTCLICK :
-                        if (dtp.onMouseClick) {
-                            auto ea = new EventArgs() ;
-                            dtp.onMouseClick(dtp, ea) ;
-                        } break ;
-
-
-                    case WM_RBUTTONDOWN :
-                        dtp.rDownHappened = true ;
-                        if (dtp.onRightMouseDown) {
-                            auto mea = new MouseEventArgs(message, wParam, lParam) ;
-                            dtp.onRightMouseDown(dtp, mea) ; 
-                            return 0 ;
-                        } break ;
-
-                    case WM_RBUTTONUP :
-                        if (dtp.onRightMouseUp) {
-                            auto mea = new MouseEventArgs(message, wParam, lParam) ;
-                            dtp.onRightMouseUp(dtp, mea) ;                     
-                        } 
-                        if (dtp.rDownHappened) {
-                            dtp.rDownHappened = false ;
-                            sendMsg(dtp.handle, CM_RIGHTCLICK, 0, 0) ;                    
-                        } break ;
-
-                    case CM_RIGHTCLICK :
-                        if (dtp.onRightClick) {
-                            auto ea = new EventArgs() ;
-                            dtp.onRightClick(dtp, ea) ;
-                        } break ;
-
-                    case WM_MOUSEWHEEL :
-                        if (dtp.onMouseWheel) {
-                            auto mea = new MouseEventArgs(message, wParam, lParam) ;
-                            dtp.onMouseWheel(dtp, mea) ; 
-                        } break ;
-
-                    case WM_MOUSEMOVE :
-                        if (dtp.isMouseEntered) {
-                            if (dtp.onMouseMove) {
-                                auto mea = new MouseEventArgs(message, wParam, lParam) ;
-                                dtp.onMouseMove(dtp, mea) ;
-                            }
-                        } else {
-                            dtp.isMouseEntered = true ;
-                            //print("entered in main wnd proc", 2) ; 
-                            if (dtp.onMouseEnter) {
-                                auto ea = new EventArgs() ;
-                                dtp.onMouseEnter(dtp, ea) ;
-                            }
-                        } break ;
-
-                    case WM_MOUSELEAVE : 
-                        dtp.isMouseEntered = false ;
-                        if (dtp.onMouseLeave) {
-                            auto ea = new EventArgs() ;
-                            dtp.onMouseLeave(dtp, ea) ;
-                        } break ;
 
 
                     default : break ;
@@ -321,7 +237,7 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
                 } 
                 //return 1 ;
-                break ;
+            break;
 
             default : return DefSubclassProc(hWnd, message, wParam, lParam) ;
         }        

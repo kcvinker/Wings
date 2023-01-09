@@ -1,15 +1,18 @@
 module wings.events;
 
 
-private import core.sys.windows.winuser;
-private import core.sys.windows.windef;
-private import core.sys.windows.windows ;
-private import std.utf ;
+import core.sys.windows.winuser;
+import core.sys.windows.windef;
+import core.sys.windows.windows ;
 
-private import wings.enums;
-private import wings.date_and_time ;
-private import wings.commons;
-private import wings.controls;
+import std.utf ;
+
+import wings.enums;
+import wings.date_and_time ;
+import wings.commons;
+import wings.controls;
+import wings.menubar : MenuItem;
+
 
 import std.stdio;
 
@@ -27,6 +30,9 @@ alias MouseEventHandler = void function(Control sender, MouseEventArgs e) ;
 alias SizeEventHandler = void function(Control sender, SizeEventArgs e) ;
 alias PaintEventHandler = void function(Control sender, PaintEventArgs e) ;
 alias DateTimeEventHandler = void function(Control sender, DateTimeEventArgs e) ;
+alias HotKeyEventHandler = void function(Control sender, HotKeyEventArgs e);
+alias MenuEventHandler = void function(MenuItem sender, EventArgs e);
+
 
 
 
@@ -185,3 +191,24 @@ class DateTimeEventArgs : EventArgs {
 }
 
 
+class HotKeyEventArgs : EventArgs {
+    this(WPARAM wp, LPARAM lp) {
+        this.mHotKeyID = cast(HotKeyId) wp;
+        if ((lp & 1) == 1) this.mIsAlt = true;
+        if ((lp & 2) == 2) this.mIsCtrl = true;
+        if ((lp & 4) == 4) this.mIsShift = true;
+        if ((lp & 8) == 8) this.mIsWin = true;
+    }
+
+    final bool isAltPressed() {return this.mIsAlt;}
+    final bool isCtrlPressed() {return this.mIsCtrl;}
+    final bool isShiftPressed() {return this.mIsShift;}
+    final bool isWinPressed() {return this.mIsWin;}
+    final HotKeyId hotKeyID() {return this.mHotKeyID;}
+
+    private :
+        HotKeyId mHotKeyID;
+        bool mIsAlt, mIsCtrl, mIsShift, mIsWin;
+        
+
+}
