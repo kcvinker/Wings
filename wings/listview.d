@@ -40,8 +40,8 @@ class ListView : Control {
         mExStyle = 0 ;
         mBackColor(defBackColor) ;
         mForeColor(defForeColor);
-        mHdrBackColor(0x80b3ff); 
-        mHdrForeColor(0x000000);   
+        mHdrBackColor(0x80b3ff);
+        mHdrForeColor(0x000000);
         mClsName = wcLvClass ;
         mHdrFont = parent.font;
         this.mName = format("%s_%d", "ListView_", lvNumber);
@@ -54,7 +54,7 @@ class ListView : Control {
 
 
     final void create() {
-    	this.adjustLVStyles() ;        
+    	this.adjustLVStyles() ;
         this.createHandle();
         if (this.mHandle) {
             this.setSubClass(&lvWndProc) ;
@@ -373,7 +373,7 @@ class ListView : Control {
             bool mHdrClickable = true;
             Font mHdrFont;
 
-            
+
             HBRUSH mHdrBkBrushTop;
             HBRUSH mHdrBkBrushBot;
             HBRUSH mHdrDefBkBrush;
@@ -453,7 +453,7 @@ class ListView : Control {
         }
 
         void addSubItemInternal(string sItem, int itemIndx, int subIndx, int imgIndx = -1) {
-            LVITEMW lw ;
+            LVITEMW lw;
             lw.iSubItem = subIndx;
             auto x = sItem.toUTF16z;
             lw.pszText =cast(LPWSTR) x;
@@ -499,7 +499,7 @@ class ListView : Control {
             if (this.mOneClickAct) lvExStyle |= LVS_EX_ONECLICKACTIVATE;
             if (this.mHotTrackSel) lvExStyle |= LVS_EX_TRACKSELECT;
             this.sendMsg(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, lvExStyle);
-        }        
+        }
 
 
         DWORD headerCustomDraw(NMCUSTOMDRAW* nmcd) {
@@ -511,18 +511,18 @@ class ListView : Control {
             SetBkMode(nmcd.hdc, TRANSPARENT);
             if (col.index > 0) nmcd.rc.left += 1;
             if (this.mHdrClickable) {
-                if (nmcd.uItemState & CDIS_SELECTED) { 
-                    // Header is clicked. So we will change the back color.               
+                if (nmcd.uItemState & CDIS_SELECTED) {
+                    // Header is clicked. So we will change the back color.
                     FillRect(nmcd.hdc, &nmcd.rc, this.mHdrDefBkBrush);
-                } else {            
-                    if (this.mMouseOnHdr && PtInRect(&nmcd.rc, this.mHdrMousePoint)) { 
-                        // Mouse pointer is on header. So we will change the back color.               
+                } else {
+                    if (this.mMouseOnHdr && PtInRect(&nmcd.rc, this.mHdrMousePoint)) {
+                        // Mouse pointer is on header. So we will change the back color.
                         FillRect(nmcd.hdc, &nmcd.rc, this.mHdrHotBkBrush);
                     } else {
                         FillRect(nmcd.hdc, &nmcd.rc, this.mHdrDefBkBrush);
                     }
                 }
-                
+
                 if (nmcd.uItemState & CDIS_SELECTED) {
                     /* Here we are mimicing dot net's same technique.
                      * We will change the rect's left and top a little bit when header got clicked.
@@ -535,7 +535,7 @@ class ListView : Control {
             }
 
             SelectObject(nmcd.hdc, this.mHdrFont.handle);
-            SetTextColor(nmcd.hdc, this.mHdrForeColor.reff);            
+            SetTextColor(nmcd.hdc, this.mHdrForeColor.reff);
             DrawText(nmcd.hdc, col.text.toUTF16z, -1, &nmcd.rc, col.mHdrTxtFlag ) ;
             return CDRF_SKIPDEFAULT;
         }
@@ -846,17 +846,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
             case WM_NOTIFY: // This msg is coming from Header control.
                  auto nmh= cast(NMHDR*) lParam;
-                // auto nmlist = cast(NMLISTVIEW*) lParam;
-                // //print("nmcd.code", nmcd.code);
-
-                // if (nmcd.code == LVN_ITEMCHANGED) {
-                //     print("item changed");
-                //     if (nmlist.uNewState & LVIS_STATEIMAGEMASK)
-                //     {print("cb clicked");}
-                //     // ListView_SetCheckState(lv.mHandle, nmlist.iItem, 1);
-                // }
-
-                switch (nmh.code) {                    
+                switch (nmh.code) {
                     case NM_CUSTOMDRAW :  // Let's draw header back & fore colors
                         auto nmcd = cast(NMCUSTOMDRAW*) lParam;
                         if (!lv.mDrawHeader) {
@@ -886,7 +876,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                         }
                         break;
                     default : /*print("other code ", nmcd.hdr.code); */ break;
-                    
+
                 }
                 break;
 
@@ -944,7 +934,7 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 //if (lv.mOldHotHdrIndx != -1) lv.mColumns[lv.mOldHotHdrIndx].mIsHotItem = false;
                 //lv.mOldHotHdrIndx = -1;
                 lv.mMouseOnHdr = false;
-                
+
             break;
 
             case HDM_LAYOUT :

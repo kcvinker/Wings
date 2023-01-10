@@ -51,6 +51,9 @@ void main() {
 
 	//lv.checkBoxColumnLast();
 	lv.create;
+	lv.addItems("1", "Translator", "200");
+	lv.addItems("2", "Dtp Operator", "400");
+	lv.addItems("3", "Cashier", "50");
 
 	//lv.addItems( "", "1", "Discovery", "5");
 	//lv.addItems( "", "2", "DTP Work", "3");
