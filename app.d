@@ -46,8 +46,8 @@ void main() {
 	lv.addColumn(new ListViewColumn("Work Name", 200));
 	lv.addColumn(new ListViewColumn("Part No.", 100));
 	//lv.hasCheckBox = true;
-	lv.onItemClicked = (c, e) => log("item clicked");
-	lv.onSelectionChanged = (c, e) => log("Selection changed");
+	//lv.onItemClicked = (c, e) => log("item clicked");
+	//lv.onSelectionChanged = (c, e) => log("Selection changed");
 
 	//lv.checkBoxColumnLast();
 	lv.create;

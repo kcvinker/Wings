@@ -456,7 +456,7 @@ class ListView : Control {
             LVITEMW lw;
             lw.iSubItem = subIndx;
             auto x = sItem.toUTF16z;
-            lw.pszText =cast(LPWSTR) x;
+            lw.pszText = cast(LPWSTR) x;
             lw.iImage = imgIndx;
             this.sendMsg(LVM_SETITEMTEXT, itemIndx, &lw);
             this.mItems[itemIndx].addSubItem(sItem);
@@ -774,6 +774,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     case LVN_ITEMCHANGING:
                     break;
                     case LVN_ITEMCHANGED:
+                        
                         auto nmlv = cast(NMLISTVIEW *) lParam;
                         if (nmlv.uNewState == 8192 || nmlv.uNewState == 4096) {
                             lv.mChecked = nmlv.uNewState == 8192 ? true : false;
@@ -800,7 +801,8 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                         }
                     break;
                     case NM_CLICK:
-                       // auto nmia = cast(NMITEMACTIVATE *) lParam;
+                        auto nmia = cast(NMITEMACTIVATE *) lParam;
+                        lv.log(nmia.uOldState);
                         if (lv.onItemClicked) {
                             auto ea = new EventArgs();
                             lv.onItemClicked(lv, ea);
