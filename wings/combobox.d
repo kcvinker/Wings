@@ -100,7 +100,7 @@ class ComboBox : Control {
          * We need to delete the old combo and create a new one.
          * Then make it look like the old combo. So this function will do that */
         if (this.mIsCreated) {
-            if (this.mCmbStyle == value) return;            
+            if (this.mCmbStyle == value) return;
             this.mCmbStyle = value;
             this.mRecreateEnabled = true;
             DestroyWindow(this.mHandle);
@@ -358,7 +358,7 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 }
             break ;
 
-            case CM_COMBOLBCOLOR :
+            case CM_COLOR_CMB_LIST :
                 // We can change the colors of List area & text area of a combo. Here we are dealing with list area.
                 // NOTE : You can change colors OF both text & list only when DropDownStyle = textCombo.
                 // NOTE : In labelCombo mode, if you change the color, it won't be affect in text area.
@@ -521,7 +521,7 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                 }
             break ;
 
-            case CM_CTLCOLOR:
+            case CM_COLOR_EDIT:
                 // Here, we receive color changing message for text box of combo.
                 // NOTE: this is only work for text typing combo box.
                 if (cmb.mBackColor.value != defBackColor || cmb.mForeColor.value != defForeColor) {

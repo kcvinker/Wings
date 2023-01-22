@@ -11,6 +11,7 @@ import wings.enums;
 import wings.fonts;
 import wings.events;
 
+package enum uint gBkColor = 0xF0F0F0; // 0xf5f5f5 ; // Global Back color for window
 enum string mnf1 = "\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' ";
 enum string mnf2 = "version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"";
 alias zstring = const(wchar)*; /// Alias for Const(wchar)*. A null terminated string
@@ -35,19 +36,22 @@ package {
         int screenWidth;
         int screenHeight;
         int windowCount;
+        Color appColor;
         //WindowState winState;
         Font mainFont ;
         INITCOMMONCONTROLSEX iccEx;
 
-        this(wstring fontName, int fontSize, FontWeight fw = FontWeight.normal) {
+        this(string fontName, int fontSize, FontWeight fw = FontWeight.normal) {
             this.className = "Wing_window";
             this.mainFont = new Font(fontName, fontSize, fw) ;
+            this.appColor = Color(gBkColor);
             this.hInstance = GetModuleHandleW(null) ;
             this.screenWidth = GetSystemMetrics(0);
             this.screenHeight = GetSystemMetrics(1);
             this.iccEx.dwSize = INITCOMMONCONTROLSEX.sizeof;
             this.iccEx.dwICC = ICC_STANDARD_CLASSES ;
             InitCommonControlsEx(&this.iccEx) ;
+
         }
     }
 
@@ -155,9 +159,9 @@ package {
         enum uint CM_RIGHTCLICK = 9001;
         enum uint CM_NOTIFY = 9002;
         enum uint CM_CTLCOMMAND = 9003;
-        enum uint CM_CTLCOLOR = 9004;
-        enum uint CM_COLORSTATIC = 9005;
-        enum uint CM_COMBOLBCOLOR = 9006 ;
+        enum uint CM_COLOR_EDIT = 9004;
+        enum uint CM_COLOR_STATIC = 9005;
+        enum uint CM_COLOR_CMB_LIST = 9006 ;
         enum uint CM_COMBOTBCOLOR = 9007;
         enum uint CM_TBTXTCHANGED = 9008;
         enum uint CM_HSCROLL = 9009;
@@ -212,10 +216,7 @@ wchar* toWchrPtr(string value){ return toUTFz!(wchar*)(value) ;}
 
 void printRect(const RECT rc, string msg = "rc values") {
     writeln(msg);
-    writefln("Left - %d", rc.left);
-    writefln("Top - %d", rc.top);
-    writefln("Right - %d", rc.right);
-    writefln("Bottom - %d", rc.bottom);
+    writefln("Left: %d, Top: %d, Right: %d, Bottom: %d", rc.left, rc.top, rc.right, rc.bottom);
     writeln("-------------------------------------------------") ;
 }
 void printRect(const RECT* rc) {

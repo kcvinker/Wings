@@ -36,13 +36,14 @@ alias MenuEventHandler = void function(MenuItem sender, EventArgs e);
 
 
 
+
 WORD getKeyStateWparam(WPARAM wp) {return cast(WORD) LOWORD(wp) ;}
 
 /// A base class for all events
 class EventArgs { bool handled ; }
 
 /// Special events for mouse related messages
-class MouseEventArgs : EventArgs {    
+class MouseEventArgs : EventArgs {
     final MouseButton mouseButton() {return this.mButton;}
     final MouseButtonState shiftKeyState() {return this.mShiftKey;}
     final MouseButtonState ctrlKeyState() {return this.mCtrlKey;}
@@ -54,7 +55,7 @@ class MouseEventArgs : EventArgs {
         const auto fwKeys = getKeyStateWparam(wp) ;
        // writeln("fw_keys ", fwKeys) ;
         this.mDelta = GET_WHEEL_DELTA_WPARAM(wp) ;
-        
+
         switch (fwKeys) {   // IMPORTANT*********** Work here --> change 4 to 5, 8 to 9 etc
             case 4 :
                 this.mShiftKey = MouseButtonState.pressed ;
@@ -75,13 +76,13 @@ class MouseEventArgs : EventArgs {
             case WM_MOUSEWHEEL, WM_MOUSEMOVE, WM_MOUSEHOVER, WM_NCHITTEST :
                 this.mX = getXFromLp(lp) ;
                 this.mY = getYFromLp(lp) ;
-                break ;                
-            case WM_LBUTTONDOWN, WM_LBUTTONUP : 
+                break ;
+            case WM_LBUTTONDOWN, WM_LBUTTONUP :
                 this.mButton = MouseButton.left ;
                 this.mX = getXFromLp(lp) ;
                 this.mY = getYFromLp(lp) ;
                 break ;
-            case WM_RBUTTONDOWN, WM_RBUTTONUP : 
+            case WM_RBUTTONDOWN, WM_RBUTTONUP :
                 this.mButton = MouseButton.right ;
                 this.mX = getXFromLp(lp) ;
                 this.mY = getYFromLp(lp) ;
@@ -94,11 +95,11 @@ class MouseEventArgs : EventArgs {
         int mX ;
         int mY ;
         int mDelta ;
-        MouseButton    mButton ;        
+        MouseButton    mButton ;
         MouseButtonState mShiftKey ;
         MouseButtonState mCtrlKey ;
         // POINT location ;
-        // int clicks ;        
+        // int clicks ;
 }
 
 
@@ -110,7 +111,7 @@ class KeyEventArgs : EventArgs {
     final int keyValue() {return this.mKeyValue;}
     final Key keyCode() {return this.mKeyCode;}
     final Key modifierKey() {return this.mModifier;}
-    
+
     this(WPARAM wp) {
         this.mKeyCode = cast(Key) wp ;
         switch (this.mKeyCode) {
@@ -122,23 +123,23 @@ class KeyEventArgs : EventArgs {
         		this.mCtrlPressed = true ;
         		this.mModifier = Key.ctrlModifier ;
         		break ;
-        	case Key.alt : 
+        	case Key.alt :
             	this.mAltPressed = true ;
             	this.mModifier = Key.altModifier ;
             	break ;
             default : break ;
         }
-        this.mKeyValue = this.mKeyCode ;        
+        this.mKeyValue = this.mKeyCode ;
     }
 
     private :
         bool mAltPressed ;
-        bool mCtrlPressed ;    
+        bool mCtrlPressed ;
         bool mShiftPressed ;
-        bool mSuppressKeyPress ; 
-        int mKeyValue ;   
-        Key mKeyCode ;         
-        Key mModifier ;        
+        bool mSuppressKeyPress ;
+        int mKeyValue ;
+        Key mKeyCode ;
+        Key mModifier ;
     }
 
 
@@ -209,6 +210,6 @@ class HotKeyEventArgs : EventArgs {
     private :
         HotKeyId mHotKeyID;
         bool mIsAlt, mIsCtrl, mIsShift, mIsWin;
-        
+
 
 }

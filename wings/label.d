@@ -142,7 +142,7 @@ private LRESULT lblWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_MOUSEMOVE : lbl.mouseMoveHandler(message, wParam, lParam); break;
             case WM_MOUSELEAVE : lbl.mouseLeaveHandler(); break;
 
-            case CM_COLORSTATIC :
+            case CM_COLOR_STATIC :
                 if (lbl.mDrawFlag > 0)  {
                     auto hdc = cast(HDC) wParam;
                     if (lbl.mDrawFlag & 1) SetTextColor(hdc, lbl.mForeColor.reff);

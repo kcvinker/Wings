@@ -392,7 +392,7 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 tkb.remSubClass(scID);
             break ;
 
-            case CM_COLORSTATIC: return cast(LRESULT) tkb.mBkBrush; break;
+            case CM_COLOR_STATIC: return cast(LRESULT) tkb.mBkBrush; break;
 
             case WM_PAINT : tkb.paintHandler(); break;
             case WM_SETFOCUS : tkb.setFocusHandler(); break;

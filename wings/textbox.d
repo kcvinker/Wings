@@ -116,7 +116,7 @@ private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                 //tb.mDrawFocus = false;
             break;
 
-            case CM_CTLCOLOR:
+            case CM_COLOR_EDIT:
                 if (tb.mDrawBkClr) {
                     auto hdc = cast(HDC) wParam;
                     if (tb.mDrawFlag & 1) SetTextColor(hdc, tb.mForeColor.reff);

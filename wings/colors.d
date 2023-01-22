@@ -10,6 +10,19 @@ struct Color
     uint value;
     COLORREF reff;
 
+    this(uint clr) {
+        this.value = clr;
+        auto red = clr >> 16 ;
+        auto green = (clr & 0x00ff00) >> 8;
+        auto blue = clr & 0x0000ff ;
+        this.reff = cast(COLORREF) ((blue << 16) | (green << 8) | red);
+    }
+
+    this(int red, int green, int blue) {
+        this.value = cast(uint) (red << 16) | (green << 8) | blue ;
+        this.reff = cast(COLORREF) ((blue << 16) | (green << 8) | red);
+    }
+
     void opCall(uint clr) {
         this.value = clr;
         auto red = clr >> 16 ;

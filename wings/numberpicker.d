@@ -464,7 +464,7 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             break;
 
             case EM_SETSEL : return 1; break;
-            case CM_CTLCOLOR :
+            case CM_COLOR_EDIT :
                 if (np.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     if (np.mDrawFlag & 1) SetTextColor(hdc, np.mForeColor.reff);

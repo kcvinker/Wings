@@ -38,9 +38,9 @@ class ListView : Control {
         mFullRowSel = true;
         mStyle = lvStyle  ;
         mExStyle = 0 ;
-        mBackColor(defBackColor) ;
+        mBackColor(0xFFFFFF) ;
         mForeColor(defForeColor);
-        mHdrBackColor(0x80b3ff);
+        mHdrBackColor(0xb3cccc);
         mHdrForeColor(0x000000);
         mClsName = wcLvClass ;
         mHdrFont = parent.font;
@@ -53,7 +53,7 @@ class ListView : Control {
     this(Window parent, int x, int y) { this(parent, x, y, 250, 200);}
 
 
-    final void create() {
+    final void create() { //=======================================================CREATE FUNC
     	this.adjustLVStyles() ;
         this.createHandle();
         if (this.mHandle) {
@@ -63,21 +63,23 @@ class ListView : Control {
 
             /+  Chances are there to user adds columns before LV is created.
                 In such cases, we need to add those columns right after creation.+/
-            if (this.mCIList.length > 0) {
-                foreach (ci; this.mCIList) {
-                    this.sendMsg(LVM_INSERTCOLUMNW, ci.index, &ci.lvc);
+            if (this.mColumns.length > 0) {
+                foreach (ci; this.mColumns) {
+                    this.sendMsg(LVM_INSERTCOLUMNW, ci.index, &ci.pLvc);
                 }
             }
 
             this.hwHeader = ListView_GetHeader(this.mHandle)  ;
             SetWindowSubclass(this.hwHeader, &hdrWndProc, UINT_PTR(Control.mSubClassId), this.toDwPtr());
             ++Control.mSubClassId ;
+
             if (this.mBackColor.value != defBackColor) ListView_SetBkColor(this.mHandle, this.mBackColor.reff);
             if (this.mSetCbLast) {
                 auto ordList = changeColumnOrder();
                 this.sendMsg(LVM_SETCOLUMNORDERARRAY, ordList.length, ordList.ptr);
                 this.mCbisLast = true;
             }
+            // this.log("I am logging here in no time");
 
         }
     }
@@ -340,10 +342,7 @@ class ListView : Control {
 
 
 
-        void finalize() {
-            if (this.mHdrBkBrushTop != null) DeleteObject(this.mHdrBkBrushTop);
-            if (this.mHdrBkBrushBot != null) DeleteObject(this.mHdrBkBrushBot);
-        }
+
 
         // void finalizeHeader(UINT_PTR subClsId) {
         //     RemoveWindowSubclass(this.mHandle, this.wndProcPtr, subClsId);
@@ -374,20 +373,23 @@ class ListView : Control {
             Font mHdrFont;
 
 
-            HBRUSH mHdrBkBrushTop;
-            HBRUSH mHdrBkBrushBot;
+            //HBRUSH mHdrBkBrushTop;
+            //HBRUSH mHdrBkBrushBot;
             HBRUSH mHdrDefBkBrush;
             HBRUSH mHdrHotBkBrush;
+            HPEN mHdrPen;
             Alignment mColAlign;
             ListViewStyle mLvStyle;
             ListViewColumn[] mColumns;
             ListViewItem[] mItems;
             ColAndIndex[] mCIList;
             int mColIndex ;
-            int mOldHotHdrIndx = -1;
+            int mOldHotHdrIndx = -1;// useless
+            int mHotHdr = -1;
             int mHdrHeight;
             int mSelItemIndx;
             int mSelSubIndx;
+            int stColIndex;
 
             Color mHdrBackColor;
             Color mHdrForeColor;
@@ -397,6 +399,13 @@ class ListView : Control {
             POINT mHdrMousePoint;
 
         // End of Variables.
+
+        void finalize() {
+            //if (this.mHdrBkBrushTop != null) DeleteObject(this.mHdrBkBrushTop);
+            if (this.mHdrHotBkBrush != null) DeleteObject(this.mHdrHotBkBrush);
+            if (this.mHdrDefBkBrush != null) DeleteObject(this.mHdrDefBkBrush);
+            if (this.mHdrPen != null) DeleteObject(this.mHdrPen);
+        }
 
         int[] changeColumnOrder() {
             int[] indices;
@@ -408,6 +417,7 @@ class ListView : Control {
 
 
         void addColumnInternal(ListViewColumn lvCol) { // Private
+            lvCol.setIndex(this.stColIndex);
             LVCOLUMNW lvc ;
             lvc.mask = LVCF_FMT | LVCF_TEXT  | LVCF_WIDTH  | LVCF_SUBITEM ;//| LVCF_ORDER;
             lvc.fmt = lvCol.alignment;
@@ -416,22 +426,25 @@ class ListView : Control {
 
             if (lvCol.hasImage) {
                 lvc.mask |= LVCF_IMAGE;
-                lvc.fmt |= LVCFMT_COL_HAS_IMAGES | LVCFMT_IMAGE ;
+                lvc.fmt |= LVCFMT_COL_HAS_IMAGES | LVCFMT_IMAGE;
                 lvc.iImage = lvCol.imageIndex;
-                if (lvCol.imageOnRight) lvc.fmt |= LVCFMT_BITMAP_ON_RIGHT ;
+                if (lvCol.imageOnRight) lvc.fmt |= LVCFMT_BITMAP_ON_RIGHT;
             }
+
+            lvCol.pLvc = lvc;
 
             if (this.mIsCreated) {
                 this.sendMsg(LVM_INSERTCOLUMNW, lvCol.index, &lvc);
                 // We need this to do the painting in wm notify.
                // if (!this.mDrawColumns && lvCol.mDrawNeeded) this.mDrawColumns = true;
-            } else {
+            } //else {
                 // We need to collect this info in mCIList.
                 // This list contains LVCOLUMNW struct and index of the column.
                 // We can insert these items right after we create the lv handle.
-                this.mCIList ~= ColAndIndex(lvCol.index, lvc);
-            }
-            this.mColumns ~= lvCol ;
+                //this.mCIList ~= ColAndIndex(lvCol.index, lvc);
+
+            this.mColumns ~= lvCol;
+            this.stColIndex += 1;
 
 
         }
@@ -488,6 +501,7 @@ class ListView : Control {
             // Set some brushes for coloring.
             this.mHdrDefBkBrush = CreateSolidBrush(this.mHdrBackColor.reff);
             this.mHdrHotBkBrush = this.mHdrBackColor.getHotBrush(1.2);
+            this.mHdrPen = CreatePen(PS_SOLID, 1, 0x00FFFFFF);
         }
 
         // Set some EX styles...
@@ -515,7 +529,7 @@ class ListView : Control {
                     // Header is clicked. So we will change the back color.
                     FillRect(nmcd.hdc, &nmcd.rc, this.mHdrDefBkBrush);
                 } else {
-                    if (this.mMouseOnHdr && PtInRect(&nmcd.rc, this.mHdrMousePoint)) {
+                    if (nmcd.dwItemSpec == this.mHotHdr) {
                         // Mouse pointer is on header. So we will change the back color.
                         FillRect(nmcd.hdc, &nmcd.rc, this.mHdrHotBkBrush);
                     } else {
@@ -534,6 +548,10 @@ class ListView : Control {
                 FillRect(nmcd.hdc, &nmcd.rc, this.mHdrDefBkBrush);
             }
 
+            // Draw a white line on ther right side of the hdr
+            SelectObject(nmcd.hdc, this.mHdrPen);
+            MoveToEx(nmcd.hdc, nmcd.rc.right, nmcd.rc.top, NULL);
+            LineTo(nmcd.hdc, nmcd.rc.right, nmcd.rc.bottom);
             SelectObject(nmcd.hdc, this.mHdrFont.handle);
             SetTextColor(nmcd.hdc, this.mHdrForeColor.reff);
             DrawText(nmcd.hdc, col.text.toUTF16z, -1, &nmcd.rc, col.mHdrTxtFlag ) ;
@@ -555,12 +573,12 @@ class ListViewColumn {
         this.mText  = header;
         this.mWidth = width;
         this.mColAlign = Alignment.left;
-        this.mIndex = mIndexNum;
+        //this.mIndex = mIndexNum;
         this.mImgIndex = img;
         this.mImgOnRight = imgRight;
         this.mHdrTxtAlign = Alignment.left;
         this.mHdrTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
-        ++mIndexNum;
+        //++mIndexNum;
     }
 
     this() {}
@@ -571,6 +589,7 @@ class ListViewColumn {
     mixin finalProperty!("width", this.mWidth);
     mixin finalProperty!("imageIndex", this.mImgIndex);
     mixin finalProperty!("alignment", this.mColAlign);
+    mixin finalProperty!("imageOnRight", this.mImgOnRight);
 
     final Alignment headerAlign() {return this.mHdrTxtAlign;}
     final void headerAlign(Alignment value) {
@@ -589,8 +608,6 @@ class ListViewColumn {
         }
     }
 
-
-    mixin finalProperty!("imageOnRight", this.mImgOnRight);
     final int index() {return this.mIndex;}
     final bool hasImage() {return (this.mImgIndex > -1) ? true : false;}
 
@@ -601,8 +618,9 @@ class ListViewColumn {
     private :
         string mText;
         int mWidth;
-        int mIndex;
+        int mIndex = -1;
         int mImgIndex = -1 ;
+
         int mOrder;
 
         Color mBackColor;
@@ -612,7 +630,9 @@ class ListViewColumn {
         Alignment mColAlign;
         Alignment mHdrTxtAlign;
         DWORD mHdrTxtFlag;
-        static mIndexNum = 0;
+        LVCOLUMN pLvc;
+        //static mIndexNum = 0;
+        void setIndex(int index) { this.mIndex = index; }
 
 } // End of ListViewColumn class
 
@@ -699,7 +719,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
         //printWinMsg(message);
         switch (message) {
             case WM_DESTROY :
-               // lv.finalize ;
+                lv.finalize();
                 lv.remSubClass(scID);
             break ;
 
@@ -774,7 +794,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     case LVN_ITEMCHANGING:
                     break;
                     case LVN_ITEMCHANGED:
-                        
+
                         auto nmlv = cast(NMLISTVIEW *) lParam;
                         if (nmlv.uNewState == 8192 || nmlv.uNewState == 4096) {
                             lv.mChecked = nmlv.uNewState == 8192 ? true : false;
@@ -908,34 +928,17 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     control. The control will fill the iItem member of the struct. It contains
                     the item index which is under the pointer. So we can set the drawing
                     flag for that column. */
-                lv.mHdrMousePoint = getMousePos(lParam);
-                lv.mMouseOnHdr = true;
-                InvalidateRect(hWnd, null, false);
-                //HD_HITTESTINFO hinfo;
-                //hinfo.pt = lv.mHdrMousePos;
-                //SendMessage(hWnd, HDM_HITTEST, 0, cast(LPARAM) &hinfo);
-                //auto colIndex =  hinfo.iItem;
-                //if (lv.mOldHotHdrIndx > -1) {
-                //    if (lv.mOldHotHdrIndx != colIndex) {
-                //        lv.mColumns[colIndex].mIsHotItem = true;
-                //        lv.mColumns[lv.mOldHotHdrIndx].mIsHotItem = false;
-                //        lv.mOldHotHdrIndx = colIndex;
-                //        InvalidateRect(hWnd, null, false);
-                //    }
-                //} else {
-                //    if (lv.mColumns) {
-                //        lv.mColumns[colIndex].mIsHotItem = true;
-                //        lv.mOldHotHdrIndx = colIndex;
-                //        InvalidateRect(hWnd, null, false);
-                //    }
-                //}
+                HD_HITTESTINFO hinfo;
+                hinfo.pt = getMousePos(lParam);
+                lv.mHotHdr = SendMessage(hWnd, HDM_HITTEST, 0, cast(LPARAM) &hinfo);
+
             break;
 
             case WM_MOUSELEAVE :
                 /* When mouse leaves the header, we need to set flag as false and repaint */
                 //if (lv.mOldHotHdrIndx != -1) lv.mColumns[lv.mOldHotHdrIndx].mIsHotItem = false;
                 //lv.mOldHotHdrIndx = -1;
-                lv.mMouseOnHdr = false;
+                lv.mHotHdr = -1;
 
             break;
 
@@ -948,6 +951,24 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     return res;
                 }
             break;
+
+            case WM_PAINT:
+            /* We need to paint the last part of the header control. Otherwise,
+             * it will look like a weird white color square and it's ugly unless,
+             * we are using white color for header. */
+                // First, let the control to do it's necessary drawings.
+                DefSubclassProc(hWnd, message, wParam, lParam);
+
+                // Now, we can draw the last part of the header.
+                RECT hrc;
+                SendMessage(hWnd, HDM_GETITEMRECT, lv.mColumns.length - 1, cast(LPARAM) &hrc);
+                auto rc = RECT(hrc.right + 1, hrc.top, lv.width, hrc.bottom);
+                HDC hdc = GetDC(hWnd);
+                FillRect(hdc, &rc, lv.mHdrDefBkBrush);
+                ReleaseDC(hWnd, hdc);
+                return 0;
+            break;
+
 
             default : return DefSubclassProc(hWnd, message, wParam, lParam) ;break;
         }

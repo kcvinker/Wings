@@ -259,7 +259,9 @@ private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
+
         Button btn = getControl!Button(refData) ;
+        //btn.log(message, "Button message ");
         switch (message) {
             case WM_DESTROY : btn.remSubClass(scID); break ;
             case WM_PAINT : btn.paintHandler(); break;

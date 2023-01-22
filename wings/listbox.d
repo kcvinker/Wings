@@ -262,7 +262,7 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_MOUSEMOVE : lbx.mouseMoveHandler(message, wParam, lParam); break;
             case WM_MOUSELEAVE : lbx.mouseLeaveHandler(); break;
 
-            case CM_CTLCOLOR :
+            case CM_COLOR_EDIT :
                 if (lbx.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     SetBkMode(hdc, TRANSPARENT);

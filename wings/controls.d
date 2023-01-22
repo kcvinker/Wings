@@ -89,7 +89,7 @@ class Control {
         }
 
         /// Set the font of a control.
-        void setFont(   wstring fName, int fSize,
+        void setFont(   string fName, int fSize,
                         FontWeight fWeight = FontWeight.normal,
                         bool fItal = false, bool fUnder = false )
         {
@@ -156,6 +156,7 @@ class Control {
 
 
 
+
     protected :
 		DWORD mStyle;
         DWORD mExStyle;
@@ -168,7 +169,7 @@ class Control {
         int mYpos;
 
         static int stCtlId = 100 ;
-        Window mParent ;
+
         bool mIsCreated;
         bool mBaseFontChanged ;
         bool mVisible = true;
@@ -201,6 +202,7 @@ class Control {
         SUBCLASSPROC wndProcPtr;
         HWND mHandle;
         HBRUSH mBkBrush;
+        Window mParent ;
 
         final void createHandle() {  // protected
             // This function works for almost all controls except combo box.
@@ -221,8 +223,7 @@ class Control {
             if (this.mHandle) {
                 ++Control.stCtlId; // Increasing protected static member for next control iD
                 this.mIsCreated = true;
-                if (!this.mBaseFontChanged) this.mFont = this.mParent.font ;
-                //this.setFontInternal() ;
+                if (!this.mBaseFontChanged) this.mFont = this.mParent.font;
                 this.createLogFontInternal();
             }
         }
@@ -254,23 +255,7 @@ class Control {
         }
 
         final void createLogFontInternal() { // Package
-            if (!this.mFont.isCreated) {
-                import wings.wingdi : CreateFontIndirect, LOGFONTW;
-                HDC dcHandle = GetDC(this.mHandle);
-                immutable int iHeight = MulDiv(this.mFont.size, GetDeviceCaps(dcHandle, LOGPIXELSY), 72) ;
-                ReleaseDC(this.mHandle, dcHandle);
-                LOGFONTW lf;
-                lf.lfFaceName = this.mFont.name;
-                lf.lfHeight = iHeight;
-                lf.lfWeight = this.mFont.weight;
-                lf.lfCharSet = DEFAULT_CHARSET;
-                lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
-                lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
-                lf.lfQuality = DEFAULT_QUALITY;
-                auto res = CreateFontIndirect(&lf);
-                this.mFont.setHandle(res);
-
-            }
+            if (!this.mFont.isCreated) this.mFont.createFontHandle(this.mHandle);
             this.sendMsg(WM_SETFONT, this.mFont.handle, 1) ;
         }
 

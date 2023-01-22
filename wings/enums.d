@@ -47,7 +47,7 @@ enum MouseButtonState {released, pressed }
 /// Public enum for describing control types
 enum ControlType {
     none, window, button, contextMenu, calendar, checkBox, comboBox, dateTimePicker, groupBox,
-    label, listBox, listView, numberPicker, panel, pictureBox, radioButton, textBox, treeView,
+    label, listBox, listView, numberPicker, panel, pictureBox, progressBar, radioButton, textBox, treeView,
     trackBar, upDown
 }
 
@@ -74,7 +74,10 @@ enum TextCase {normal, lowerCase, upperCase} // For textbox
 enum ListViewStyle {largeIcon, report, smallIcon, list, tile}
 enum TicPosition {downSide, upSide, leftSide, rightSide, bothSide} // For trackBar.
 enum ChannelStyle {classic, outline} // For Trackbar
-enum TrackChange {none, arrowLow, arrowHigh, pageLow, pageHigh, mouseClick, mouseDrag}
+enum TrackChange {none, arrowLow, arrowHigh, pageLow, pageHigh, mouseClick, mouseDrag} // For TrackBar
+enum NodeOps {addNode, insertNode, addChild, insertChild} // For TreeView
+enum ProgressBarStyle {blockStyle, MarqueeStyle}
+
 
 
 enum ColorOptions { // For ImageList

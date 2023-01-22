@@ -125,7 +125,7 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                 }
             break ;
 
-            case CM_COLORSTATIC :
+            case CM_COLOR_STATIC :
                 // We need to use this message to change the back color.
                 // There is no other ways to change the back color.
                 auto hdc = cast(HDC) wParam ;

@@ -87,7 +87,7 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                 rb.finalize ;
                 rb.remSubClass(scID);
             break ;
-            case CM_COLORSTATIC :
+            case CM_COLOR_STATIC :
             	auto hdc = cast(HDC) wParam;
                 SetBkMode(hdc, TRANSPARENT);
                 return toLresult(CreateSolidBrush(rb.mBackColor.reff));

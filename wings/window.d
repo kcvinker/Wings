@@ -29,7 +29,6 @@ import std.datetime.stopwatch ;
 package HWND mainHwnd ; // A handle for main window
 
 // Compile time values to use later
-package enum uint gBkColor = 0xf5f5f5 ; // Global Back color for window
 package enum string defWinFontName = "Tahoma" ;
 package enum int defWinFontSize = 12 ;
 package enum FontWeight defWinFontWeight = FontWeight.normal ;
@@ -82,7 +81,7 @@ class Window : Control {
         //this.mWinState = WindowState.normal;
         this.mFont = appData.mainFont;
         this.controlType = ControlType.window ;
-        this.mBackColor(gBkColor) ; // using opCall feature
+        this.mBackColor = appData.appColor ; // using opCall feature
 
         mWinCount += 1 ; // Incrementing private static variable
     }
@@ -209,6 +208,7 @@ class Window : Control {
         bool mIsLoaded ;
         bool mIsMouseTracking ;
         bool mIsMouseEntered ;
+        bool mSizingStarted;
         WindowBkMode mBkDrawMode ;
         HWND[HWND] cmb_dict;
 
@@ -376,14 +376,14 @@ struct HotKeyStruct {
 
 void regWindowClass(wstring clsN,  HMODULE hInst) {
     WNDCLASSEXW wcEx ;
-    wcEx.style         = CS_HREDRAW | CS_VREDRAW  | CS_OWNDC ;
+    wcEx.style         = CS_HREDRAW | CS_VREDRAW  | CS_OWNDC;
     wcEx.lpfnWndProc   = &mainWndProc ;
     wcEx.cbClsExtra    = 0;
     wcEx.cbWndExtra    = 0;
     wcEx.hInstance     = hInst;
     wcEx.hIcon         = LoadIconW(null, IDI_APPLICATION);
     wcEx.hCursor       = LoadCursorW(null, IDC_ARROW);
-    wcEx.hbrBackground = CreateSolidBrush(getClrRef(gBkColor)) ;//COLOR_WINDOW;
+    wcEx.hbrBackground = CreateSolidBrush(appData.appColor.reff);//COLOR_WINDOW;
     wcEx.lpszMenuName  = null;
     wcEx.lpszClassName = clsN.ptr;
 
@@ -451,9 +451,14 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 //print("DTN FIRST ", DTN_FIRST2);
             break;
 
+            case WM_NOTIFY :
+                auto nm = cast(NMHDR*) lParam;
+                return SendMessage(nm.hwndFrom, CM_NOTIFY, wParam, lParam) ;
+            break;
+
             case WM_CTLCOLOREDIT :
                 auto ctlHwnd = cast(HWND) lParam;
-                return SendMessage(ctlHwnd, CM_CTLCOLOR, wParam, lParam);
+                return SendMessage(ctlHwnd, CM_COLOR_EDIT, wParam, lParam);
             break;
 
             case WM_CTLCOLORSTATIC :
@@ -462,9 +467,9 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 //if (receiver) {
                 //    return SendMessage(receiver, CM_COMBOTBCOLOR, wParam, lParam) ;
                 //} else {
-                //    return SendMessage(ctlHwnd, CM_COLORSTATIC, wParam, lParam) ;
+                //    return SendMessage(ctlHwnd, CM_COLOR_STATIC, wParam, lParam) ;
                 //}
-                return SendMessage(ctlHwnd, CM_COLORSTATIC, wParam, lParam) ;
+                return SendMessage(ctlHwnd, CM_COLOR_STATIC, wParam, lParam);
             break;
 
             case WM_CTLCOLORLISTBOX :
@@ -476,9 +481,9 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
 
                 auto cmb = win.cmb_dict.get(ctlHwnd, null);
                 if (cmb) {
-                    return SendMessage(cmb, CM_COMBOLBCOLOR, wParam, lParam) ;
+                    return SendMessage(cmb, CM_COLOR_CMB_LIST, wParam, lParam) ;
                 } else {
-                    return SendMessage(ctlHwnd, CM_CTLCOLOR, wParam, lParam) ;
+                    return SendMessage(ctlHwnd, CM_COLOR_EDIT, wParam, lParam) ;
                 }
             break ;
 
@@ -631,6 +636,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
             case WM_VSCROLL: return SendMessage(cast(HWND) lParam, CM_VSCROLL, wParam, lParam);
 
             case WM_SIZING :
+                win.mSizingStarted = true;
                 auto sea = new SizeEventArgs(message, wParam, lParam);
                 win.width = sea.windowRect.right - sea.windowRect.left;
                 win.height = sea.windowRect.bottom - sea.windowRect.top;
@@ -638,14 +644,17 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                     win.onSizing(win, sea);
                     return 1;
                 }
+                return 0;
             break ;
 
             case WM_SIZE :
+                win.mSizingStarted = false;
                 if (win.onSized) {
                     auto sea = new SizeEventArgs(message, wParam, lParam);
                     win.onSized(win, sea);
                     return 1;
                 }
+                return 0;
             break ;
 
             case WM_MOVE :
@@ -671,10 +680,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 return 0;
             break;
 
-            case WM_NOTIFY :
-                auto nm = cast(NMHDR*) lParam;
-                return SendMessage(nm.hwndFrom, CM_NOTIFY, wParam, lParam) ;
-            break ;
+
 
             case WM_SYSCOMMAND :
                 auto uMsg = cast(UINT) (wParam & 0xFFF0) ;
@@ -705,8 +711,9 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 if (win.mBkDrawMode != WindowBkMode.normal) {
                     auto dch = cast(HDC) wParam ;
                     win.setBkClrInternal(dch) ;
-
+                    return 1; // We must return non zero value if handle this message.
                 }
+                // Do not return zero here. It will cause static controls's back ground looks ugly.
             break ;
 
             case WM_HOTKEY :
