@@ -125,7 +125,7 @@ private LRESULT calWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
     try {
         Calendar cal = getControl!Calendar(refData) ;
         switch (message) {
-            case WM_DESTROY : cal.remSubClass(scID); break ;
+            case WM_DESTROY : RemoveWindowSubclass(hWnd, &calWndProc, scID); break;
             case WM_PAINT : cal.paintHandler(); break ;
             case WM_LBUTTONDOWN : cal.mouseDownHandler(message, wParam, lParam); break ;
             case WM_LBUTTONUP : cal.mouseUpHandler(message, wParam, lParam); break ;

@@ -352,7 +352,8 @@ class NumberPicker : Control {
 
         void finalize(UINT_PTR subClsId) { // Private
             if (this.mBkBrush) DeleteObject(this.mBkBrush);
-            this.remSubClass(subClsId );
+            RemoveWindowSubclass(this.mHandle, &npWndProc, subClsId);
+            // this.remSubClass(subClsId );
         }
 
         void finalizeBuddy(UINT_PTR subClsId) { // Private
@@ -367,13 +368,10 @@ extern(Windows)
 private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
     try {
 
-        NumberPicker np = getControl!NumberPicker(refData)  ;
+        NumberPicker np = getControl!NumberPicker(refData);
         //printWinMsg(message);
         switch (message) {
-            case WM_DESTROY :
-                np.finalize(scID) ;
-                // np.remSubClass(scID);
-            break ;
+            case WM_DESTROY : np.finalize(scID); break;
 
             case CM_NOTIFY :
                 auto nm = cast(NMUPDOWN*) lParam;
@@ -419,7 +417,7 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
         NumberPicker np = getControl!NumberPicker(refData)  ;
         //printWinMsg(message);
         switch (message) {
-            case WM_DESTROY : np.finalizeBuddy(scID); break ;
+            case WM_DESTROY : RemoveWindowSubclass(hWnd, &buddyWndProc, scID ); break;
             case WM_SETFOCUS : np.setFocusHandler(); break;
             case WM_KILLFOCUS : np.killFocusHandler(); break;
             case WM_LBUTTONDOWN : np.mouseDownHandler(message, wParam, lParam); break;
@@ -445,7 +443,7 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 HDC hdc = GetDC(hWnd);
                 DrawEdge(hdc, &np.mTBRect, BDR_SUNKENOUTER, np.mTopEdgeFlag);
                 DrawEdge(hdc, &np.mTBRect, BDR_RAISEDINNER, np.mBotEdgeFlag);
-                auto fpen = CreatePen(PS_SOLID, 1, np.mBackColor.reff);
+                auto fpen = CreatePen(PS_SOLID, 1, np.mBackColor.cref);
                 scope(exit) DeleteObject(fpen);
                 MoveToEx(hdc, np.mLineX, np.mTBRect.top + 1, null);
                 SelectObject(hdc, fpen);
@@ -467,9 +465,9 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             case CM_COLOR_EDIT :
                 if (np.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
-                    if (np.mDrawFlag & 1) SetTextColor(hdc, np.mForeColor.reff);
-                    np.mBkBrush = CreateSolidBrush(np.mBackColor.reff);
-                    SetBkColor(hdc, np.mBackColor.reff);
+                    if (np.mDrawFlag & 1) SetTextColor(hdc, np.mForeColor.cref);
+                    np.mBkBrush = CreateSolidBrush(np.mBackColor.cref);
+                    SetBkColor(hdc, np.mBackColor.cref);
                     return cast(LRESULT) np.mBkBrush;
                 }
             break;

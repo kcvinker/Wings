@@ -73,7 +73,7 @@ class ListView : Control {
             SetWindowSubclass(this.hwHeader, &hdrWndProc, UINT_PTR(Control.mSubClassId), this.toDwPtr());
             ++Control.mSubClassId ;
 
-            if (this.mBackColor.value != defBackColor) ListView_SetBkColor(this.mHandle, this.mBackColor.reff);
+            if (this.mBackColor.value != defBackColor) ListView_SetBkColor(this.mHandle, this.mBackColor.cref);
             if (this.mSetCbLast) {
                 auto ordList = changeColumnOrder();
                 this.sendMsg(LVM_SETCOLUMNORDERARRAY, ordList.length, ordList.ptr);
@@ -266,7 +266,7 @@ class ListView : Control {
 
         final override void backColor(uint value) {
             this.mBackColor(value);
-            if (this.mIsCreated) ListView_SetBkColor(this.mHandle,this.mBackColor.reff );
+            if (this.mIsCreated) ListView_SetBkColor(this.mHandle,this.mBackColor.cref );
         }
         final override uint backColor() {return this.mBackColor.value;}
 
@@ -400,11 +400,12 @@ class ListView : Control {
 
         // End of Variables.
 
-        void finalize() {
+        void finalize(UINT_PTR scid) {
             //if (this.mHdrBkBrushTop != null) DeleteObject(this.mHdrBkBrushTop);
             if (this.mHdrHotBkBrush != null) DeleteObject(this.mHdrHotBkBrush);
             if (this.mHdrDefBkBrush != null) DeleteObject(this.mHdrDefBkBrush);
             if (this.mHdrPen != null) DeleteObject(this.mHdrPen);
+            RemoveWindowSubclass(this.mHandle, &lvWndProc, scid);
         }
 
         int[] changeColumnOrder() {
@@ -499,7 +500,7 @@ class ListView : Control {
             if (this.mMultiSel) this.mStyle ^= LVS_SINGLESEL;
 
             // Set some brushes for coloring.
-            this.mHdrDefBkBrush = CreateSolidBrush(this.mHdrBackColor.reff);
+            this.mHdrDefBkBrush = CreateSolidBrush(this.mHdrBackColor.cref);
             this.mHdrHotBkBrush = this.mHdrBackColor.getHotBrush(1.2);
             this.mHdrPen = CreatePen(PS_SOLID, 1, 0x00FFFFFF);
         }
@@ -553,7 +554,7 @@ class ListView : Control {
             MoveToEx(nmcd.hdc, nmcd.rc.right, nmcd.rc.top, NULL);
             LineTo(nmcd.hdc, nmcd.rc.right, nmcd.rc.bottom);
             SelectObject(nmcd.hdc, this.mHdrFont.handle);
-            SetTextColor(nmcd.hdc, this.mHdrForeColor.reff);
+            SetTextColor(nmcd.hdc, this.mHdrForeColor.cref);
             DrawText(nmcd.hdc, col.text.toUTF16z, -1, &nmcd.rc, col.mHdrTxtFlag ) ;
             return CDRF_SKIPDEFAULT;
         }
@@ -718,10 +719,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
         ListView lv = getControl!ListView(refData)  ;
         //printWinMsg(message);
         switch (message) {
-            case WM_DESTROY :
-                lv.finalize();
-                lv.remSubClass(scID);
-            break ;
+            case WM_DESTROY: lv.finalize(scID); break;
 
             case WM_PAINT : lv.paintHandler(); break;
             case WM_SETFOCUS : lv.setFocusHandler(); break;
@@ -785,7 +783,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                         switch (nmLvCd.nmcd.dwDrawStage) {
                             case CDDS_PREPAINT : return CDRF_NOTIFYITEMDRAW; break;
                             case CDDS_ITEMPREPAINT :
-                                nmLvCd.clrTextBk = lv.mBackColor.reff;
+                                nmLvCd.clrTextBk = lv.mBackColor.cref;
                                 return CDRF_NEWFONT | CDRF_DODEFAULT;
                             break;
                             default : break;
@@ -916,11 +914,7 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
        ListView lv = getControl!ListView(refData)  ;
        //printWinMsg(message);
         switch (message) {
-            case WM_DESTROY :
-                RemoveWindowSubclass(hWnd, &hdrWndProc, scID);
-                //print("removed hdr subcls");
-            break;
-
+            case WM_DESTROY : RemoveWindowSubclass(hWnd, &hdrWndProc, scID); break;
             case WM_MOUSEMOVE :
                 /** We need to some extra job here. Because, there is no notification
                     for a header control when mouse pointer passes upon it. So We collect

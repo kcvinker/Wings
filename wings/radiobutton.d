@@ -70,8 +70,9 @@ class RadioButton : Control
         MoveWindow(this.mHandle, this.mXpos, this.mYpos, ss.cx, ss.cy, true) ;
     }
 
-    void finalize() { // private
-        DeleteObject(this.mBkBrush) ;
+    void finalize(UINT_PTR subid) { // private
+        DeleteObject(this.mBkBrush);
+        RemoveWindowSubclass(this.mHandle, &rbWndProc, subid);
     }
 }
 
@@ -83,14 +84,11 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
     try {
         RadioButton rb = getControl!RadioButton(refData)  ;
         switch (message) {
-            case WM_DESTROY :
-                rb.finalize ;
-                rb.remSubClass(scID);
-            break ;
+            case WM_DESTROY : rb.finalize(scID); break ;
             case CM_COLOR_STATIC :
             	auto hdc = cast(HDC) wParam;
                 SetBkMode(hdc, TRANSPARENT);
-                return toLresult(CreateSolidBrush(rb.mBackColor.reff));
+                return toLresult(CreateSolidBrush(rb.mBackColor.cref));
             break;
 
             case CM_CTLCOMMAND :
@@ -111,7 +109,7 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     case CDDS_PREPAINT:
                         RECT rct = nmcd.rc;
                         if (rb.mRightAlign) { rct.right -= 18;} else {rct.left += 18;}
-                        SetTextColor(nmcd.hdc, rb.mForeColor.reff);
+                        SetTextColor(nmcd.hdc, rb.mForeColor.cref);
                         DrawTextW(nmcd.hdc, rb.text.toUTF16z, -1, &rct, rb.mTxtStyle);
                         return CDRF_SKIPDEFAULT;
                     break;

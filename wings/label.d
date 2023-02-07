@@ -117,7 +117,8 @@ class Label : Control {
         void finalize(UINT_PTR scID) { // private
             // This is our destructor. Clean all the dirty stuff
             DeleteObject(this.mBkBrush) ;
-            this.remSubClass(scID);
+            RemoveWindowSubclass(this.mHandle, &lblWndProc, scID);
+            // this.remSubClass(scID);
         }
 
 } // End of Label Class
@@ -145,9 +146,9 @@ private LRESULT lblWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case CM_COLOR_STATIC :
                 if (lbl.mDrawFlag > 0)  {
                     auto hdc = cast(HDC) wParam;
-                    if (lbl.mDrawFlag & 1) SetTextColor(hdc, lbl.mForeColor.reff);
-                    SetBkColor(hdc, lbl.mBackColor.reff);
-                    return cast(LRESULT) CreateSolidBrush(lbl.mBackColor.reff);
+                    if (lbl.mDrawFlag & 1) SetTextColor(hdc, lbl.mForeColor.cref);
+                    SetBkColor(hdc, lbl.mBackColor.cref);
+                    return cast(LRESULT) CreateSolidBrush(lbl.mBackColor.cref);
                 }
                 else {
                     return cast(LRESULT) GetStockObject(HOLLOW_BRUSH);

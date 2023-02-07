@@ -1,5 +1,5 @@
 module wings.commons;
-
+pragma(lib, "UxTheme.lib");
 import std.stdio ;
 import std.conv;
 import std.utf;
@@ -15,6 +15,16 @@ package enum uint gBkColor = 0xF0F0F0; // 0xf5f5f5 ; // Global Back color for wi
 enum string mnf1 = "\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' ";
 enum string mnf2 = "version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"";
 alias zstring = const(wchar)*; /// Alias for Const(wchar)*. A null terminated string
+alias  HTHEME = HANDLE ;
+enum WINDOWTHEMEATTRIBUTETYPE : int { WTA_NONCLIENT = 1 }
+extern (Windows) nothrow @nogc {
+    HTHEME OpenThemeData(HWND, LPCWSTR);
+    HRESULT DrawThemeEdge(HTHEME, HDC, int, int, LPRECT, UINT, UINT, LPRECT);
+    HRESULT DrawThemeBackground(HTHEME, HDC, int, int, LPRECT, LPRECT);
+    HRESULT SetWindowThemeAttribute(HWND, WINDOWTHEMEATTRIBUTETYPE, PVOID, DWORD);
+    HRESULT CloseThemeData(HTHEME);
+}
+
 //pragma(linkerDirective, mnf1 ~ mnf2) // run this if you want to create a manifest file
 
 //bool isReleaseVersion = false;

@@ -33,9 +33,9 @@ class TreeView : Control {
     	this.createHandle();
     	if (this.mHandle) {
             this.setSubClass(&tvWndProc) ;
-            if (this.mBackColor.value != 0xFFFFFF) this.sendMsg(TVM_SETBKCOLOR, 0, this.mBackColor.reff);
-            if (this.mForeColor.value != defForeColor) this.sendMsg(TVM_SETTEXTCOLOR, 0, this.mForeColor.reff);
-            if (this.mLineClr.value != defForeColor) this.sendMsg(TVM_SETLINECOLOR, 0, this.mLineClr.reff);
+            if (this.mBackColor.value != 0xFFFFFF) this.sendMsg(TVM_SETBKCOLOR, 0, this.mBackColor.cref);
+            if (this.mForeColor.value != defForeColor) this.sendMsg(TVM_SETTEXTCOLOR, 0, this.mForeColor.cref);
+            if (this.mLineClr.value != defForeColor) this.sendMsg(TVM_SETLINECOLOR, 0, this.mLineClr.cref);
         }
     }
 
@@ -54,7 +54,7 @@ class TreeView : Control {
     }
 
     final void insertChildNode(TreeNode parent, TreeNode node, int index) {
-        foreach (nod; parent.mNodes) {print("child ", nod.text);}
+        // foreach (nod; parent.mNodes) {print("child ", nod.text);}
         this.addNodeInternal(NodeOps.insertChild, node, parent, index);
     }
 
@@ -232,10 +232,7 @@ private LRESULT tvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
     try {
         TreeView tv = getControl!TreeView(refData)  ;
         switch (message) {
-            case WM_DESTROY :
-                //tv.finalize ;
-                tv.remSubClass(scID);
-            break ;
+            case WM_DESTROY : RemoveWindowSubclass(hWnd, &tvWndProc, scID); break;
 
             case WM_PAINT : tv.paintHandler(); break;
             case WM_SETFOCUS : tv.setFocusHandler(); break;

@@ -121,10 +121,10 @@ class TrackBar : Control {
             if (this.mCustDraw) this.prepareForCustDraw();
             this.sendInitialMessages();
             if (this.mCustDraw) this.calculateTics();
-            if (this.mSelRange) this.mSelBrush = CreateSolidBrush(this.mSelColor.reff);
+            if (this.mSelRange) this.mSelBrush = CreateSolidBrush(this.mSelColor.cref);
             auto x = this.sendMsg(TBM_GETPTICS, 0, 0);
             DWORD* y = cast(DWORD*) x;
-            this.log(y[2], " track");
+            // this.log(y[2], " track");
         }
     }
 
@@ -204,12 +204,12 @@ class TrackBar : Control {
             if (this.mNoThumb) this.mStyle |= TBS_NOTHUMB;
             if (this.mToolTip) this.mStyle |= TBS_TOOLTIPS;
             if (this.mSelRange) this.mChannelFlag = BF_RECT | BF_ADJUST | BF_FLAT;
-            this.mBkBrush = CreateSolidBrush(this.mBackColor.reff);
+            this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         }
 
         void prepareForCustDraw() {
-            this.mChannelPen = CreatePen(PS_SOLID, 1, this.mChannelColor.reff);
-            this.mTicPen = CreatePen(PS_SOLID, this.mTicWidth, this.mTicColor.reff);
+            this.mChannelPen = CreatePen(PS_SOLID, 1, this.mChannelColor.cref);
+            this.mTicPen = CreatePen(PS_SOLID, this.mTicWidth, this.mTicColor.cref);
         }
 
         void sendInitialMessages() {
@@ -387,10 +387,7 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
     try {
         TrackBar tkb = getControl!TrackBar(refData)  ;
         switch (message) {
-            case WM_DESTROY :
-                //tkb.finalize ;
-                tkb.remSubClass(scID);
-            break ;
+            case WM_DESTROY : RemoveWindowSubclass(hWnd, &tkbWndProc, scID); break;
 
             case CM_COLOR_STATIC: return cast(LRESULT) tkb.mBkBrush; break;
 

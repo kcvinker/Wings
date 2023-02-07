@@ -124,7 +124,7 @@ class Control {
         void backColor(uint value) {
             this.mBackColor(value);
             if ((this.mDrawFlag & 2) != 2 ) this.mDrawFlag += 2;
-            if (this.mIsCreated) this.mBkBrush = CreateSolidBrush(this.mBackColor.reff);
+            if (this.mIsCreated) this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
             this.checkRedrawNeeded();
         }
 
@@ -199,7 +199,7 @@ class Control {
         Color mBackColor;
         Color mForeColor;
         uint mDrawFlag;
-        SUBCLASSPROC wndProcPtr;
+        // SUBCLASSPROC wndProcPtr;
         HWND mHandle;
         HBRUSH mBkBrush;
         Window mParent ;
@@ -239,15 +239,14 @@ class Control {
             In order to do that, we need to subclass a control. Here, subclassing means...
             just replacing the parent's own WndProc with our function. */
             SetWindowSubclass(this.mHandle, ctlWndProc, UINT_PTR(mSubClassId), this.toDwPtr);
-            this.wndProcPtr = ctlWndProc;
             ++mSubClassId ;
         }
 
-        final void remSubClass(UINT_PTR subClsId) { // Package
-            // We must remove the subclass when a control destroyed
-            auto res = RemoveWindowSubclass(this.mHandle, this.wndProcPtr, subClsId);
-            writefln("Removing subclass of %s and result - %d ", this.mName, res) ;
-        }
+        // final void remSubClass(UINT_PTR subClsId) { // Package
+        //     // We must remove the subclass when a control destroyed
+        //     auto res = RemoveWindowSubclass(this.mHandle, this.wndProcPtr, subClsId);
+        //     writefln("Removing subclass of %s and result - %d ", this.mName, res) ;
+        // }
 
         final auto sendMsg(wpt, lpt)(uint uMsg, wpt wp, lpt lp) { // Package
             // A helper function for sending messages to controls & window.

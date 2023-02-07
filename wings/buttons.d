@@ -4,6 +4,8 @@ module wings.buttons;
 import wings.d_essentials;
 import wings.wings_essentials;
 import std.datetime.stopwatch;
+import std.stdio;
+
 
 //------------------------------------------------------
 
@@ -14,7 +16,7 @@ private static int btnNumber = 1;
 private int subClsID = 1001;
 private const int mMouseClickFlag = 0b1 ;
 private const int mMouseOverFlag = 0b1000000 ;
-
+private const int roundCurve = 5;
 //---------------------------------------------------------
 
 
@@ -27,16 +29,17 @@ class Button : Control {
     /// Set the forecolor of the button.
     final override void foreColor(uint value) {
         this.mForeColor(value) ;
-        this.rgbFrg = RgbColor(value) ;
-        switch (this.mDrawMode) {
-            case BtnDrawMode.normal :
-                this.mDrawMode = BtnDrawMode.textOnly ; break ;
-            case BtnDrawMode.bkgOnly :
-                this.mDrawMode = BtnDrawMode.textBkg ; break ;
-            case BtnDrawMode.gradient :
-                this.mDrawMode = BtnDrawMode.gradientText ; break ;
-            default : break ;
-        }
+        // this.rgbFrg = RgbColor(value) ;
+        // switch (this.mDrawMode) {
+        //     case BtnDrawMode.normal :
+        //         this.mDrawMode = BtnDrawMode.textOnly ; break ;
+        //     case BtnDrawMode.bkgOnly :
+        //         this.mDrawMode = BtnDrawMode.textBkg ; break ;
+        //     case BtnDrawMode.gradient :
+        //         this.mDrawMode = BtnDrawMode.gradientText ; break ;
+        //     default : break ;
+        // }
+        if ((this.mDrawFlag & 1) != 1) this.mDrawFlag += 1;
         this.checkRedrawNeeded();
     }
 
@@ -45,29 +48,34 @@ class Button : Control {
 
     final override void backColor(uint value) {
         this.mBackColor(value) ;
-        this.rgbBkg = RgbColor(value) ;
-        switch (this.mDrawMode) {
-            case BtnDrawMode.normal :
-                this.mDrawMode = BtnDrawMode.bkgOnly ; break ;
-            case BtnDrawMode.textOnly :
-                this.mDrawMode = BtnDrawMode.textBkg ; break ;
-            default : break ;
-        }
+        this.mFDraw.setData(this.mBackColor);
+        if ((this.mDrawFlag & 2) != 2) this.mDrawFlag += 2;
         this.checkRedrawNeeded();
     }
 
     final override uint backColor() const {return this.mBackColor.value ;}
 
-    final void setGradientColors(uint clr1, uint clr2, GradientStyle gStyle = GradientStyle.topToBottom) {
-        this.gradData = Gradient(clr1, clr2, gStyle) ;
-        switch (this.mDrawMode) {
-            case BtnDrawMode.textOnly, BtnDrawMode.textBkg :
-                this.mDrawMode = BtnDrawMode.gradientText ; break ;
-            default :
-                this.mDrawMode = BtnDrawMode.gradient ; break ;
-        }
-        //writeln("btn draw mode - ", this.mDrawMode) ;
+    final void setGradientColors(uint clr1, uint clr2) {
+        this.mGDraw.setData(clr1, clr2);
+        if ((this.mDrawFlag & 4) != 4) this.mDrawFlag += 4;
         this.checkRedrawNeeded();
+    }
+
+    /// Values between 0..1
+    final void focusFactor(float value) {
+        if (this.mFDraw.isActive) {
+            COLORREF crf = this.mBackColor.mouseFocusColor(value);
+            this.mFDraw.hotBrush = CreateSolidBrush(crf);
+            this.checkRedrawNeeded();
+        }
+    }
+
+    final void frameFactor(float value) {
+        if (this.mFDraw.isActive) {
+            COLORREF crf = this.mBackColor.makeFrameColor(value);
+            this.mFDraw.defPen = CreatePen(PS_SOLID, 1, crf);
+            this.checkRedrawNeeded();
+        }
     }
 
 // End of Properties
@@ -99,15 +107,15 @@ class Button : Control {
 
     this(Window parent) {
         string btxt = format("%s_%d", "Button", btnNumber);
-        this(parent, btxt, 20, 20, 100, 35) ;
+        this(parent, btxt, 20, 20, 120, 35) ;
     }
 
     this(Window parent, string txt) {
-        this(parent, txt, 20, 20, 100, 35) ;
+        this(parent, txt, 20, 20, 120, 35) ;
     }
 
     this(Window parent, string txt, size_t x, size_t y) {
-        this(parent, txt, x, y, 100, 35) ;
+        this(parent, txt, x, y, 120, 35) ;
     }
 
     this(Window parent, size_t x, size_t y, size_t w, size_t h) {
@@ -125,8 +133,11 @@ class Button : Control {
         //sw.stop();
         //print("btn create speed in micro sec : ", sw.peek.total!"usecs");
         if (this.mHandle) {
+
             this.setSubClass(&btnWndProc) ;
         }
+		// NMCUSTOMDRAW nmc;
+		// this.log(nmc.sizeof, " NMCUSTOMDRAW.size");
     }
 
 
@@ -134,113 +145,151 @@ class Button : Control {
         BtnDrawMode mDrawMode ;
         DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX ;
 
-        // Drawing a button's text at pre paint stage.
-        final LRESULT setBtnForeColor(NMCUSTOMDRAW * ncd) {
-            SetTextColor(ncd.hdc, this.mForeColor.reff) ;
-            SetBkMode(ncd.hdc, 1) ;
-            DrawText(ncd.hdc, this.mText.toUTF16z, -1, &ncd.rc, this.mTxtFlag ) ;
-            return CDRF_NOTIFYPOSTPAINT ;
-        }
 
-        // Drawing a button with special back color at pre paint stage.
-        final LRESULT setBtnBackColor(NMCUSTOMDRAW * ncd) {
-            switch (ncd.dwDrawStage) {
-                case CDDS_PREERASE :
-                    return CDRF_NOTIFYPOSTERASE ;
-                    break ;
-                case CDDS_PREPAINT :
-                    if ((ncd.uItemState & mMouseClickFlag) == mMouseClickFlag) {
-                        //User clicked on it. We can shrink the size a little bit ;
-                        drawBackColor(ncd.hdc, &ncd.rc, this.mBackColor.reff, -1) ;
-                    }
 
-                    if ((ncd.uItemState & mMouseOverFlag) == mMouseOverFlag) {
-                        // Button's mouse over state. Let's change the bk clr a bit.
-                        auto crc = this.rgbBkg.changeColor(1.2);
-                        drawBackColor(ncd.hdc, &ncd.rc, crc.clrRef, -1) ;
-                        auto crc1 = this.rgbBkg.changeColor(0.5) ;
-                        drawBtnFrame(ncd.hdc, &ncd.rc, crc1.clrRef, 1) ;
-                    } else {
-                        // Button's default state.
-                        drawBackColor(ncd.hdc, &ncd.rc, this.rgbBkg.clrRef, -1) ;
-                        auto crc = this.rgbBkg.changeColor(0.5) ;
-                        drawBtnFrame(ncd.hdc, &ncd.rc, crc.clrRef, 1) ;
-                    }
-                    return CDRF_DODEFAULT ;
-                    break ;
-                default : break ;
-            }
-            return CDRF_DODEFAULT ;
-        }
+
 
 
         // Drawing a button's background with gradient brush at the pre paint stage.
-        final LRESULT setBtnGradientInternl(NMCUSTOMDRAW * ncd) {
-            switch (ncd.dwDrawStage) {
-                case CDDS_PREERASE :
-                    return CDRF_NOTIFYPOSTERASE ;
-                    break ;
-                case CDDS_PREPAINT :
-                    if ((ncd.uItemState & mMouseClickFlag) == mMouseClickFlag) {
-                        //User clicked on it. We can shrink the size a little bit ;
-                        auto crc = this.gradData.clr1.changeColor(0.5) ;
-                        paintWithGradientBrush(ncd.hdc, &ncd.rc, -1, this.gradData) ;
-                        drawBtnFrame(ncd.hdc, &ncd.rc, crc.clrRef, 1, 0);
 
-                    } else if ((ncd.uItemState & mMouseOverFlag) == mMouseOverFlag) {
-                        // Button's mouse over state. Let's change the bk clr a bit.
-                        auto cgd = this.gradData.changeColors(1.25) ;
-                        auto frcrc = cgd.clr2.changeColor(0.5) ;
-                        paintWithGradientBrush(ncd.hdc, &ncd.rc, -1, cgd ) ;
-                        drawBtnFrame(ncd.hdc, &ncd.rc, frcrc.clrRef, 1 );
-
-                    } else {
-                        // Button's default state.
-                        auto crc = this.gradData.clr1.changeColor(0.5) ;
-                        paintWithGradientBrush(ncd.hdc, &ncd.rc, -1, this.gradData) ;
-                        drawBtnFrame(ncd.hdc, &ncd.rc, crc.clrRef, 1 );
-                    }
-                    return CDRF_DODEFAULT ;
-                    break ;
-
-                default : break ;
-            }
-            return CDRF_DODEFAULT ;
-        }
 
 
     //---------------------------------------------------------------------------------
     private :
         RgbColor rgbBkg ;
         RgbColor rgbFrg ;
-        Gradient gradData ;
+        Gradient mGDraw;
+        FlatDraw mFDraw;
 
-        // This function fills the baclground of a button with given color.
-        void drawBackColor(HDC dc, RECT* rct, COLORREF clr, int rcSize = -2) {
-            auto hbr = CreateSolidBrush(clr) ;
-            scope(exit) DeleteObject(hbr) ;
-            if (rcSize != 0) InflateRect(rct, rcSize, rcSize) ;
-            SelectObject(dc, hbr) ;
-            FillRect(dc, rct, hbr) ;
+         // Drawing a button's text at pre paint stage.
+        LRESULT drawTextColor(NMCUSTOMDRAW* ncd) { // Private
+            SetTextColor(ncd.hdc, this.mForeColor.cref) ;
+            SetBkMode(ncd.hdc, 1) ;
+            DrawText(ncd.hdc, this.mText.toUTF16z, -1, &ncd.rc, this.mTxtFlag ) ;
+            return CDRF_NOTIFYPOSTPAINT ;
+        }
+
+        // Drawing the flat color bkg
+        LRESULT drawBackColor(NMCUSTOMDRAW* ncd) {
+            switch (ncd.dwDrawStage) {
+                case CDDS_PREERASE : // This happens when the paint starts
+                    return CDRF_NOTIFYPOSTERASE; break; // Telling the program to inform us after erase
+                case CDDS_PREPAINT: // We get the notification after erase happened.
+                    switch (ncd.uItemState) { // We check the control state and draw
+                        case mMouseClickFlag:
+                            this.paintFlatBtnRoundRect(ncd.hdc, ncd.rc, mFDraw.defBrush, mFDraw.hotPen);
+                        break;
+                        case mMouseOverFlag:
+                            this.paintFlatBtnRoundRect(ncd.hdc, ncd.rc, mFDraw.hotBrush, mFDraw.hotPen);
+                        break;
+                        default:
+                            this.paintFlatBtnRoundRect(ncd.hdc, ncd.rc, mFDraw.defBrush, mFDraw.defPen);
+                        break;
+                    }
+                    return CDRF_NOTIFYPOSTPAINT;
+                break ;
+                default : break ;
+            }
+            return CDRF_DODEFAULT ;
+        }
+
+        // Drawing the gradient color bkg
+        LRESULT drawGradientBackColor(NMCUSTOMDRAW * ncd) {
+            switch (ncd.dwDrawStage) {
+                case CDDS_PREERASE: // This happens when the paint starts
+                    return CDRF_NOTIFYPOSTERASE; // Telling the program to inform us after erase
+                break ;
+                case CDDS_PREPAINT: // We get the notification after erase happened.
+                    switch (ncd.uItemState) { // We check the control state and draw
+                        case mMouseClickFlag:
+                            this.paintRoundGradient(ncd.hdc, ncd.rc, this.mGDraw.gcDef, this.mGDraw.hotPen);
+                        break;
+                        case mMouseOverFlag:
+                            this.paintRoundGradient(ncd.hdc, ncd.rc, this.mGDraw.gcHot, this.mGDraw.hotPen);
+                        break;
+                        default:
+                            // print("def pen when used ", this.mGDraw.defPen);
+                            this.paintRoundGradient(ncd.hdc, ncd.rc, this.mGDraw.gcDef, this.mGDraw.defPen);
+                        break;
+                    }
+                    return CDRF_NOTIFYPOSTPAINT;
+                    break ;
+                default : break ;
+            }
+            return CDRF_DODEFAULT ;
+        }
+
+        // Helper function for drawing flat color bkg
+        void paintFlatBtnRoundRect(HDC dc, RECT rc, HBRUSH hbr, HPEN pen ) {
+            SelectObject(dc, pen);
+            SelectObject(dc, hbr);
+            RoundRect(dc, rc.left, rc.top, rc.right, rc.bottom, roundCurve, roundCurve);
+            FillPath(dc);
         }
 
         // This function draws a frame around the button with given color & width.
-        void drawBtnFrame(HDC dc, RECT* rct, COLORREF clr, int penWidth, int rcSize = 1) {
-            if (rcSize != 0) InflateRect(rct, rcSize, rcSize) ;
-            auto framePen = CreatePen(PS_SOLID, penWidth, clr) ;
-            scope(exit) DeleteObject(framePen) ;
-            SelectObject(dc, framePen) ;
-            Rectangle(dc, rct.left, rct.top, rct.right, rct.bottom) ;
-        }
+        // void drawFrame(HDC hdc, RECT* rc, HPEN pen, int rcSize) {
+        //     if (rcSize != 0) InflateRect(rc, rcSize, rcSize) ;
+        //     SelectObject(hdc, pen) ;
+        //     Rectangle(hdc, rc.left, rc.top, rc.right, rc.bottom);
+        // }
+
+        // void roundFrame(HDC dc, RECT* rc, HPEN fp) {
+        //     SelectObject(dc, fp);
+        //     RoundRect(dc, rc.left, rc.top, rc.right, rc.bottom, 5, 5);
+        // }
 
         // This function fills the button's bakground with a gradient color pattern.
-        void paintWithGradientBrush(HDC dc, RECT* rct, int rcSize, Gradient gd ) {
-            if (rcSize != 0) InflateRect(rct, rcSize, rcSize);
-            auto gradBrush = createGradientBrush(dc, rct, gd) ;
+        // void paintWithGradientBrush(HDC dc, RECT* rct, GradColor gdc, HBRUSH fbr ) {
+        //     // if (rcSize != 0) InflateRect(rct, rcSize, rcSize);
+        //     auto gradBrush = createGradientBrush(dc, rct, gdc.c1, gdc.c2) ;
+        //     scope(exit) DeleteObject(gradBrush) ;
+        //     SelectObject(dc, gradBrush) ;
+        //     FillRect(dc, rct, gradBrush);
+        //     FrameRect(dc, rct, fbr);
+        //     // FillPath(dc);
+        // }
+
+        void paintRoundGradient(HDC dc, RECT rc, GradColor gc, HPEN pen) {
+            auto gradBrush = createGradientBrush(dc, rc, gc.c1, gc.c2) ;
             scope(exit) DeleteObject(gradBrush) ;
-            SelectObject(dc, gradBrush) ;
-            FillRect(dc, rct, gradBrush) ;
+
+            SelectObject(dc, pen);
+            SelectObject(dc, gradBrush);
+            RoundRect(dc, rc.left, rc.top, rc.right, rc.bottom, roundCurve, roundCurve);
+            FillPath(dc);
         }
+
+        LRESULT wmNotifyHandler(LPARAM lpm) {
+            LRESULT ret = CDRF_DODEFAULT;
+            if (this.mDrawFlag) {
+                NMCUSTOMDRAW* nmcd = cast(NMCUSTOMDRAW*)lpm;
+                switch (this.mDrawFlag) {
+                        case 1: ret = this.drawTextColor(nmcd); break; // ForeColor only
+                        case 2: ret = this.drawBackColor(nmcd); break; // BackColor only
+                        case 3://-----------------------------------------Back & Fore colors
+                            this.drawBackColor(nmcd);
+                            ret = this.drawTextColor(nmcd);
+                        break;
+                        case 4: ret = this.drawGradientBackColor(nmcd); break; // Gradient only
+                        case 5: //------------------------------------------------Gradient & fore colors
+                            this.drawGradientBackColor(nmcd);
+                            ret = this.drawTextColor(nmcd);
+                        break;
+                    default: return CDRF_DODEFAULT; break;
+                }
+
+
+            }
+            return ret;
+        }
+
+        void finalize(UINT_PTR scID) {
+            // this.remSubClass(scID);
+            RemoveWindowSubclass(this.mHandle, &btnWndProc, scID);
+        }
+
+
 
 
 
@@ -251,7 +300,42 @@ class Button : Control {
 
 }// End Button Class---------------------------------------------------------
 
-//Button getButton(DWORD_PTR refData) {return cast(Button)cast(void*)refData;}
+struct FlatDraw {
+    HBRUSH defBrush;
+	HBRUSH hotBrush;
+    HBRUSH dFrmBrush;
+    HBRUSH hFrmBrush;
+	HPEN defPen;
+	HPEN hotPen;
+    bool isActive;
+
+    ~this() {
+        if (this.defBrush) DeleteObject(this.defBrush);
+	    if (this.hotBrush) DeleteObject(this.hotBrush);
+	    if (this.defPen) DeleteObject(this.defPen);
+	    if (this.hotPen) DeleteObject(this.hotPen);
+	    if (this.dFrmBrush) DeleteObject(this.dFrmBrush);
+	    if (this.hFrmBrush) DeleteObject(this.hFrmBrush);
+        print("FlatDraw resources freed");
+    }
+
+    void setData(Color c) {
+        import std.stdio;
+        auto hotRc = RgbColor(c.value);
+        auto frmRc = RgbColor(c.value);
+        double hadj = hotRc.isDark() ? 1.5 : 1.2;
+        hotRc.changeShade(hadj);
+        print("hadj ", hadj);
+        this.defBrush = CreateSolidBrush(c.cref);
+        this.hotBrush = CreateSolidBrush(hotRc.cref);
+        this.defPen = CreatePen(PS_SOLID, 1, frmRc.makeFrameColor(0.6));
+        this.hotPen = CreatePen(PS_SOLID, 1, frmRc.makeFrameColor(0.3));
+        // this.dFrmBrush = CreateSolidBrush(c.makeFrameColor(0.3));
+        // this.hFrmBrush = CreateSolidBrush(c.makeFrameColor(0.6));
+
+        this.isActive = true;
+    }
+}
 
 
 extern(Windows)
@@ -263,7 +347,7 @@ private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         Button btn = getControl!Button(refData) ;
         //btn.log(message, "Button message ");
         switch (message) {
-            case WM_DESTROY : btn.remSubClass(scID); break ;
+            case WM_DESTROY : btn.finalize(scID); break ;
             case WM_PAINT : btn.paintHandler(); break;
             case WM_SETFOCUS :
                 btn.setFocusHandler();
@@ -282,32 +366,7 @@ private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_MOUSEWHEEL : btn.mouseWheelHandler(message, wParam, lParam); break;
             case WM_MOUSEMOVE : btn.mouseMoveHandler(message, wParam, lParam); break;
             case WM_MOUSELEAVE : btn.mouseLeaveHandler(); break;
-            case CM_NOTIFY :
-                if (btn.mDrawMode != BtnDrawMode.normal) {
-                    auto nmp = cast(NMCUSTOMDRAW*) lParam ;
-                    switch (btn.mDrawMode) {
-                        case BtnDrawMode.textOnly:
-                            return btn.setBtnForeColor(nmp) ;
-                            break ;
-                        case BtnDrawMode.bkgOnly :
-                            return btn.setBtnBackColor(nmp) ;
-                            break ;
-                        case BtnDrawMode.textBkg :
-                            btn.setBtnBackColor(nmp) ;
-                            btn.setBtnForeColor(nmp) ;
-                            return CDRF_NOTIFYPOSTPAINT ;
-                            break ;
-                        case BtnDrawMode.gradient :
-                            return btn.setBtnGradientInternl(nmp) ;
-                            break ;
-                        case BtnDrawMode.gradientText :
-                            btn.setBtnGradientInternl(nmp) ;
-                            btn.setBtnForeColor(nmp) ;
-                            return CDRF_NOTIFYPOSTPAINT ;
-                            break ;
-                        default : break ;
-                    }
-                } break ;
+            case CM_NOTIFY : return btn.wmNotifyHandler(lParam); break ;
 
             default : return DefSubclassProc(hWnd, message, wParam, lParam) ;
         }

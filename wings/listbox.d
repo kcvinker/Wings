@@ -239,7 +239,8 @@ class ListBox : Control {
 
         void finalize(UINT_PTR scID) { // private
             DeleteObject(this.mBkBrush) ;
-            this.remSubClass(scID);
+            RemoveWindowSubclass(this.mHandle, &lbxWndProc, scID);
+            // this.remSubClass(scID);
         }
 
 } // End of ListBox class
@@ -266,8 +267,8 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 if (lbx.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     SetBkMode(hdc, TRANSPARENT);
-                    if (lbx.mDrawFlag & 1) SetTextColor(hdc, lbx.mForeColor.reff);
-                    lbx.mBkBrush = CreateSolidBrush(lbx.mBackColor.reff);
+                    if (lbx.mDrawFlag & 1) SetTextColor(hdc, lbx.mForeColor.cref);
+                    lbx.mBkBrush = CreateSolidBrush(lbx.mBackColor.cref);
                     //print("cm ctl color on lbx");
                     return cast(LRESULT) lbx.mBkBrush;
 

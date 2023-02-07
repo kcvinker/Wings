@@ -1,6 +1,6 @@
 
 // Created on 08-May-2022 10:48:00
-module wings.datetimepicker ; 
+module wings.datetimepicker ;
 
 import wings.d_essentials;
 import std.conv : to ;
@@ -30,7 +30,7 @@ struct NMDATETIMESTRINGW {
 
 
 /**
- * DateTimePicker 
+ * DateTimePicker
  */
 class DateTimePicker : Control {
 
@@ -39,7 +39,7 @@ class DateTimePicker : Control {
     /// Set the format string of DateTimPicker
     final void formatString(string value) {this.setFormatString(value);  }
     /// Returns the format of DateTimPicker
-    mixin finalProperty!("format", this.mFormat);    
+    mixin finalProperty!("format", this.mFormat);
     mixin finalProperty!("rightAligned", this.mRightAlign);
     mixin finalProperty!("fourDigitYear", this.mFourDigitYear);
     mixin finalProperty!("showWeekNumber", this.mShowWeekNum);
@@ -48,27 +48,27 @@ class DateTimePicker : Control {
     mixin finalProperty!("noTrailingDates", this.mNoTrlDates);
     mixin finalProperty!("shortDateNames", this.mShortDnames);
     mixin finalProperty!("showUpDown", this.mShowUpdown);
-    mixin finalProperty!("value", this.mValue);    
+    mixin finalProperty!("value", this.mValue);
 
 	EventHandler onCalendarOpened ;
 	EventHandler onValueChanged ;
 	EventHandler onCalendarClosed ;
 	DateTimeEventHandler onTextChanged ;
 
-	this(Window parent, int x, int y, int w, int h) {   
+	this(Window parent, int x, int y, int w, int h) {
         if (!appData.isDtpInit) {
             appData.isDtpInit = true;
             appData.iccEx.dwICC = ICC_DATE_CLASSES;
             InitCommonControlsEx(&appData.iccEx);
-        }            
-        
+        }
+
         mixin(repeatingCode);
-        mControlType = ControlType.dateTimePicker ;   
+        mControlType = ControlType.dateTimePicker ;
         this.mExStyle = 0 ;
         this.mFormat = DtpFormat.custom ;
         this.mFormatString = " dd-MMM-yyyy";
         this.mClsName = "SysDateTimePick32" ;
-        ++dtpNumber ;        
+        ++dtpNumber ;
     }
 
     this(Window p ) { this(p, 20, 20, 140, 25) ; }
@@ -76,12 +76,12 @@ class DateTimePicker : Control {
 
     final void create() {
     	this.setDtpStyles() ;
-        this.createHandle() ; 
-        if (this.mHandle) {            
-            this.setSubClass(&dtpWndProc) ;            
+        this.createHandle() ;
+        if (this.mHandle) {
+            this.setSubClass(&dtpWndProc) ;
             this.afterCreationStyling() ;
-            
-        }        
+
+        }
     }
 
     package :
@@ -106,12 +106,12 @@ class DateTimePicker : Control {
         void setDtpStyles() { // Private
             switch (this.mFormat) {
                 case DtpFormat.custom :
-                    this.mStyle = WS_TABSTOP | WS_CHILD| WS_VISIBLE | DTS_LONGDATEFORMAT | DTS_APPCANPARSE ;                                       
+                    this.mStyle = WS_TABSTOP | WS_CHILD| WS_VISIBLE | DTS_LONGDATEFORMAT | DTS_APPCANPARSE ;
                     break ;
                 case DtpFormat.longDate :
                     this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_LONGDATEFORMAT ;
                     break ;
-                case DtpFormat.shortDate :                    
+                case DtpFormat.shortDate :
                     if (this.mFourDigitYear) {
                         this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATECENTURYFORMAT ;
                     } else {
@@ -137,25 +137,25 @@ class DateTimePicker : Control {
         void afterCreationStyling() { // Private
             if (this.mFormat == DtpFormat.custom) {
                 /*  Here, we have a strange situation. Since, we are working with unicode string, we need...
-                    to use the W version functions & messages. So, here DTM_SETFORMATW is the candidate. 
+                    to use the W version functions & messages. So, here DTM_SETFORMATW is the candidate.
                     But it won't work. For some unknown reason, only DTM_SETFORMATA is working here. So we need...
                     to pass a null terminated c string ptr to this function. Why MS, why ?
                 */
-                this.sendMsg(DTM_SETFORMATA, 0, this.mFormatString.ptr);                
+                this.sendMsg(DTM_SETFORMATA, 0, this.mFormatString.ptr);
             }
-            if (this.mCalStyle > 0 ) this.sendMsg(DTM_SETMCSTYLE, 0, this.mCalStyle);  
+            if (this.mCalStyle > 0 ) this.sendMsg(DTM_SETMCSTYLE, 0, this.mCalStyle);
             SIZE ss;
             this.sendMsg(DTM_GETIDEALSIZE, 0, &ss);
             this.mWidth = ss.cx + 2;
             this.mHeight = ss.cy + 5;
-            SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOZORDER);        
+            SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOZORDER);
         }
 
         void setFormatString(string fmt) { // Private
             // When user changes format string, this function will be called
             this.mFormatString = fmt ;
             if (this.mFormat != DtpFormat.custom) this.mFormat = DtpFormat.custom;
-            if (this.mIsCreated) this.sendMsg(DTM_SETFORMATA, 0, this.mFormatString.ptr);            
+            if (this.mIsCreated) this.sendMsg(DTM_SETFORMATA, 0, this.mFormatString.ptr);
         }
 
 
@@ -163,10 +163,10 @@ class DateTimePicker : Control {
 
 extern(Windows)
 private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
-    try {   
-        DateTimePicker dtp = getControl!DateTimePicker(refData) ;         
+    try {
+        DateTimePicker dtp = getControl!DateTimePicker(refData) ;
         switch (message) {
-            case WM_DESTROY : dtp.remSubClass(scID); break;            
+            case WM_DESTROY : RemoveWindowSubclass(hWnd, &dtpWndProc, scID); break;
             case WM_PAINT : dtp.paintHandler(); break;
             case WM_SETFOCUS : dtp.setFocusHandler(); break;
             case WM_KILLFOCUS : dtp.killFocusHandler(); break;
@@ -181,14 +181,14 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_MOUSELEAVE : dtp.mouseLeaveHandler(); break;
 
             case CM_NOTIFY :
-                auto nm = cast(NMHDR *) lParam ;  
-                //print("nm.code", nm.code) ;              
+                auto nm = cast(NMHDR *) lParam ;
+                //print("nm.code", nm.code) ;
                 switch (nm.code) {
                     case DTN_USERSTRING :
-                        if (dtp.onTextChanged) {                            
-                            auto dts = cast(NMDATETIMESTRINGW *) lParam ;                            
+                        if (dtp.onTextChanged) {
+                            auto dts = cast(NMDATETIMESTRINGW *) lParam ;
                             auto dea = new DateTimeEventArgs(dts.pszUserString) ;
-                            dtp.onTextChanged(dtp, dea) ;                            
+                            dtp.onTextChanged(dtp, dea) ;
                             if (dea.handled) {
                                 sendMsg(hWnd, DTM_SETSYSTEMTIME, 0, dea.dateStruct) ;
                             }
@@ -221,7 +221,7 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     break ;
 
                     case DTN_FORMATQUERY :
-                        
+
                     case DTN_CLOSEUP :
                         if (dtp.onCalendarClosed) {
                             auto ea = new EventArgs();
@@ -229,19 +229,19 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                         }
                     break ;
                     //--------------------------------------
-                    
+
 
 
                     default : break ;
 
 
-                } 
+                }
                 //return 1 ;
             break;
 
             default : return DefSubclassProc(hWnd, message, wParam, lParam) ;
-        }        
+        }
     }
-    catch (Exception e) {}     
+    catch (Exception e) {}
     return DefSubclassProc(hWnd, message, wParam, lParam);
 }

@@ -60,12 +60,15 @@ class Window : Control {
     SizeEventHandler onSized, onSizing ;
     HotKeyEventHandler onHotKeyPress;
 
+
+
     ///the constructor of form class
     private this(string txt, int x, int y, int w, int h) {
         if (!isWindowInit) { // It's the first window.
             isWindowInit = true;
             appData = new ApplicationData( defWinFontName, defWinFontSize, defWinFontWeight);
             regWindowClass(appData.className, appData.hInstance);
+            this.checkWinVwesion();
         }
 
         this.mText = txt ;
@@ -158,9 +161,11 @@ class Window : Control {
     }
 
     /// This will set the gradient background color for this window.
-    final void setGradientColors(uint c1, uint c2, GradientStyle gStyle = GradientStyle.topToBottom) {
+    final void setGradientColors(uint c1, uint c2, bool r2l = false) {
         this.mBkDrawMode = WindowBkMode.gradient ;
-        this.gradData = Gradient(c1, c2, gStyle) ;
+        this.mGdraw.c1 = RgbColor(c1);
+        this.mGdraw.c2 = RgbColor(c2);
+        this.mGDR2L = r2l;
         this.checkRedrawNeeded() ;
     }
 
@@ -222,10 +227,10 @@ class Window : Control {
             scope(exit) DeleteObject(hBr) ;
 
             if (this.mBkDrawMode == WindowBkMode.singleColor ) {
-                hBr = CreateSolidBrush(this.mBackColor.reff) ;
+                hBr = CreateSolidBrush(this.mBackColor.cref) ;
             }
             else if (this.mBkDrawMode == WindowBkMode.gradient) {
-                hBr = createGradientBrush(dcHandle, &rct, this.gradData) ;
+                hBr = createGradientBrush(dcHandle, rct, this.mGdraw.c1, this.mGdraw.c2, this.mGDR2L) ;
             }
 
             FillRect(dcHandle, &rct, hBr) ;
@@ -248,13 +253,14 @@ class Window : Control {
         bool mTopMost;
         bool mMaxBox;
         bool mMinBox;
+        bool mGDR2L; // Gradient draw right to left
 
         HMENU menuHwnd;
         DWORD winStyle = WS_OVERLAPPEDWINDOW;
         WindowPos mStartPos;
         WindowStyle mWinStyle;
         WindowState mWinState;
-        Gradient gradData;
+        GradColor mGdraw;
         MenuItem[] mMenuItems; // dictionary(key = uint, value = MenuItem)
 
 
@@ -335,14 +341,41 @@ class Window : Control {
             if (this.mWinState == WindowState.maximized) this.mStyle = this.mStyle | WS_MAXIMIZE;
             //if (!this.mVisible) this.mStyle &= ~(WS_VISIBLE); // flags -= flags & MY_FLAG
 
+            //this.log(fixed3DExStyle, "fixed3DExStyle"); // Delete anytime.
+            //this.log(fixed3DStyle, "fixed3DStyle");
+            //this.log(fixedDialogExStyle, "fixedDialogExStyle");
+            //this.log(fixedDialogStyle, "fixedDialogStyle");
+            //this.log(fixedSingleExStyle, "fixedSingleExStyle");
+            //this.log(fixedSingleStyle, "fixedSingleStyle");
+            //this.log(normalWinExStyle, "normalWinExStyle");
+            //this.log(normalWinStyle, "normalWinStyle");
+            //this.log(fixedToolExStyle, "fixedToolExStyle");
+            //this.log(fixedToolStyle, "fixedToolStyle");
+            //this.log(sizableToolExStyle, "sizableToolExStyle");
+            //this.log(sizableToolStyle, "sizableToolStyle");
 
         }
 
     	void propBackColorSetter(uint clr) {   // private
     		this.mBackColor(clr) ;
     		this.mBkDrawMode = WindowBkMode.singleColor ;
-    		if (this.mIsCreated) InvalidateRect(this.mHandle, null, true) ;
+    		if (this.mIsCreated) InvalidateRect(this.mHandle, null, false) ;
     	}
+
+        void checkWinVwesion() {
+            import  std.stdio;
+
+            OSVERSIONINFOW ovi;
+            ovi.dwOSVersionInfoSize = OSVERSIONINFOW.sizeof;
+            GetVersionExW(&ovi);
+            // string b;
+            // b.reserve(ovi.szCSDVersion.length);
+            // foreach (wchar c; ovi.szCSDVersion){
+            //     b ~= c;
+            // }
+            writefln("OS Version : %s.%s.%s.%s", ovi.dwMajorVersion,
+                ovi.dwMinorVersion, ovi.dwPlatformId, ovi.dwBuildNumber);
+        }
 
         void finalize() {
             // If there is un managed hotkeys, remove all of them.
@@ -383,7 +416,7 @@ void regWindowClass(wstring clsN,  HMODULE hInst) {
     wcEx.hInstance     = hInst;
     wcEx.hIcon         = LoadIconW(null, IDI_APPLICATION);
     wcEx.hCursor       = LoadCursorW(null, IDC_ARROW);
-    wcEx.hbrBackground = CreateSolidBrush(appData.appColor.reff);//COLOR_WINDOW;
+    wcEx.hbrBackground = CreateSolidBrush(appData.appColor.cref);//COLOR_WINDOW;
     wcEx.lpszMenuName  = null;
     wcEx.lpszClassName = clsN.ptr;
 

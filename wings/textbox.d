@@ -30,7 +30,7 @@ class TextBox : Control {
 
     void create() {
     	this.setTbStyle();
-        printf("textbox style %X", this.mStyle) ;
+        // printf("textbox style %X", this.mStyle) ;
     	this.createHandle();
     	if (this.mHandle) {
 
@@ -66,9 +66,12 @@ class TextBox : Control {
 
             if (this.mTxtPos == Alignment.center) {this.mStyle |= ES_CENTER;}
             else if (this.mTxtPos == Alignment.right) {this.mStyle |= ES_RIGHT;}
-            this.mBkBrush = CreateSolidBrush(this.mBackColor.reff);
+            this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         }
 
+        void finalize(UINT_PTR subid) {
+            RemoveWindowSubclass(this.mHandle, &tbWndProc, subid );
+        }
 
 
 } // End of TextBox class
@@ -88,14 +91,7 @@ private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
         //printf("Textbox retreiving time in nano sec : %s", timeElap);
         switch (message)
         {
-            case WM_NCDESTROY :
-                //tb.finalize ;
-                //tb.remSubClass(scID);
-                auto res = RemoveWindowSubclass(hWnd, &tbWndProc, scID);
-                printf("Removing subclass for %s", tb.mHandle);
-            break ;
-
-
+            case WM_NCDESTROY : tb.finalize(scID); break;
             case WM_PAINT:
                 //if (tb.mDrawFocus) {
                 //    PAINTSTRUCT ps;
@@ -117,11 +113,10 @@ private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             break;
 
             case CM_COLOR_EDIT:
-                if (tb.mDrawBkClr) {
+                if (tb.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
-                    if (tb.mDrawFlag & 1) SetTextColor(hdc, tb.mForeColor.reff);
-                    if (tb.mDrawFlag & 2) SetBkColor(hdc, tb.mBackColor.reff);
-
+                    if (tb.mDrawFlag & 1) SetTextColor(hdc, tb.mForeColor.cref);
+                    if (tb.mDrawFlag & 2) SetBkColor(hdc, tb.mBackColor.cref);
                 }
                 return toLresult(tb.mBkBrush);
             break;

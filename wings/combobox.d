@@ -101,6 +101,7 @@ class ComboBox : Control {
          * Then make it look like the old combo. So this function will do that */
         if (this.mIsCreated) {
             if (this.mCmbStyle == value) return;
+            this.mSelIndex = cast(int) this.sendMsg(CB_GETCURSEL, 0, 0) ;
             this.mCmbStyle = value;
             this.mRecreateEnabled = true;
             DestroyWindow(this.mHandle);
@@ -207,6 +208,7 @@ class ComboBox : Control {
         } else {
             this.mStyle |= CBS_DROPDOWN;
         }
+        this.mBkBrush = this.mBackColor.getBrush();
         this.mHandle = CreateWindowEx(  this.mExStyle,
                                         mClsName.ptr,
                                         this.mText.toUTF16z,
@@ -223,7 +225,6 @@ class ComboBox : Control {
             this.mIsCreated = true;
             this.mOldHwnd = this.mHandle ;
             this.setSubClass(&cmbWndProc) ;
-            if (!this.mBaseFontChanged) this.mFont = this.mParent.font ;
             this.setFontInternal() ;
         	this.getComboInfo() ;
             insertItems() ;
@@ -233,18 +234,6 @@ class ComboBox : Control {
         }
     }
 
-    package :
-        bool tbMLDownHappened, tbMRDownHappened ;
-
-        // Check if the mouse pointer is upon combo's rect.
-        final int isInComboRect(HWND hw) {
-            RECT rc ;
-            GetWindowRect(hw, &rc);
-            auto pts = getMousePoints() ;
-            return PtInRect(&rc, pts) ;
-        }
-
-
 
 	private :
 		DropDownStyle mCmbStyle ;
@@ -253,13 +242,14 @@ class ComboBox : Control {
 		int mSelIndex = -1;
         int ctlId ;
 		bool mRecreateEnabled ;
+        bool tbMLDownHappened, tbMRDownHappened ;
 		HBRUSH mBkBrush ;
 		HWND mOldHwnd ;
         //ComboInfo myInfo ;
 
 
         // Get and save the internal info of a ComboBox.
-		void getComboInfo() {
+		void getComboInfo() { // Private
 			COMBOBOXINFO cmbInfo ;
 			cmbInfo.cbSize = cmbInfo.sizeof ;
 			this.sendMsg(CB_GETCOMBOBOXINFO, 0, &cmbInfo) ;
@@ -272,7 +262,7 @@ class ComboBox : Control {
 		}
 
         // Internal function to insert items to ComboBox.
-        void insertItems() {
+        void insertItems() { // Private
             if (this.mItems.length > 0 ) {
                 foreach (item; this.mItems) {
                     auto witem = toUTF16z(item);
@@ -281,11 +271,20 @@ class ComboBox : Control {
             }
         }
 
-        void finalize(UINT_PTR scID) {
+        int isInComboRect(HWND hw) { // Private
+            RECT rc ;
+            GetWindowRect(hw, &rc);
+            auto pts = getMousePoints() ;
+            return PtInRect(&rc, pts) ;
+        }
+
+
+        void finalize(UINT_PTR scID) { // Private
     		DeleteObject(this.mBkBrush);
             // We need to remove the subclassing of the edit control.
-           // RemoveWindowSubclass(this.myInfo.tbHwnd, &cmbEditWndProc, this.myInfo.tbSubClsId);
-            this.remSubClass(scID);
+           RemoveWindowSubclass(this.mHandle, &cmbWndProc, scID);
+
+            // this.remSubClass(scID);
     	}
 
         //void pCinfo(const ref ComboInfo c) {
@@ -363,18 +362,14 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 // NOTE : You can change colors OF both text & list only when DropDownStyle = textCombo.
                 // NOTE : In labelCombo mode, if you change the color, it won't be affect in text area.
                 // Only change the color if user wants to be.
-                if (cmb.mBackColor.value != defBackColor || cmb.mForeColor.value != defForeColor) {
-                    auto hdc = cast(HDC) wParam ;
-                    SetBkMode(hdc, TRANSPARENT) ;
-                    if (cmb.mForeColor.value != defForeColor) SetTextColor(hdc, cmb.mForeColor.reff) ;
-                    cmb.mBkBrush = CreateSolidBrush(cmb.mBackColor.reff);
-                    return cast(LRESULT) cmb.mBkBrush ;
-                } else {
-                    // Otherwise return the default color(white) brush.
-                    // If you don't do this, you can see black background inthe listbox.
-                    cmb.mBkBrush = CreateSolidBrush(cmb.mBackColor.reff);
-                    return cast(LRESULT) cmb.mBkBrush ;
+                if (cmb.mDrawFlag) {
+                    auto hdc = cast(HDC) wParam;
+                    SetBkMode(hdc, TRANSPARENT);
+                    if ((cmb.mDrawFlag & 1) == 1) SetTextColor(hdc, cmb.mForeColor.cref);
+                    if ((cmb.mDrawFlag & 2) == 2) SetBkColor(hdc, cmb.mBackColor.cref);
+
                 }
+                return cast(LRESULT)cmb.mBkBrush;
             break ;
 
             case CM_CTLCOMMAND :
@@ -441,10 +436,7 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
         ComboBox cmb = getControl!ComboBox(refData) ;
         //print("ComboBox Messages", message) ;
         switch (message) {
-            case WM_DESTROY:
-                RemoveWindowSubclass(hWnd, &cmbEditWndProc, scID);
-            break;
-
+            case WM_DESTROY: RemoveWindowSubclass(hWnd, &cmbEditWndProc, scID); break;
             case WM_KEYDOWN:
                 if (cmb.onTextKeyDown) {
                     auto kea = new KeyEventArgs(wParam) ;
@@ -527,8 +519,8 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                 if (cmb.mBackColor.value != defBackColor || cmb.mForeColor.value != defForeColor) {
                     auto hdc = cast(HDC) wParam ;
                     SetBkMode(hdc, TRANSPARENT) ;
-                    if (cmb.mForeColor.value != defForeColor) SetTextColor(hdc, cmb.mForeColor.reff) ;
-                    cmb.mBkBrush = CreateSolidBrush(cmb.mBackColor.reff);
+                    if (cmb.mForeColor.value != defForeColor) SetTextColor(hdc, cmb.mForeColor.cref) ;
+                    cmb.mBkBrush = CreateSolidBrush(cmb.mBackColor.cref);
                     return cast(LRESULT) cmb.mBkBrush ;
                 }
             break;

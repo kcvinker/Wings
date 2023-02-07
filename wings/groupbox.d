@@ -41,8 +41,8 @@ class GroupBox : Control {
 
     final void create() {
         //if (this.mBackColor.value == this.parent.mBackColor.value) this.isPaintBkg = true;
-        this.mBkBrush = CreateSolidBrush(this.mBackColor.reff);
-        this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.reff ); //0x000015ff
+        this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
+        this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref ); //0x000015ff
         this.mTmpText = this.mText;
         this.mText = "";
         this.createHandle();
@@ -57,7 +57,7 @@ class GroupBox : Control {
     //     this.mBackColor = Color(value);
     //     // this.isPaintBkg = true;
     //     if ((this.mDrawFlag & 2) != 2 ) this.mDrawFlag += 2;
-    //     if (this.mIsCreated) this.mBkBrush = CreateSolidBrush(this.mBackColor.reff);
+    //     if (this.mIsCreated) this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
     //     this.checkRedrawNeeded();
     // }
     // override final backColor() {
@@ -68,12 +68,7 @@ class GroupBox : Control {
         bool isPaintBkg;
         string mTmpText;
 
-        void finalize(UINT_PTR scID) { // private
-            // This is our destructor. Clean all the dirty stuff
-            DeleteObject(this.mBkBrush) ;
-            DeleteObject(this.mPen);
-            this.remSubClass(scID);
-        }
+
 
         void drawText() {
             HDC hdc = GetDC(this.mHandle);
@@ -89,7 +84,7 @@ class GroupBox : Control {
             LineTo(hdc, ss.cx + 10, yp);
             // SetRect(&rc, 10, 0, ss.cx + 10, ss.cy + 10);
 
-            SetTextColor(hdc, this.mForeColor.reff);
+            SetTextColor(hdc, this.mForeColor.cref);
 
             TextOutW(hdc, 10, 0, this.mTmpText.toUTF16z, this.mTmpText.length);
 
@@ -124,10 +119,18 @@ class GroupBox : Control {
             SetRect(&rc, 10, 0, ss.cx, ss.cy);
             SetBkMode(dcMem, TRANSPARENT);
             SelectObject(dcMem, this.mFont.handle);
-            SetTextColor(dcMem, this.mForeColor.reff);
+            SetTextColor(dcMem, this.mForeColor.cref);
             DrawTextW(dcMem, this.mTmpText.toUTF16z, -1, &rc, DT_CENTER|DT_SINGLELINE );
             // TextOutW(dcMem, 10, 0, this.mTmpText.toUTF16z, this.mTmpText.length);
             BitBlt(hdc, 10, 0, ss.cx, ss.cy, dcMem, 0, 0, SRCCOPY);
+        }
+
+        void finalize(UINT_PTR scID) { // private
+            // This is our destructor. Clean all the dirty stuff
+            DeleteObject(this.mBkBrush) ;
+            DeleteObject(this.mPen);
+            RemoveWindowSubclass(this.mHandle, &gbWndProc, scID);
+            // this.remSubClass(scID);
         }
 
 
@@ -157,23 +160,23 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             // //     gb.log("cm ctl rcvd");
             // //     auto hdc = cast(HDC) wParam;
             // //     SetBkMode(hdc, TRANSPARENT) ;
-            // //     gb.mBkBrush = CreateSolidBrush(gb.mBackColor.reff);
-            // //     if (gb.mForeColor.value != 0x000000) SetTextColor(hdc, gb.mForeColor.reff) ;
+            // //     gb.mBkBrush = CreateSolidBrush(gb.mBackColor.cref);
+            // //     if (gb.mForeColor.value != 0x000000) SetTextColor(hdc, gb.mForeColor.cref) ;
             //     return cast(LRESULT) gb.mBkBrush;
             // // break ;
 
             // case CM_COLOR_STATIC: return cast(LRESULT) gb.mBkBrush; break;
             //     // // gb.log("CM_COLOR_STATIC rcvd");
             //     // auto hdc = cast(HDC) wParam;
-            //     // // gb.mBkBrush = CreateSolidBrush(gb.mBackColor.reff);
+            //     // // gb.mBkBrush = CreateSolidBrush(gb.mBackColor.cref);
             //     // if ((gb.mDrawFlag & 1) == 1) {
             //     //     // gb.log("text colored");
-            //     //     SetTextColor(hdc, gb.mForeColor.reff);
+            //     //     SetTextColor(hdc, gb.mForeColor.cref);
             //     // }
             //     // SetBkMode(hdc, TRANSPARENT) ;
-            //     // if (gb.mBackColor.value != gb.parent.mBackColor.value) SetBkColor(hdc, gb.mBackColor.reff);
+            //     // if (gb.mBackColor.value != gb.parent.mBackColor.value) SetBkColor(hdc, gb.mBackColor.cref);
             //     // return cast(LRESULT) gb.mBkBrush;
-            //     // return cast(LRESULT) CreateSolidBrush(gb.parent.mBackColor.reff);
+            //     // return cast(LRESULT) CreateSolidBrush(gb.parent.mBackColor.cref);
             //     return cast(LRESULT) gb.mBkBrush;
 
 

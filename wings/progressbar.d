@@ -81,7 +81,7 @@ private LRESULT pgbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         ProgressBar pgb = getControl!ProgressBar(refData) ;
         //  gb.log(message);
         switch (message) {
-            case WM_DESTROY : pgb.remSubClass(scID); break;
+            case WM_DESTROY : RemoveWindowSubclass(hWnd, &pgbWndProc, scID); break;
             // case WM_PAINT : pgb.paintHandler(); break;
             case WM_SETFOCUS : pgb.setFocusHandler(); break;
             case WM_KILLFOCUS : pgb.killFocusHandler(); break;

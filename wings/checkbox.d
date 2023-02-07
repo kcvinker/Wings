@@ -94,7 +94,8 @@ class CheckBox : Control {
         void finalize(UINT_PTR scID) { // Package
             // This is our destructor. Clean all the dirty stuff
             DeleteObject(this.mBkBrush) ;
-            this.remSubClass(scID);
+            RemoveWindowSubclass(this.mHandle, &cbWndProc, scID);
+            // this.remSubClass(scID);
         }
 }
 
@@ -147,7 +148,7 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                         if (!cb.mRightAlign) { // Adjusing rect. Otherwise, text will be drawn upon the check area
                             rct.left += 18 ;
                         } else {rct.right -= 18 ;}
-                        SetTextColor(nmc.hdc, cb.mForeColor.reff) ;
+                        SetTextColor(nmc.hdc, cb.mForeColor.cref) ;
                         DrawText(nmc.hdc, cb.text.toUTF16z, -1, &rct, cb.mTxtStyle) ;
                         return CDRF_SKIPDEFAULT ;
                         break ;
