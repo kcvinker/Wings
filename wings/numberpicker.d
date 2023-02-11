@@ -13,7 +13,8 @@ int npNumber = 1;
 wstring wcNpClass;
 bool isNpCreated;
 DWORD npStyle = WS_VISIBLE | WS_CHILD | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_HOTTRACK;
-DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX ;
+DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
+DWORD swp_flag = SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER;
 
 class NumberPicker : Control {
     this(Window parent, int x, int y, int w, int h) {
@@ -49,77 +50,30 @@ class NumberPicker : Control {
     this(Window parent, int x, int y) {this(parent, x, y, 100, 27);}
 
     final void create() {
+    	this.adjustNpStyles();
+        this.createUpdown();
+        this.createBuddy();
+        if (this.mHandle && this.mBuddyHandle) {
+            auto oldBuddy = cast(HWND)this.sendMsg(UDM_SETBUDDY, this.mBuddyHandle, 0); // set the edit as updown's buddy.
+            this.sendMsg(UDM_SETRANGE32, cast(WPARAM) this.mMinRange, cast(LPARAM) this.mMaxRange);
 
-    	this.adjustNpStyles() ;
-        this.mCtlId = Control.stCtlId ;
-        this.mMyRect = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
-        this.mHandle = CreateWindowEx( this.mExStyle,
-                                        mClsName.ptr,
-                                        null,
-                                        this.mStyle,
-                                        0, 0, 0, 0,
-                                        this.mParent.handle,
-                                        cast(HMENU) this.mCtlId,
-                                        appData.hInstance,
-                                        null);
+            // Collecting both controls rects
+            GetClientRect(this.mBuddyHandle, &this.mTBRect);
+            GetClientRect(this.mHandle, &this.mUDRect);
+            this.resizeBuddy();
+            SendMessageW(oldBuddy, CM_BUDDY_RESIZE, 0, 0);
 
-        if (this.mHandle) {     // Creating buddy edit control.
-            ++Control.stCtlId; // Increasing protected static member for next control iD
-            this.mIsCreated = true;
-            this.setSubClass(&npWndProc) ;
-            if (!this.mBaseFontChanged) this.mFont = this.mParent.font;
-            this.createLogFontInternal();
-            this.mBuddyCid = Control.stCtlId;
+            /*  This thing is a hack. The edit control is not turned on the...
+                vertical alignment without setting the WS_BORDER style.
+                But if we set that style, it will create a border around the edit.
+                However, when we draw edges of the edit, 3 of the borders will be deleted.
+                But, we need to manually erase the forth one.
+                And drawing a line with background color is the hack. */
 
-            // Let's create the buddy control aka edit control.
-            this.mBuddyHandle = CreateWindowEx( this.mBuddyExStyle,
-                                                "Edit".toUTF16z,
-                                                null,
-                                                this.mBuddyStyle,
-                                                this.mXpos,
-                                                this.mYpos,
-                                                this.mWidth,
-                                                this.mHeight,
-                                                this.mParent.handle,
-                                                cast(HMENU) this.mBuddyCid,
-                                                appData.hInstance,
-                                                null);
-            if (this.mBuddyHandle) {
-                this.mBuddySubClsID = Control.mSubClassId;
-                this.mBuddySubClsProc = &buddyWndProc;
-                ++Control.mSubClassId;
-                SendMessageW(this.mBuddyHandle, WM_SETFONT, cast(WPARAM) this.mFont.handle, cast(LPARAM) 1);
-                this.sendMsg(UDM_SETBUDDY, this.mBuddyHandle, 0); // This will set the edit as updown's buddy.
-
-                SetWindowSubclass(this.mBuddyHandle, &buddyWndProc, UINT_PTR(Control.mSubClassId), this.toDwPtr());
-                this.sendMsg(UDM_SETRANGE32, cast(WPARAM) this.mMinRange, cast(LPARAM) this.mMaxRange);
-
-                // Collecting both controls rects
-                GetClientRect(this.mBuddyHandle, &this.mTBRect);
-                GetClientRect(this.mHandle, &this.mUDRect);
-
-                /*  This thing is a hack. The edit control is not turned on the...
-                    vertical alignment without setting the WS_BORDER style.
-                    But if we set that style, it will create a border around the edit.
-                    However, when we draw edges of the edit, 3 of the borders will be deleted.
-                    But, we need to manually erase the forth one.
-                    And drawing a line with background color is the hack. */
-                this.mLineX = this.mBtnLeft ? this.mTBRect.left: this.mTBRect.right - 2;
-
-                DWORD swp_flag = SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER;
-                if (this.mBtnLeft) { // If button is on left side, place the edit at right side
-                    SetWindowPos(this.mBuddyHandle, HWND_TOP,
-                                    (this.mXpos + this.mUDRect.right), this.mYpos,
-                                    this.mTBRect.right, this.mTBRect.bottom, swp_flag);
-                } else {  // Else, place the edit at left side
-                    SetWindowPos(this.mBuddyHandle, HWND_TOP, this.mXpos, this.mYpos,
-                                    (this.mTBRect.right - 1), this.mTBRect.bottom, swp_flag);
-                }
-                //test_tb_rect();
-				this.displayValue;
-                ++Control.stCtlId;
-                ++Control.mSubClassId;
-            }
+            //test_tb_rect();
+            this.displayValue;
+            ++Control.stCtlId;
+            ++Control.mSubClassId;
         }
     }
 
@@ -248,6 +202,7 @@ class NumberPicker : Control {
     package :
 
     private :
+    // region private members
         bool mEditStarted;
         bool mEditFinished;
         bool mHideSel;
@@ -282,7 +237,9 @@ class NumberPicker : Control {
         EventHandler mOnMouseLeave;
         EventHandler mOnMouseEnter;
         MouseEventHandler mOnMouseMove;
+    // endregion private members
 
+    // region private functions
         void adjustNpStyles() { // Private
             if (this.mBtnLeft) {
                 this.mStyle ^= UDS_ALIGNRIGHT;
@@ -299,7 +256,66 @@ class NumberPicker : Control {
                 case Alignment.right : this.mBuddyStyle |= ES_RIGHT; break;
                 default : break;
             }
+        }
 
+        void createUpdown() { // Private
+            // Creating the updown control only.
+            this.mCtlId = Control.stCtlId ;
+            this.mMyRect = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
+            this.mHandle = CreateWindowEx( this.mExStyle,
+                                            mClsName.ptr,
+                                            null,
+                                            this.mStyle,
+                                            0, 0, 0, 0,
+                                            this.mParent.handle,
+                                            cast(HMENU) this.mCtlId,
+                                            appData.hInstance,
+                                            null);
+            if (this.mHandle) {
+                ++Control.stCtlId; // Increasing protected static member for next control iD
+                this.mIsCreated = true;
+                this.setSubClass(&npWndProc);
+                this.createLogFontInternal();
+            }
+        }
+
+        void createBuddy() { // Private
+            // Creating buddy edit control
+
+            this.mBuddyCid = Control.stCtlId;
+            if (this.mBtnLeft) this.mWidth -= 2; // To match the size of a button right control.
+            this.mBuddyHandle = CreateWindowEx( this.mBuddyExStyle,
+                                                "Edit".toUTF16z,
+                                                null,
+                                                this.mBuddyStyle,
+                                                this.mXpos,
+                                                this.mYpos,
+                                                this.mWidth,
+                                                this.mHeight,
+                                                this.mParent.handle,
+                                                cast(HMENU) this.mBuddyCid,
+                                                appData.hInstance,
+                                                null);
+            if (this.mBuddyHandle) {
+                this.mBuddySubClsID = Control.mSubClassId;
+                SetWindowSubclass(this.mBuddyHandle, &buddyWndProc, UINT_PTR(this.mBuddySubClsID), this.toDwPtr());
+                SendMessageW(this.mBuddyHandle, WM_SETFONT, cast(WPARAM) this.mFont.handle, cast(LPARAM) 1);
+                ++Control.mSubClassId;
+            }
+        }
+
+        void resizeBuddy() { // Private
+            // Place the edit control at proper coordinates
+            if (this.mBtnLeft) {
+                this.mLineX = this.mTBRect.left;
+                SetWindowPos(this.mBuddyHandle, HWND_TOP,
+                                (this.mXpos + this.mUDRect.right), this.mYpos,
+                                this.mTBRect.right, this.mTBRect.bottom, swp_flag);
+            } else {
+                this.mLineX = this.mTBRect.right - 3;
+                SetWindowPos(this.mBuddyHandle, HWND_TOP, this.mXpos, this.mYpos,
+                                (this.mTBRect.right - 2), this.mTBRect.bottom, swp_flag);
+            }
         }
 
         void setValueInternal(int delta) { // Private
@@ -356,9 +372,9 @@ class NumberPicker : Control {
             // this.remSubClass(subClsId );
         }
 
-        void finalizeBuddy(UINT_PTR subClsId) { // Private
-            RemoveWindowSubclass(this.mBuddyHandle, this.mBuddySubClsProc, subClsId );
-        }
+
+
+    // endregion private functions
 
 
 } // End of NumberPicker class
@@ -433,13 +449,15 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             case WM_MOUSEMOVE : np.npMouseMoveHandler(message, wParam, lParam); break;
 
             case WM_PAINT :
-                // Edit control needs to be painted by DefSubclassProc function.
-                // Otherwise, cursor and text will not be visible, So we need to call it.
+                // Let the control paint it's basic stuff.
                 DefSubclassProc(hWnd, message, wParam, lParam);
-                // Now, painting job is done and there is no area to update in this control.
-                // So, we can draw our control edges
-                //auto sw = StopWatch(AutoStart.no);
-                //sw.start();
+
+                /* We need WM_BORDER style to preserve the alignment of text in edit control.
+                 * But that will cause a border around the edit control and it will separate...
+                 * the updown and edit visualy. So we need to erase one border. It will be...
+                 * either right side of the edit or left side of the edit, depends upon where...
+                 * the bupown button locates. To erase the border, we just draw a line with...
+                 * edit's back color. */
                 HDC hdc = GetDC(hWnd);
                 DrawEdge(hdc, &np.mTBRect, BDR_SUNKENOUTER, np.mTopEdgeFlag);
                 DrawEdge(hdc, &np.mTBRect, BDR_RAISEDINNER, np.mBotEdgeFlag);
@@ -449,9 +467,7 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 SelectObject(hdc, fpen);
                 LineTo(hdc, np.mLineX, np.mTBRect.bottom - 1);
                 ReleaseDC(hWnd, hdc);
-                //sw.stop();
-                //print(" micro seconds", sw.peek.total!"usecs");  // lowest 37 micro, largest 370
-                return 0;
+                return 1;
                 //if (np.onPaint) {
                 //    PAINTSTRUCT ps ;
                 //    BeginPaint(hWnd, &ps) ;
@@ -461,7 +477,7 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 //}
             break;
 
-            case EM_SETSEL : return 1; break;
+            case EM_SETSEL : return 1; break; // To eliminate the text selection
             case CM_COLOR_EDIT :
                 if (np.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
@@ -503,9 +519,11 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                     //if (np.mEditStarted) np.mEditedText = np.getControlText(hWnd);
                 }
             break;
-
-            // case WM_NOTIFY :
-            //     print("em notify", 1) ; break;
+            /* We don't get this msg for the first NumberPicker. We will get this for...
+             * each one after the first NumberPicker. This is a fix for a strange problem.
+             * After sending the UDM_SETBUDDY message, the previous NumberPicker's buddy...
+             * will be sperated from it's updown. So we need to combine them once again. */
+            case CM_BUDDY_RESIZE: np.resizeBuddy(); break;
 
             default : return DefSubclassProc(hWnd, message, wParam, lParam) ; break;
         }
