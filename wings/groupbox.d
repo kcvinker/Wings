@@ -13,12 +13,6 @@ DWORD gb_exstyle = WS_EX_RIGHTSCROLLBAR| WS_EX_TRANSPARENT| WS_EX_CONTROLPARENT;
 class GroupBox : Control {
 
     this(Window parent, string txt, int x, int y, int w, int h) {
-        //mWidth = w ;
-        //mHeight = h ;
-        //mXpos = x ;
-        //mYpos = y ;
-        //mParent = parent ;
-        //mFont = parent.font ;
         mixin(repeatingCode);
         mControlType = ControlType.groupBox ;
         mText = txt ;
@@ -42,88 +36,87 @@ class GroupBox : Control {
     final void create() {
         //if (this.mBackColor.value == this.parent.mBackColor.value) this.isPaintBkg = true;
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
-        this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref ); //0x000015ff
-        this.mTmpText = this.mText;
-        this.mText = "";
+        this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref );
         this.createHandle();
         if (this.mHandle) {
             this.setSubClass(&gbWndProc);
-            // RedrawWindow(this.mHandle, null, null, RDW_INTERNALPAINT | RDW_NOCHILDREN);
+            this.getTextBounds();
 
         }
     }
 
-    // override final void backColor(uint value) {
-    //     this.mBackColor = Color(value);
-    //     // this.isPaintBkg = true;
-    //     if ((this.mDrawFlag & 2) != 2 ) this.mDrawFlag += 2;
-    //     if (this.mIsCreated) this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
-    //     this.checkRedrawNeeded();
-    // }
-    // override final backColor() {
+    override final void text(string value) {
+        this.mText = value;
+        if (this.mIsCreated) this.getTextBounds();
+        this.checkRedrawNeeded();
+    }
+
 
     private :
         HBRUSH mBkBrush;
         HPEN mPen;
         bool isPaintBkg;
-        string mTmpText;
+        int mTxtWidth;
+
+        void getTextBounds() {
+            HDC hdc = GetDC(this.mHandle);
+            scope(exit) ReleaseDC(this.mHandle, hdc);
+            SIZE ss;
+            SelectObject(hdc, this.mFont.handle);
+            GetTextExtentPoint32(hdc, this.mText.toUTF16z, this.mText.length, &ss );
+            this.mTxtWidth = ss.cx + 8;
+        }
 
 
 
         void drawText() {
             HDC hdc = GetDC(this.mHandle);
             scope(exit) ReleaseDC(this.mHandle, hdc);
-            // RECT rc;
-            SIZE ss;
             int yp = 11;
             SetBkMode(hdc, TRANSPARENT);
-            SelectObject(hdc, this.mFont.handle);
-            GetTextExtentPoint32(hdc, this.mTmpText.toUTF16z, this.mTmpText.length, &ss );
+
             SelectObject(hdc, this.mPen);
             MoveToEx(hdc, 10, yp, null);
-            LineTo(hdc, ss.cx + 10, yp);
-            // SetRect(&rc, 10, 0, ss.cx + 10, ss.cy + 10);
+            LineTo(hdc, this.mTxtWidth, yp);
 
+            SelectObject(hdc, this.font.handle);
             SetTextColor(hdc, this.mForeColor.cref);
-
-            TextOutW(hdc, 10, 0, this.mTmpText.toUTF16z, this.mTmpText.length);
-
-            // DrawText(hdc, this.mTmpText.toUTF16z, -1, &rc, DT_CENTER|DT_SINGLELINE );
+            TextOutW(hdc, 10, 0, this.mText.toUTF16z, this.mText.length);
 
         }
 
-        void drawTextDblBuff() {
-            RECT rc;
-            SIZE ss;
-            int yp = 11;
-            HDC hdc = GetDC(this.mHandle);
-            SelectObject(hdc, this.mFont.handle);
-            GetTextExtentPoint32(hdc, this.mTmpText.toUTF16z, this.mTmpText.length, &ss );
-            ss.cx += 10;
-            // ss.cy += 10;
-            HDC dcMem = CreateCompatibleDC(hdc);
-            int ndcMem = SaveDC(dcMem);
-            HBITMAP hbm = CreateCompatibleBitmap(hdc, ss.cx, ss.cy);
-            scope(exit) {
-                RestoreDC(dcMem, ndcMem);
-                DeleteObject(hbm);
-                DeleteDC(dcMem);
-                ReleaseDC(this.mHandle, hdc);
-            }
-            SelectObject(dcMem, hbm);
-            BitBlt(dcMem, 0, 0, ss.cx, ss.cy, hdc, 10, 0, SRCCOPY);
+        // void drawTextDblBuff() {
+        //     RECT rc;
+        //     SIZE ss;
+        //     int yp = 11;
+        //     HDC hdc = GetDC(this.mHandle);
+        //     SelectObject(hdc, this.mFont.handle);
+        //     GetTextExtentPoint32(hdc, this.mTmpText.toUTF16z, this.mTmpText.length, &ss );
+        //     ss.cx += 10;
+        //     // ss.cy += 10;
+        //     HDC dcMem = CreateCompatibleDC(hdc);
+        //     int ndcMem = SaveDC(dcMem);
+        //     HBITMAP hbm = CreateCompatibleBitmap(hdc, ss.cx, ss.cy);
+        //     scope(exit) {
+        //         RestoreDC(dcMem, ndcMem);
+        //         DeleteObject(hbm);
+        //         DeleteDC(dcMem);
+        //         ReleaseDC(this.mHandle, hdc);
+        //     }
+        //     SelectObject(dcMem, hbm);
+        //     BitBlt(dcMem, 0, 0, ss.cx, ss.cy, hdc, 10, 0, SRCCOPY);
 
-            SelectObject(dcMem, this.mPen);
-            MoveToEx(dcMem, 10, yp, null);
-            LineTo(dcMem, ss.cx, yp);
-            SetRect(&rc, 10, 0, ss.cx, ss.cy);
-            SetBkMode(dcMem, TRANSPARENT);
-            SelectObject(dcMem, this.mFont.handle);
-            SetTextColor(dcMem, this.mForeColor.cref);
-            DrawTextW(dcMem, this.mTmpText.toUTF16z, -1, &rc, DT_CENTER|DT_SINGLELINE );
-            // TextOutW(dcMem, 10, 0, this.mTmpText.toUTF16z, this.mTmpText.length);
-            BitBlt(hdc, 10, 0, ss.cx, ss.cy, dcMem, 0, 0, SRCCOPY);
-        }
+        //     SelectObject(dcMem, this.mPen);
+        //     MoveToEx(dcMem, 10, yp, null);
+        //     LineTo(dcMem, ss.cx, yp);
+        //     SetRect(&rc, 10, 0, ss.cx, ss.cy);
+        //     SetBkMode(dcMem, TRANSPARENT);
+        //     SelectObject(dcMem, this.mFont.handle);
+        //     SetTextColor(dcMem, this.mForeColor.cref);
+        //     DrawTextW(dcMem, this.mTmpText.toUTF16z, -1, &rc, DT_CENTER|DT_SINGLELINE );
+        //     // TextOutW(dcMem, 10, 0, this.mTmpText.toUTF16z, this.mTmpText.length);
+        //     BitBlt(hdc, 10, 0, ss.cx, ss.cy, dcMem, 0, 0, SRCCOPY);
+        // }
 
         void finalize(UINT_PTR scID) { // private
             // This is our destructor. Clean all the dirty stuff
@@ -155,41 +148,14 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_MOUSEWHEEL : gb.mouseWheelHandler(message, wParam, lParam); break;
             case WM_MOUSEMOVE : gb.mouseMoveHandler(message, wParam, lParam); break;
             case WM_MOUSELEAVE : gb.mouseLeaveHandler(); break;
-
-            // case CM_COLOR_EDIT :
-            // //     gb.log("cm ctl rcvd");
-            // //     auto hdc = cast(HDC) wParam;
-            // //     SetBkMode(hdc, TRANSPARENT) ;
-            // //     gb.mBkBrush = CreateSolidBrush(gb.mBackColor.cref);
-            // //     if (gb.mForeColor.value != 0x000000) SetTextColor(hdc, gb.mForeColor.cref) ;
-            //     return cast(LRESULT) gb.mBkBrush;
-            // // break ;
-
-            // case CM_COLOR_STATIC: return cast(LRESULT) gb.mBkBrush; break;
-            //     // // gb.log("CM_COLOR_STATIC rcvd");
-            //     // auto hdc = cast(HDC) wParam;
-            //     // // gb.mBkBrush = CreateSolidBrush(gb.mBackColor.cref);
-            //     // if ((gb.mDrawFlag & 1) == 1) {
-            //     //     // gb.log("text colored");
-            //     //     SetTextColor(hdc, gb.mForeColor.cref);
-            //     // }
-            //     // SetBkMode(hdc, TRANSPARENT) ;
-            //     // if (gb.mBackColor.value != gb.parent.mBackColor.value) SetBkColor(hdc, gb.mBackColor.cref);
-            //     // return cast(LRESULT) gb.mBkBrush;
-            //     // return cast(LRESULT) CreateSolidBrush(gb.parent.mBackColor.cref);
-            //     return cast(LRESULT) gb.mBkBrush;
+            case WM_GETTEXTLENGTH: return 0;
 
 
-            // break;
-
-            case WM_ERASEBKGND :  // TODO : We don't need to do this. Use WM_CTLCOLORSTATIC, and return an HBRUSH
+            case WM_ERASEBKGND :
                 if (gb.mDrawFlag ) {
                     auto hdc = cast(HDC) wParam;
                     RECT rc = gb.clientRect();
-                    rc.bottom -= 2;
-                    rc.top += 10;
                     FillRect(hdc, &rc, gb.mBkBrush);
-
                     return 1 ;
                 }
             break ;
@@ -197,7 +163,6 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_PAINT:
                 auto ret = DefSubclassProc(hWnd, message, wParam, lParam);
                 gb.drawText();
-                // gb.drawTextDblBuff();
                 return ret;
             break;
 
