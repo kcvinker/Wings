@@ -6,7 +6,7 @@ import wings.d_essentials;
 import wings.wings_essentials;
 
 private int rbNumber = 1 ;
-
+private wchar[] mClassName = ['B','u','t','t','o','n', 0];
 /**
  * RadioButton : Control
  */
@@ -21,9 +21,7 @@ class RadioButton : Control
         mStyle = WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON ;
         mExStyle = WS_EX_LTRREADING | WS_EX_LEFT ;
         mTxtStyle = DT_SINGLELINE | DT_VCENTER  ;
-        mBackColor = parent.mBackColor ;
-
-        mClsName = "Button" ;
+        mBackColor = parent.mBackColor;
         this.mName = format("%s_%d", "RadioButton_", rbNumber);
         ++rbNumber;
     }
@@ -32,7 +30,7 @@ class RadioButton : Control
 
     void create() {
     	this.setRbStyle();
-    	this.createHandle();
+    	this.createHandle(mClassName.ptr);
     	if (this.mHandle) {
             this.setSubClass(&rbWndProc) ;
             this.setRbSize() ;

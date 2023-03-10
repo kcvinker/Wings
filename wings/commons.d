@@ -82,10 +82,10 @@ package {
     // Window & Button are the control which supports gradient back colors.
     // So this struct will be helpful to store the required info.
     struct GradientColor {
-        RgbColor color1, color2;
+        Color color1, color2;
         this(uint c1, uint c2) {
-            this.color1 = RgbColor(c1);
-            this.color2 = RgbColor(c2);
+            this.color1 = Color(c1);
+            this.color2 = Color(c2);
         }
     }
 
@@ -155,6 +155,12 @@ package {
         return result;
     }
 
+    string makeString(T)(T item) {
+        static if (is(T == string)) return item;
+        return to!string(item);
+
+    }
+
     void printWinMsg(uint msg) {
         debug {
             import wings.message_map;
@@ -176,6 +182,7 @@ package {
         enum uint CM_TBTXTCHANGED = 9008;
         enum uint CM_HSCROLL = 9009;
         enum uint CM_VSCROLL = 9010;
+        enum uint CM_BUDDY_RESIZE = 9011;
 
 
 

@@ -8,6 +8,7 @@ private DWORD tvStyle = WS_BORDER | WS_CHILD | WS_VISIBLE | TVS_HASLINES | TVS_H
                         TVS_LINESATROOT | TVS_DISABLEDRAGDROP;
 
 alias TreeNodeNotifyHandler = void delegate(TreeNode node, string prop, void* data);
+private wchar[] mClassName = ['S','y','s','T','r','e','e','V','i','e','w','3','2', 0];
 
 class TreeView : Control {
 
@@ -20,7 +21,6 @@ class TreeView : Control {
         mBackColor(0xFFFFFF) ;
         mForeColor(defForeColor);
         mLineClr(defForeColor);
-        mClsName = "SysTreeView32" ;
         this.mName = format("%s_%d", "TreeView_", tvNumber);
         ++tvNumber;
     }
@@ -30,7 +30,7 @@ class TreeView : Control {
 
     void create() {
     	this.setTvStyle();
-    	this.createHandle();
+    	this.createHandle(mClassName.ptr);
     	if (this.mHandle) {
             this.setSubClass(&tvWndProc) ;
             if (this.mBackColor.value != 0xFFFFFF) this.sendMsg(TVM_SETBKCOLOR, 0, this.mBackColor.cref);
@@ -165,9 +165,6 @@ class TreeView : Control {
         void nodeNotifyHandler(TreeNode node, string prop, void* data ) {
             print("Not implemented");
         }
-
-
-
 
 } // End of TreeView class
 

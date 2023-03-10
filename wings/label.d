@@ -6,7 +6,7 @@ import wings.wings_essentials;
 
 
 int lblNumber = 1;
-
+private wchar[] mClassName = ['S', 't', 'a', 't', 'i', 'c', 0];
 class Label : Control {
     this(Window parent, string txt, int x, int y, int w, int h) {
         mixin(repeatingCode);
@@ -17,9 +17,7 @@ class Label : Control {
         mExStyle = 0 ;
         mAutoSize = true;
         mBackColor = parent.mBackColor;
-        mForeColor(defForeColor) ;
-
-        mClsName = "Static" ;
+        mForeColor(defForeColor);
         this.mName = format("%s_%d", "Label+", lblNumber);
         ++lblNumber;
         //mBorder = LabelBorder.singleLine;
@@ -34,7 +32,7 @@ class Label : Control {
     final void create() {
         if (this.mBorder != LabelBorder.noBorder) adjustBorder();
         this.checkForAutoSize();
-        this.createHandle();
+        this.createHandle(mClassName.ptr);
 
         if (this.mHandle) {
             if (this.mAutoSize) this.calculateAutoSize();

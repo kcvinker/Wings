@@ -11,7 +11,7 @@ import wings.date_and_time ;
 
 int calNumber = 1 ;
 DWORD calExStyle = 0 ;
-
+private wchar[] mClassName = ['S', 'y', 's', 'M', 'o', 'n', 't', 'h', 'C', 'a', 'l', '3', '2', 0];
 enum MCS_NOTRAILINGDATES = 0x40 ;
 enum MCS_SHORTDAYSOFWEEK = 0x80 ;
 enum MCM_SETCURRENTVIEW = MCM_FIRST + 32 ;
@@ -74,7 +74,6 @@ class Calendar : Control {
         mControlType = ControlType.calendar ;
         this.mStyle = WS_CHILD | WS_VISIBLE ;
         this.mExStyle = 0 ;
-        this.mClsName = "SysMonthCal32";
         this.mName = format("%s_%d", "Calendar_", calNumber);
         ++calNumber ;
 
@@ -85,7 +84,7 @@ class Calendar : Control {
 
     final void create() {
     	this.setCalenderStyles() ;
-        this.createHandle() ;        // Calling base function
+        this.createHandle(mClassName.ptr) ;        // Calling base function
         if (this.mHandle) {
             this.setSubClass(&calWndProc) ;
             RECT rct ;
@@ -98,6 +97,8 @@ class Calendar : Control {
 
         }
     }
+
+
 
     private :
     	DateTime mValue ;

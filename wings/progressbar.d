@@ -13,6 +13,7 @@ DWORD pgbStyle = WS_CHILD | WS_VISIBLE | PBS_SMOOTH | WS_OVERLAPPED;
 enum PBM_SETSTATE  = (WM_USER+16);
 enum PBM_GETSTATE  = 0x0420;
 DWORD pgbExStyle = 0;
+private wchar[] mClassName = ['m','s','c','t','l','s','_','p','r','o','g','r','e','s','s','3','2', 0];
 
 enum ProgressBarState {normal = 1, error, paused}
 enum ProgressBarStyle {blockStyle, marqueeStyle}
@@ -31,7 +32,6 @@ class ProgressBar : Control {
 		mStep = 1;
         mSpeed = 30;
         mForeColor(0x000000);
-        mClsName = "msctls_progress32";
         this.mName = format("%s_%d", "ProgressBar_", pgbNumber);
         ++pgbNumber;
     }
@@ -42,7 +42,7 @@ class ProgressBar : Control {
     final void create() {
 		if (this.mBarStyle == ProgressBarStyle.marqueeStyle) this.mStyle |= PBS_MARQUEE;
 		if (this.mVertical) this.mStyle |= PBS_VERTICAL;
-        this.createHandle();
+        this.createHandle(mClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&pgbWndProc);
             if (this.mMinValue != 0 || this.mMaxValue != 100)

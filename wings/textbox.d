@@ -6,7 +6,7 @@ import wings.wings_essentials;
 import std.datetime.stopwatch ;
 
 private int tbNumber = 1 ;
-
+private wchar[] mClassName = ['E', 'd', 'i', 't', 0];
 
 class TextBox : Control {
 
@@ -20,8 +20,6 @@ class TextBox : Control {
         this.mExStyle =  0x00000204 ;
         this.mBackColor(0Xffffff); // White
         this.mForeColor(0x000000); // Black
-        this.mClsName = "Edit" ;
-
         ++tbNumber;
     }
 
@@ -31,7 +29,7 @@ class TextBox : Control {
     void create() {
     	this.setTbStyle();
         // printf("textbox style %X", this.mStyle) ;
-    	this.createHandle();
+    	this.createHandle(mClassName.ptr);
     	if (this.mHandle) {
 
             this.setSubClass(&tbWndProc) ;

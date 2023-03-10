@@ -160,26 +160,21 @@ class Control {
     protected :
 		DWORD mStyle;
         DWORD mExStyle;
-        wstring mClsName;
         string mText;
         string mName;
         int mWidth;
         int mHeight;
         int mXpos;
         int mYpos;
-
-        static int stCtlId = 100 ;
-
+        int mCtlId;
         bool mIsCreated;
-        bool mBaseFontChanged ;
+        bool mBaseFontChanged;
         bool mVisible = true;
         Font mFont;
-
-
-
         ControlType mControlType;
-        static int mSubClassId = 1000 ;
-        int mCtlId ;
+        static int mSubClassId = 1000;
+        static int stCtlId = 100 ;
+
 
 
 
@@ -204,12 +199,12 @@ class Control {
         HBRUSH mBkBrush;
         Window mParent ;
 
-        final void createHandle() {  // protected
+        final void createHandle(wchar* clsname) {  // protected
             // This function works for almost all controls except combo box.
             // This will save us 150+ lines of code.
             this.mCtlId = Control.stCtlId ;
             this.mHandle = CreateWindowEx(  this.mExStyle,
-                                            this.mClsName.ptr,
+                                            clsname,
                                             this.mText.toUTF16z,
                                             this.mStyle,
                                             this.mXpos,
@@ -225,6 +220,10 @@ class Control {
                 this.mIsCreated = true;
                 if (!this.mBaseFontChanged) this.mFont = this.mParent.font;
                 this.createLogFontInternal();
+                // writefln("TVI_ROOT %s", TVI_ROOT);
+                // writefln("TVI_FIRST %s", TVI_FIRST);
+                // writefln("TVI_LAST %s", TVI_LAST);
+                // writefln("TVI_SORT %s", TVI_SORT);
             }
         }
 

@@ -55,10 +55,7 @@ class ComboBox : Control {
         mExStyle = WS_EX_CLIENTEDGE ;
         mBackColor(defBackColor) ;
         mForeColor(defForeColor) ;
-        mSelIndex = -1 ;
-        //mBClrRef = getClrRef(defBackColor) ;
-        //mFClrRef = getClrRef(defForeColor) ;
-        mClsName = "ComboBox" ;
+        mSelIndex = -1;
         this.mName = format("%s_%d", "ComboBox_", cmbNumber);
         ++cmbNumber;
     }
@@ -118,12 +115,12 @@ class ComboBox : Control {
     /// Add an item into ComboBox's items collection.
     void addItem(T)(T value) {
         if (this.mIsCreated) {
-            auto sitem = value.to!string;
+            auto sitem = value.makeString();
             this.mItems ~= sitem;
             auto witem = sitem.toUTF16z;
             this.sendMsg(CB_ADDSTRING, 0, witem);
         } else {
-            this.mItems ~= value.to!string;
+            this.mItems ~= value.makeString();
         }
     }
 
@@ -131,32 +128,33 @@ class ComboBox : Control {
     void addRange(T)( T[] newItems) {
         if (this.mIsCreated) {
             foreach (item ; newItems) {
-                auto witem = toUTF16z(item) ;
-                this.mItems ~= item.to!string;
+                auto sitem = item.makeString();
+                auto witem = toUTF16z(sitem) ;
+                this.mItems ~= sitem;
                 this.sendMsg(CB_ADDSTRING, 0, witem);
             }
         } else {
-            foreach (item; newItems) this.mItems ~= item.to!string;
+            foreach (item; newItems) this.mItems ~= item.makeString();
         }
     }
 
     void addRange(T...)( T newItems) {
         if (this.mIsCreated) {
             foreach (item ; newItems) {
-                auto sitem = item.to!string;
+                auto sitem = item.makeString();
                 auto witem = sitem.toUTF16z;
                 this.mItems ~= sitem;
                 this.sendMsg(CB_ADDSTRING, 0, witem) ;
             }
         } else {
-            foreach (value; newItems) this.mItems ~= value.to!string;
+            foreach (value; newItems) this.mItems ~= value.makeString();
         }
     }
 
     /// Remove the given item from ComboBox's items collection.
     void removeItem(T)(T item) {
         zstring cmbItem = item.toUTF16z ;
-        string myItem = item.to!string;
+        string myItem = item.makeString();
         if (this.mItems.length > 0) {
             this.mItems = this.mItems.remove!(a => a == myItem) ;
             if (this.mIsCreated) { // Remove item from combo also.
@@ -210,7 +208,7 @@ class ComboBox : Control {
         }
         this.mBkBrush = this.mBackColor.getBrush();
         this.mHandle = CreateWindowEx(  this.mExStyle,
-                                        mClsName.ptr,
+                                        this.mClassName.ptr,
                                         this.mText.toUTF16z,
                                         this.mStyle,
                                         this.mXpos,
@@ -245,6 +243,7 @@ class ComboBox : Control {
         bool tbMLDownHappened, tbMRDownHappened ;
 		HBRUSH mBkBrush ;
 		HWND mOldHwnd ;
+        static wchar[] mClassName = ['C', 'o', 'm', 'b', 'o', 'B', 'o', 'x', 0];
         //ComboInfo myInfo ;
 
 
@@ -374,7 +373,6 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
             case CM_CTLCOMMAND :
                 auto nCode = HIWORD(wParam) ;
-                print("ncode ", nCode);
                 switch (nCode) {
                     case CBN_SELCHANGE :
                         if (cmb.onSelectionChanged) cmb.onSelectionChanged(cmb, new EventArgs());
@@ -516,13 +514,13 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             case CM_COLOR_EDIT:
                 // Here, we receive color changing message for text box of combo.
                 // NOTE: this is only work for text typing combo box.
-                if (cmb.mBackColor.value != defBackColor || cmb.mForeColor.value != defForeColor) {
+                if (cmb.mDrawFlag) {
                     auto hdc = cast(HDC) wParam ;
                     SetBkMode(hdc, TRANSPARENT) ;
-                    if (cmb.mForeColor.value != defForeColor) SetTextColor(hdc, cmb.mForeColor.cref) ;
-                    cmb.mBkBrush = CreateSolidBrush(cmb.mBackColor.cref);
-                    return cast(LRESULT) cmb.mBkBrush ;
+                    if (cmb.mDrawFlag & 1) SetTextColor(hdc, cmb.mForeColor.cref) ;
+                    if (cmb.mDrawFlag & 2) SetBkColor(hdc, cmb.mBackColor.cref);
                 }
+                return cast(LRESULT) cmb.mBkBrush ;
             break;
 
             case WM_MOUSEMOVE:

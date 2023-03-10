@@ -1,5 +1,16 @@
 module wings.listview; // Created on : 01-Jun-22 11:26:46 AM
 
+/* Usage Manual.
+    Constructor = auto lv = new ListView(frm, 100, 50, 200, 300); // frm is the form class instance
+    Create handle = lv.create();
+    Add column = addColumn(text [width [image_index]]);
+                addColumns(names);
+                addColumns(names_array, width_array);
+    Add item =
+
+
+*/
+
 
 import std.conv ;
 import std.algorithm ;
@@ -10,7 +21,7 @@ import wings.imagelist ;
 //----------------------------------------------------
 
 int bottomClrAdj = 11;
-
+private wchar[] mClassName = ['S','y','s','L','i','s','t','V','i','e','w','3','2', 0];
 int lvNumber = 1 ;
 wstring wcLvClass ;
 DWORD lvStyle = WS_VISIBLE|WS_CHILD|WS_CLIPCHILDREN|WS_CLIPSIBLINGS|LVS_REPORT|WS_BORDER|LVS_ALIGNLEFT|LVS_SINGLESEL;
@@ -26,7 +37,6 @@ class ListView : Control {
     this(Window parent, int x, int y, int w, int h) {
         if (!lvCreated) {
             lvCreated = true;
-            wcLvClass = "SysListView32";
             appData.iccEx.dwICC = ICC_LISTVIEW_CLASSES ;
             InitCommonControlsEx(&appData.iccEx);
         }
@@ -42,7 +52,6 @@ class ListView : Control {
         mForeColor(defForeColor);
         mHdrBackColor(0xb3cccc);
         mHdrForeColor(0x000000);
-        mClsName = wcLvClass ;
         mHdrFont = parent.font;
         this.mName = format("%s_%d", "ListView_", lvNumber);
         ++lvNumber;
@@ -55,7 +64,7 @@ class ListView : Control {
 
     final void create() { //=======================================================CREATE FUNC
     	this.adjustLVStyles() ;
-        this.createHandle();
+        this.createHandle(mClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&lvWndProc) ;
             this.setLvExStyles();
@@ -103,6 +112,21 @@ class ListView : Control {
             this.addColumnInternal(lvc);
         }
 
+        final void addColumns(string[] names... ) {
+            foreach (name; names) {
+                auto lvc = new ListViewColumn(name);
+                this.addColumnInternal(lvc);
+            }
+        }
+
+        final void addColumns(string[] names, int[] widths ) {
+            if (names.length != widths.length) return;
+            foreach (i, name; names) {
+                auto lvc = new ListViewColumn(name, widths[i]);
+                this.addColumnInternal(lvc);
+            }
+        }
+
 
         /// Set the back color for header. Use headerCurve for adjust the curvy look.
         final void headerBackColor(uint value) {
@@ -125,14 +149,13 @@ class ListView : Control {
         }
 
         /// Adds a row of items to listview. Only for Report view.
-        void addRow(T...)(T items) {
+        void addRow(string[] items...) {
             if (this.mLvStyle != ListViewStyle.report || !this.mIsCreated) return;
             auto iLen = items.length;
-            auto lvItem = new ListViewItem(items[0].toString);
+            auto lvItem = new ListViewItem(items[0]);
             this.addItemInternal(lvItem);
             for (int i = 1; i < iLen; ++i) {
-                auto sItem = items[i].toString();
-                this.addSubItemInternal(sItem, lvItem.index, i);
+                this.addSubItemInternal(items[i], lvItem.index, i);
             }
         }
 
@@ -176,6 +199,13 @@ class ListView : Control {
         void addSubItem(T)(T subItem, int itemIndex, int subIndx, int imgIndx = -1) {
             if (this.mIsCreated && this.mLvStyle == ListViewStyle.report) {
                 this.addSubItemInternal(subItem.toString, itemIndex, subIndx, imgIndx );
+            }
+        }
+
+        final void deleteItem(int index) {
+            if (this.mIsCreated && this.mItems.length > 0) {
+                this.sendMsg(LVM_DELETEITEM, index, 0);
+                // TODO delete from mItems
             }
         }
 
@@ -270,63 +300,49 @@ class ListView : Control {
         }
         final override uint backColor() {return this.mBackColor.value;}
 
-        // final int selectedIndex() {return this.mSelIndex;}
-        // final ListViewItem selectedItem() {return this.mSelItem;}
+        /// Get or set selected index of listview item
         mixin finalProperty!("selectedIndex", this.mSelIndex);
-        //final void alignItemTop(bool value) {this.mitemTopAlign = value;}
 
+        /// Get listview columns collection
         final ListViewColumn[] columns() {return this.mColumns;}
 
-        // final bool alignItemTop() {return this.mitemTopAlign;}
-        // final void alignItemTop(bool value) {this.mitemTopAlign = value;}
+        /// Get or set align item top property
         mixin finalProperty!("alignItemTop", this.mitemTopAlign);
 
-        // final bool hideSelection() {return this.mHideSel;}
-        // final void hideSelection(bool value) {this.mHideSel = value;}
+        /// Get or set hide selection
         mixin finalProperty!("hideSelection", this.mHideSel);
 
-        // final bool multiSelection() {return this.mMultiSel;}
-        // final void multiSelection(bool value) {this.mMultiSel = value;}
+        /// Get or set multi selection property
         mixin finalProperty!("multiSelection", this.mMultiSel);
 
-        // final bool fullRowSelection() {return this.mFullRowSel;}
-        // final void fullRowSelection(bool value) {this.mFullRowSel = value;}
+        /// Get or set full row selecttion
         mixin finalProperty!("fullRowSelection", this.mFullRowSel);
 
-        // final bool hasCheckBox() {return this.mHasCheckBox;}
-        // final void hasCheckBox(bool value) {this.mHasCheckBox = value;}
+        /// Get or set if this list view has a check box.
         mixin finalProperty!("hasCheckBox", this.mHasCheckBox);
 
-        // final bool showGridLines() {return this.mShowGridLines;}
-        // final void showGridLines(bool value) {this.mShowGridLines = value;}
+        /// Get or set show grid lines property. Default is true
         mixin finalProperty!("showGridLines", this.mShowGridLines);
 
-        // final bool oneClickActivate() {return this.mOneClickAct;}
-        // final void oneClickActivate(bool value) {this.mOneClickAct = value;}
+        /// Get or set one click activate feature.
         mixin finalProperty!("oneClickActivate", this.mOneClickAct);
 
-        // final bool hotTrackSelection() {return this.mHotTrackSel;}
-        // final void hotTrackSelection(bool value) {this.mHotTrackSel = value;}
+        /// Get or set hot track selection. Means, if mouse is over an item, it will be selected
         mixin finalProperty!("hotTrackSelection", this.mHotTrackSel);
 
-        // final bool editLabel() {return this.mEditLabel;}
-        // final void editLabel(bool value) {this.mEditLabel = value;}
+        /// Get or set edit label property.
         mixin finalProperty!("editLabel", this.mEditLabel);
 
-        // final bool noHeaders() {return this.mNoHeader;}
-        // final void noHeaders(bool value) {this.mNoHeader = value;}
+        /// Get or set no headers property
         mixin finalProperty!("noHeaders", this.mNoHeader);
 
-        // final ListViewStyle viewStyle() {return this.mLvStyle;}
-        // final void viewStyle(ListViewStyle value) {this.mLvStyle = value;}
+        /// Get or set view style. Report view is default
         mixin finalProperty!("viewStyle", this.mLvStyle);
 
-        final void deleteItem(int index) {
-            if (this.mIsCreated && this.mItems.length > 0) {
-                this.sendMsg(LVM_DELETEITEM, index, 0);
-                // TODO delete from mItems
-            }
-        }
+        final int headerHeight() {return this.mHdrHeight;}
+
+
+
 
     // Event section
     EventHandler onSelectionChanged, onCheckedChanged, onItemClicked, onItemDblClicked, onItemHover;
@@ -336,19 +352,8 @@ class ListView : Control {
         ListViewItem mSelItem;
         bool mEditLabel;
         bool mDrawHeader; // Need this to check in WM_NOTIFY msg // TODO - Rename this.
-
         HWND hwLabel;
         HWND hwHeader;
-
-
-
-
-
-        // void finalizeHeader(UINT_PTR subClsId) {
-        //     RemoveWindowSubclass(this.mHandle, this.wndProcPtr, subClsId);
-        // }
-
-
 
 
     private :
@@ -501,7 +506,7 @@ class ListView : Control {
 
             // Set some brushes for coloring.
             this.mHdrDefBkBrush = CreateSolidBrush(this.mHdrBackColor.cref);
-            this.mHdrHotBkBrush = this.mHdrBackColor.getHotBrush(1.2);
+            this.mHdrHotBkBrush = this.mHdrBackColor.getHotBrushEx(20);
             this.mHdrPen = CreatePen(PS_SOLID, 1, 0x00FFFFFF);
         }
 
@@ -820,14 +825,14 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     break;
                     case NM_CLICK:
                         auto nmia = cast(NMITEMACTIVATE *) lParam;
-                        lv.log(nmia.uOldState);
+                        // lv.log(nmia.uOldState);
                         if (lv.onItemClicked) {
                             auto ea = new EventArgs();
                             lv.onItemClicked(lv, ea);
                         }
                     break;
                     case NM_HOVER:
-                        print("hover test");
+                        // print("hover test");
                         if (lv.onItemHover) {
                             auto ea = new EventArgs();
                             lv.onItemHover(lv, ea);
@@ -929,20 +934,22 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             break;
 
             case WM_MOUSELEAVE :
-                /* When mouse leaves the header, we need to set flag as false and repaint */
-                //if (lv.mOldHotHdrIndx != -1) lv.mColumns[lv.mOldHotHdrIndx].mIsHotItem = false;
-                //lv.mOldHotHdrIndx = -1;
+                /* When mouse leaves the header, we need to set flag to false and repaint */
                 lv.mHotHdr = -1;
-
             break;
 
             case HDM_LAYOUT :
+                /* Set the window pos structures fields, so that windows will adjust our header & lv */
                 if (lv.mChangeHdrHeight) {
                     LPHDLAYOUT pHl = cast(LPHDLAYOUT) lParam;
-                    LRESULT res = DefSubclassProc(hWnd, message, wParam, lParam);
-                    WINDOWPOS* wp = pHl.pwpos;
-                    wp.cy = lv.mHdrHeight;
-                    return res;
+                    pHl.pwpos.hwnd = hWnd;
+                    pHl.pwpos.flags = SWP_FRAMECHANGED;
+                    pHl.pwpos.x = pHl.prc.left;
+                    pHl.pwpos.y = 0;
+                    pHl.pwpos.cx = (pHl.prc.right - pHl.prc.left);
+                    pHl.pwpos.cy = lv.mHdrHeight;
+                    pHl.prc.top =lv.mHdrHeight;
+                    return 1;
                 }
             break;
 
@@ -962,8 +969,6 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 ReleaseDC(hWnd, hdc);
                 return 0;
             break;
-
-
             default : return DefSubclassProc(hWnd, message, wParam, lParam) ;break;
         }
 

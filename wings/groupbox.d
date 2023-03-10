@@ -9,6 +9,7 @@ int gbNumber = 1 ;
 DWORD gb_style = WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP |
                 WS_OVERLAPPED| WS_CLIPCHILDREN| WS_CLIPSIBLINGS;
 DWORD gb_exstyle = WS_EX_RIGHTSCROLLBAR| WS_EX_TRANSPARENT| WS_EX_CONTROLPARENT;
+private wchar[] mClassName = ['B','u','t','t','o','n', 0];
 
 class GroupBox : Control {
 
@@ -19,8 +20,6 @@ class GroupBox : Control {
         mStyle = gb_style; // WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP ;
         mExStyle = gb_exstyle; // WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT ;
         mBackColor = parent.mBackColor ;
-
-        mClsName = "Button" ;
         this.mName = format("%s_%d", "GroupBox_", gbNumber);
         ++gbNumber;
     }
@@ -37,7 +36,7 @@ class GroupBox : Control {
         //if (this.mBackColor.value == this.parent.mBackColor.value) this.isPaintBkg = true;
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref );
-        this.createHandle();
+        this.createHandle(mClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&gbWndProc);
             this.getTextBounds();

@@ -76,7 +76,7 @@ enum TicPosition {downSide, upSide, leftSide, rightSide, bothSide} // For trackB
 enum ChannelStyle {classic, outline} // For Trackbar
 enum TrackChange {none, arrowLow, arrowHigh, pageLow, pageHigh, mouseClick, mouseDrag} // For TrackBar
 enum NodeOps {addNode, insertNode, addChild, insertChild} // For TreeView
-enum ProgressBarStyle {blockStyle, MarqueeStyle}
+
 
 
 

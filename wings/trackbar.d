@@ -6,6 +6,8 @@ import wings.d_essentials;
 import wings.wings_essentials;
 
 private int tkbNumber = 1 ;
+private wchar[] mClassName = ['m','s','c','t','l','s','_','t','r','a','c','k','b','a','r','3','2', 0];
+
 enum U16_MAX = 1 << 16;
 enum THUMB_PAGE_HIGH = 3;
 enum THUMB_PAGE_LOW = 2;
@@ -33,12 +35,10 @@ class TrackBar : Control {
     this (Window parent, int x, int y, int w, int h)
     {
         mixin(repeatingCode); // Setting size, position, parent & font
-        mClsName = "msctls_trackbar32";
         mName = format("TrackBar_%d", tkbNumber);
         mControlType = ControlType.trackBar;
         mStyle = WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS;
         mExStyle = WS_EX_RIGHTSCROLLBAR | WS_EX_LTRREADING |WS_EX_LEFT;
-
         mBackColor = parent.mBackColor;
         mTicWidth = 1;
         mTicLen = 4;
@@ -53,7 +53,6 @@ class TrackBar : Control {
         mChannelColor(0xc2c2a3);
         mSelColor(0x99ff33);
         mTicColor(0x3385ff);
-
         ++tkbNumber;
     }
 
@@ -107,23 +106,18 @@ class TrackBar : Control {
     //---------------------------------------------------------------------[20] Value
 
 
-
-
-
-
-
     final void create() {
         // import std.stdio;
     	this.setTkbStyle();
-    	this.createHandle();
+    	this.createHandle(mClassName.ptr);
     	if (this.mHandle) {
             this.setSubClass(&tkbWndProc);
             if (this.mCustDraw) this.prepareForCustDraw();
             this.sendInitialMessages();
             if (this.mCustDraw) this.calculateTics();
             if (this.mSelRange) this.mSelBrush = CreateSolidBrush(this.mSelColor.cref);
-            auto x = this.sendMsg(TBM_GETPTICS, 0, 0);
-            DWORD* y = cast(DWORD*) x;
+            //auto x = this.sendMsg(TBM_GETPTICS, 0, 0);
+            //DWORD* y = cast(DWORD*) x;
             // this.log(y[2], " track");
         }
     }

@@ -9,55 +9,35 @@ import wings.enums ;
 import wings.commons ;
 
 struct GradColor {
-    RgbColor c1;
-    RgbColor c2;
+    Color c1;
+    Color c2;
 }
 
 struct Gradient {
 	GradColor gcDef;
 	GradColor gcHot ;
     bool rtl;
-    // Hbrush defGBrush;
-	// Hbrush hotGBrush;
+    int iAdj = 20; // Value to add or subtract to/from RGB value.
 	HPEN defPen;
 	HPEN hotPen;
-    // HBRUSH frmBrush;
-    // HBRUSH hotBrush;
 
-	// this(uint c1, uint c2, GradientStyle orient) {
-	// 	this.clr1 = RgbColor(c1) ;
-	// 	this.clr2 = RgbColor(c2) ;
-	// 	this.orientation = orient ;
-	// }
-
-    // this(RgbColor c1, RgbColor c2, GradientStyle orient) {
-    //     this.clr1 = c1 ;
-    //     this.clr2 = c2 ;
-    //     this.orientation = orient ;
-    // }
-
-    ~this() {
-        // if (this.frmBrush) DeleteObject(this.frmBrush);
+    ~this() { // Destructor
         if (this.defPen) DeleteObject(this.defPen);
         if (this.hotPen) DeleteObject(this.hotPen);
-        // if (this.hotBrush) DeleteObject(this.hotBrush);
     }
 
     void setData(uint c1, uint c2, bool r2l = false) {
-        this.gcDef.c1 = RgbColor(c1);
-        this.gcDef.c2 = RgbColor(c2);
-        double hotAdj = this.gcDef.c1.isDark() ? 1.5 : 1.2;
-        double hotAdj2 = this.gcDef.c2.isDark() ? 1.5 : 1.2;
+        this.gcDef.c1 = Color(c1);
+        this.gcDef.c2 = Color(c2);
+        // double hadj = this.gcDef.c1.isDark() ? 1.5 : 1.2;
+        // double hadj2 = this.gcDef.c2.isDark() ? 1.5 : 1.2;
 
-        this.gcHot.c1 = this.gcDef.c1.changeShadeRGB(hotAdj);
-        this.gcHot.c2 = this.gcDef.c2.changeShadeRGB(hotAdj2);
-        RgbColor frmRc = this.gcDef.c1.changeShadeRGB(0.6);
+        this.gcHot.c1 = this.gcDef.c1.changeShadeColorEx(this.iAdj);
+        this.gcHot.c2 = this.gcDef.c2.changeShadeColorEx(this.iAdj);
+        Color frmRc = this.gcDef.c1.changeShadeColor(0.6);
         this.defPen = CreatePen(PS_SOLID, 1, frmRc.cref);
         this.hotPen = CreatePen(PS_SOLID, 1, this.gcHot.c1.makeFrameColor(0.3));
         this.rtl = r2l;
-        print("def pen when created ", this.defPen);
-        // this.frmBrush = CreateSolidBrush(this.gcDef.c1.makeFrameColor(0.5));
-        // this.hotBrush = CreateSolidBrush(this.gcHot.c2.makeFrameColor(0.5));
     }
 
     // Gradient changeColors(double value) const {
@@ -68,7 +48,7 @@ struct Gradient {
     // }
 }
 
-package HBRUSH createGradientBrush(HDC dc, RECT rct, RgbColor c1, RgbColor c2, bool t2b = true ) {
+package HBRUSH createGradientBrush(HDC dc, RECT rct, Color c1, Color c2, bool t2b = true ) {
     HBRUSH tBrush;
     HDC memHDC = CreateCompatibleDC(dc);
     HBITMAP hBmp = CreateCompatibleBitmap(dc, rct.right, rct.bottom);

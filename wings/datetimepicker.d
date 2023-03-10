@@ -1,6 +1,6 @@
 
 // Created on 08-May-2022 10:48:00
-module wings.datetimepicker ;
+module wings.datetimepicker ; // Change the wndproc code - 09-feb-2023
 
 import wings.d_essentials;
 import std.conv : to ;
@@ -11,7 +11,7 @@ import wings.date_and_time ;
 
 int dtpNumber = 1 ;
 bool isDtpInit = false;
-
+private wchar[] mClassName = ['S','y','s','D','a','t','e','T','i','m','e','P','i','c','k','3','2', 0];
 
 enum DWORD DTN_FIRST  = (0U-740U) ;
 enum DWORD MCS_NOTRAILINGDATES = 0x40 ;
@@ -67,8 +67,8 @@ class DateTimePicker : Control {
         this.mExStyle = 0 ;
         this.mFormat = DtpFormat.custom ;
         this.mFormatString = " dd-MMM-yyyy";
-        this.mClsName = "SysDateTimePick32" ;
         ++dtpNumber ;
+
     }
 
     this(Window p ) { this(p, 20, 20, 140, 25) ; }
@@ -76,11 +76,10 @@ class DateTimePicker : Control {
 
     final void create() {
     	this.setDtpStyles() ;
-        this.createHandle() ;
+        this.createHandle(mClassName.ptr) ;
         if (this.mHandle) {
             this.setSubClass(&dtpWndProc) ;
             this.afterCreationStyling() ;
-
         }
     }
 

@@ -10,13 +10,14 @@ import std.stdio;
 //------------------------------------------------------
 
 //private DWORD btnStyle = WS_CHILD | BS_NOTIFY | WS_TABSTOP | WS_VISIBLE ;
-private DWORD btnExStyle = 0;
-private Button[] buttonList;
+// private DWORD btnExStyle = 0;
+// private Button[] buttonList;
 private static int btnNumber = 1;
-private int subClsID = 1001;
+// private int subClsID = 1001;
 private const int mMouseClickFlag = 0b1 ;
 private const int mMouseOverFlag = 0b1000000 ;
 private const int roundCurve = 5;
+private wchar[] mClassName = ['B','u','t','t','o','n', 0];
 //---------------------------------------------------------
 
 
@@ -29,16 +30,6 @@ class Button : Control {
     /// Set the forecolor of the button.
     final override void foreColor(uint value) {
         this.mForeColor(value) ;
-        // this.rgbFrg = RgbColor(value) ;
-        // switch (this.mDrawMode) {
-        //     case BtnDrawMode.normal :
-        //         this.mDrawMode = BtnDrawMode.textOnly ; break ;
-        //     case BtnDrawMode.bkgOnly :
-        //         this.mDrawMode = BtnDrawMode.textBkg ; break ;
-        //     case BtnDrawMode.gradient :
-        //         this.mDrawMode = BtnDrawMode.gradientText ; break ;
-        //     default : break ;
-        // }
         if ((this.mDrawFlag & 1) != 1) this.mDrawFlag += 1;
         this.checkRedrawNeeded();
     }
@@ -62,7 +53,7 @@ class Button : Control {
     }
 
     /// Values between 0..1
-    final void focusFactor(float value) {
+    final void focusFactor(float value) { // Deprecated ?
         if (this.mFDraw.isActive) {
             COLORREF crf = this.mBackColor.mouseFocusColor(value);
             this.mFDraw.hotBrush = CreateSolidBrush(crf);
@@ -70,7 +61,7 @@ class Button : Control {
         }
     }
 
-    final void frameFactor(float value) {
+    final void frameFactor(float value) { // Depricated ?
         if (this.mFDraw.isActive) {
             COLORREF crf = this.mBackColor.makeFrameColor(value);
             this.mFDraw.defPen = CreatePen(PS_SOLID, 1, crf);
@@ -78,24 +69,32 @@ class Button : Control {
         }
     }
 
-// End of Properties
-
-    void testObj() {
-        LOGFONTW lf;
-        auto value = 0x640A1A04;
-        void* vp = cast(void*) value;
-        auto res = GetObject(vp, LOGFONTW.sizeof, &lf );
-        print("result ", res);
-        print("lfFaceName - ", lf.lfFaceName);
+    /// Set this property to control the color change when mouse is over the button.
+    /// For flat color, default is 15 & for gradient, default is 20.
+    final void hotColorFactor(int value) {
+        if ((this.mDrawFlag > 1) && (this.mDrawFlag < 4)) {
+            // A flat color bkg
+            this.mFDraw.iAdj = value;
+        } else if ((this.mDrawFlag > 3) && (this.mDrawFlag < 6)) {
+            this.mGDraw.iAdj = value;
+        }
+        this.checkRedrawNeeded();
     }
 
+// End of Properties
 
+    // void testObj() {
+    //     LOGFONTW lf;
+    //     auto value = 0x640A1A04;
+    //     void* vp = cast(void*) value;
+    //     auto res = GetObject(vp, LOGFONTW.sizeof, &lf );
+    //     print("result ", res);
+    //     print("lfFaceName - ", lf.lfFaceName);
+    // }
 
 
 // Ctors
     this(Window parent, string txt, int x, int y, int w, int h) {
-
-        mClsName = "Button" ;
         this.mName = format("%s_%d", "Button", btnNumber);
         mixin(repeatingCode);
         mControlType = ControlType.button ;
@@ -126,40 +125,26 @@ class Button : Control {
 
 
     //------------------------------------------------------------------------
+    /// Create the button handle
     final void create() {
-        //auto sw = StopWatch(AutoStart.no);
-        //sw.start();
-        this.createHandle() ;
-        //sw.stop();
-        //print("btn create speed in micro sec : ", sw.peek.total!"usecs");
+        this.createHandle(mClassName.ptr) ;
         if (this.mHandle) {
-
             this.setSubClass(&btnWndProc) ;
         }
-		// NMCUSTOMDRAW nmc;
-		// this.log(nmc.sizeof, " NMCUSTOMDRAW.size");
     }
 
 
     package :
         BtnDrawMode mDrawMode ;
-        DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX ;
-
-
-
-
-
-
-        // Drawing a button's background with gradient brush at the pre paint stage.
+        DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
 
 
 
     //---------------------------------------------------------------------------------
     private :
-        RgbColor rgbBkg ;
-        RgbColor rgbFrg ;
-        Gradient mGDraw;
-        FlatDraw mFDraw;
+        Gradient mGDraw; // For gradient back color
+        FlatDraw mFDraw; // For flat back color
+
 
          // Drawing a button's text at pre paint stage.
         LRESULT drawTextColor(NMCUSTOMDRAW* ncd) { // Private
@@ -227,28 +212,6 @@ class Button : Control {
             FillPath(dc);
         }
 
-        // This function draws a frame around the button with given color & width.
-        // void drawFrame(HDC hdc, RECT* rc, HPEN pen, int rcSize) {
-        //     if (rcSize != 0) InflateRect(rc, rcSize, rcSize) ;
-        //     SelectObject(hdc, pen) ;
-        //     Rectangle(hdc, rc.left, rc.top, rc.right, rc.bottom);
-        // }
-
-        // void roundFrame(HDC dc, RECT* rc, HPEN fp) {
-        //     SelectObject(dc, fp);
-        //     RoundRect(dc, rc.left, rc.top, rc.right, rc.bottom, 5, 5);
-        // }
-
-        // This function fills the button's bakground with a gradient color pattern.
-        // void paintWithGradientBrush(HDC dc, RECT* rct, GradColor gdc, HBRUSH fbr ) {
-        //     // if (rcSize != 0) InflateRect(rct, rcSize, rcSize);
-        //     auto gradBrush = createGradientBrush(dc, rct, gdc.c1, gdc.c2) ;
-        //     scope(exit) DeleteObject(gradBrush) ;
-        //     SelectObject(dc, gradBrush) ;
-        //     FillRect(dc, rct, gradBrush);
-        //     FrameRect(dc, rct, fbr);
-        //     // FillPath(dc);
-        // }
 
         void paintRoundGradient(HDC dc, RECT rc, GradColor gc, HPEN pen) {
             auto gradBrush = createGradientBrush(dc, rc, gc.c1, gc.c2) ;
@@ -278,8 +241,6 @@ class Button : Control {
                         break;
                     default: return CDRF_DODEFAULT; break;
                 }
-
-
             }
             return ret;
         }
@@ -288,13 +249,6 @@ class Button : Control {
             // this.remSubClass(scID);
             RemoveWindowSubclass(this.mHandle, &btnWndProc, scID);
         }
-
-
-
-
-
-
-
     //-----------------------------------------------------------------------
 
 
@@ -308,6 +262,7 @@ struct FlatDraw {
 	HPEN defPen;
 	HPEN hotPen;
     bool isActive;
+    int iAdj = 15; // This value is to add/subtract to/from RGB values
 
     ~this() {
         if (this.defBrush) DeleteObject(this.defBrush);
@@ -320,19 +275,13 @@ struct FlatDraw {
     }
 
     void setData(Color c) {
-        import std.stdio;
-        auto hotRc = RgbColor(c.value);
-        auto frmRc = RgbColor(c.value);
-        double hadj = hotRc.isDark() ? 1.5 : 1.2;
-        hotRc.changeShade(hadj);
-        print("hadj ", hadj);
+        /* When a button's back color prop changes, this function will set the oens & colors.*/
+        auto hotRc = c.changeShadeColorEx(this.iAdj);
+        auto frmRc = c.changeShadeColorEx(10);
         this.defBrush = CreateSolidBrush(c.cref);
         this.hotBrush = CreateSolidBrush(hotRc.cref);
         this.defPen = CreatePen(PS_SOLID, 1, frmRc.makeFrameColor(0.6));
         this.hotPen = CreatePen(PS_SOLID, 1, frmRc.makeFrameColor(0.3));
-        // this.dFrmBrush = CreateSolidBrush(c.makeFrameColor(0.3));
-        // this.hFrmBrush = CreateSolidBrush(c.makeFrameColor(0.6));
-
         this.isActive = true;
     }
 }

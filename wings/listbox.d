@@ -9,6 +9,8 @@ import wings.wings_essentials;
 
 
 int lbxNumber = 1;
+private wchar[] mClassName = ['L', 'I', 'S', 'T', 'B', 'O', 'X', 0];
+
 class ListBox : Control {
 
     this(Window parent, size_t x, size_t y, size_t w, size_t h) {
@@ -18,7 +20,6 @@ class ListBox : Control {
         mExStyle = 0 ;
         mBackColor(defBackColor) ;
         mForeColor(defForeColor);
-        mClsName = "LISTBOX" ;
         this.mName = format("%s_%d", "ListBox_", lbxNumber);
         ++lbxNumber;
        // mMultiSel = true;
@@ -183,7 +184,7 @@ class ListBox : Control {
      // Create the handle of CheckBox
     final void create() {
     	this.setLboxStyles() ;
-        this.createHandle();
+        this.createHandle(mClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&lbxWndProc) ;
             if (this.mItems.length > 0) { // We need to add those items to list box
@@ -195,6 +196,7 @@ class ListBox : Control {
 
     // Events
     EventHandler onSelectionChanged;
+
 
     private :
         bool mHasSort;

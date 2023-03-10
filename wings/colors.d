@@ -9,48 +9,61 @@ private import core.sys.windows.windows ;
 
 
 
-struct Color
+struct Color  // This struct is used to hold the color values for all control's back & fore color.
 {
     uint value;
+    uint red;
+    uint green;
+    uint blue;
     COLORREF cref;
 
     this(uint clr) {
         this.value = clr;
-        auto red = clr >> 16 ;
-        auto green = (clr & 0x00ff00) >> 8;
-        auto blue = clr & 0x0000ff ;
-        this.cref = cast(COLORREF) ((blue << 16) | (green << 8) | red);
+        this.red = clr >> 16 ;
+        this.green = (clr & 0x00ff00) >> 8;
+        this.blue = clr & 0x0000ff ;
+        this.cref = cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red);
     }
 
     this(int red, int green, int blue) {
-        this.value = cast(uint) (red << 16) | (green << 8) | blue ;
+        this.value = cast(uint) (red << 16) | (green << 8) | blue;
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
         this.cref = cast(COLORREF) ((blue << 16) | (green << 8) | red);
     }
 
     void opCall(uint clr) {
         this.value = clr;
-        auto red = clr >> 16 ;
-        auto green = (clr & 0x00ff00) >> 8;
-        auto blue = clr & 0x0000ff ;
-        this.cref = cast(COLORREF) ((blue << 16) | (green << 8) | red);
+        this.red = clr >> 16 ;
+        this.green = (clr & 0x00ff00) >> 8;
+        this.blue = clr & 0x0000ff ;
+        this.cref = cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red);
     }
 
     void opCall(int red, int green, int blue) {
-        this.value = cast(uint) (red << 16) | (green << 8) | blue ;
+        this.value = cast(uint) (red << 16) | (green << 8) | blue;
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
         this.cref = cast(COLORREF) ((blue << 16) | (green << 8) | red);
     }
 
     void opCall(Color clr) { // Initiate with existing color
         this.value = clr.value;
+        this.red = clr.red;
+        this.green = clr.green;
+        this.blue = clr.blue;
         this.cref = clr.cref;
     }
 
     Color changeShade(double changeValue) { // Color.changeShade
         Color clr;
-        auto red = clip((this.value >> 16) * changeValue) ;
-        auto green = clip(((this.value & 0x00ff00) >> 8) * changeValue);
-        auto blue = clip((this.value & 0x0000ff) * changeValue) ;
-        clr(red, green, blue);
+        clr.red = clip(this.red * changeValue) ;
+        clr.green = clip(this.green * changeValue);
+        clr.blue = clip(this.blue * changeValue) ;
+        clr.value = cast(uint) (clr.red << 16) | (clr.green << 8) | clr.blue;
+        clr.cref = cast(COLORREF) ((clr.blue << 16) | (clr.green << 8) | clr.red);
         return clr;
     }
 
@@ -62,69 +75,49 @@ struct Color
         an hbrush with slightly different color. This function create...
         an hbrush for that purpose. It will create a different color with...
         given value 'adj'. Try with a 1.2 */
+        auto red = clip(this.red + (adj * 8));
+        auto green = clip(this.green + (adj * 16));
+        auto blue = clip(this.blue + (adj * 32));
+        auto cref = cast(COLORREF) ((blue << 16) | (green << 8) | red);
+        return CreateSolidBrush(cref);
+    }
 
-        auto red = clip((this.value >> 16) + (adj * 8));
-        auto green = clip(((this.value & 0x00ff00) >> 8) + (adj * 16));
-        auto blue = clip((this.value & 0x0000ff) + (adj * 32));
+    HBRUSH getHotBrushEx(int adj) { // Color.getHotBrush
+        /* Sometimes, we need to use a special color for mouse hover event.
+        In such cases, we have already a back color. But we need to make...
+        an hbrush with slightly different color. This function create...
+        an hbrush for that purpose. It will create a different color with...
+        given value 'adj'. Try with a 1.2 */
+        auto red = clip(this.red + adj);
+        auto green = clip(this.green + adj);
+        auto blue = clip(this.blue + adj);
         auto cref = cast(COLORREF) ((blue << 16) | (green << 8) | red);
         return CreateSolidBrush(cref);
     }
 
     HPEN getFramePen(double adj, int pwidth = 1) { // Color.getFramePen
-        auto red = clip((this.value >> 16) + (adj * 8));
-        auto green = clip(((this.value & 0x00ff00) >> 8) + (adj * 16));
-        auto blue = clip((this.value & 0x0000ff) + (adj * 32));
+        auto red = clip(this.red + (adj * 8));
+        auto green = clip(this.green + (adj * 16));
+        auto blue = clip(this.blue + (adj * 32));
         auto cref = cast(COLORREF) ((blue << 16) | (green << 8) | red);
         return CreatePen(PS_SOLID, pwidth, cref);
     }
 
-    RgbColor makeRgbColor(double adj = 0) { // Color.makeRgbColor
-        RgbColor rc;
-		rc.red = clip((this.value >> 16) + (adj * 8));
-        rc.green = clip(((this.value & 0x00ff00) >> 8) + (adj * 16));
-        rc.blue = clip((this.value & 0x0000ff) + (adj * 32));
-        rc.cref = cast(COLORREF) ((rc.blue << 16) | (rc.green << 8) | rc.red) ;
-		return rc;
-    }
-
-    RgbColor makeRgbColor() { // Color.makeRgbColor
-        RgbColor rc;
-		rc.red = this.value >> 16;
-        rc.green = (this.value & 0x00ff00) >> 8;
-        rc.blue = this.value & 0x0000ff;
-        rc.cref = cast(COLORREF) ((rc.blue << 16) | (rc.green << 8) | rc.red) ;
-		return rc;
-    }
-
 
     int darkRange() { // Color.darkRange
-        auto red = this.value >> 16 ;
-        auto green = (this.value & 0x00ff00) >> 8;
-        auto blue = this.value & 0x0000ff ;
-		int x = cast(int)((red * 0.2126) + (green * 0.7152) + (blue * 0.0722));
-        writefln("isDark x : %s, sum(RGB) : %s", x, red+green+blue);
+		int x = cast(int)((this.red * 0.2126) + (this.green * 0.7152) + (this.blue * 0.0722));
 		return x;
 	}
 
     bool isDark() { // Color.isDark
-        auto red = cast(double) (this.value >> 16);
-        auto green = cast(double)((this.value & 0x00ff00) >> 8);
-        auto blue = cast(double)(this.value & 0x0000ff);
-		int x = cast(int)((red * 0.2126) + (green * 0.7152) + (blue * 0.0722));
+		int x = cast(int)((this.red * 0.2126) + (this.green * 0.7152) + (this.blue * 0.0722));
 		return x < 40;
     }
 
-
-
-
-
     COLORREF mouseFocusColor(float adj) {
-        float red =  cast(float)(this.value >> 16);
-        float green = cast(float)((this.value & 0x00ff00) >> 8);
-        float blue = cast(float)(this.value & 0x0000ff);
-        red = red + (adj * (255 - red));
-        green = green + (adj * (255 - green));
-        blue = blue + (adj * (255 - blue));
+        auto red = this.red + (adj * (255 - this.red));
+        auto green = this.green + (adj * (255 - this.green));
+        auto blue = this.blue + (adj * (255 - this.blue));
         uint r = clip(cast(uint)(red));
         uint g = clip(cast(uint)(green));
         uint b = clip(cast(uint)(blue));
@@ -133,30 +126,39 @@ struct Color
 
 
     COLORREF makeFrameColor(double adj) {
-        double red = cast(double)(this.value >> 16) * adj;
-        double green = cast(double)((this.value & 0x00ff00) >> 8) * adj;
-        double blue = cast(double)(this.value & 0x0000ff) * adj;
-
-        uint r = clip(cast(uint)(red));
-        uint g = clip(cast(uint)(green));
-        uint b = clip(cast(uint)(blue));
+        uint r = clip(cast(uint)(this.red * adj));
+        uint g = clip(cast(uint)(this.green * adj));
+        uint b = clip(cast(uint)(this.blue * adj));
         return cast(COLORREF)((b << 16) | (g << 8) | r);
     }
 
     COLORREF makeHotRef(uint adj) {
-        auto red = this.value >> 16 ;
-        auto green = (this.value & 0x00ff00) >> 8;
-        auto blue = this.value & 0x0000ff ;
-        auto r = clip(cast(uint) (red * (100 + adj) / 100));
-        auto g = clip(cast(uint) (green * (100 + adj) / 100));
-        auto b = clip(cast(uint) (blue * (100 + adj) / 100));
+        auto r = clip(cast(uint) (this.red * (100 + adj) / 100));
+        auto g = clip(cast(uint) (this.green * (100 + adj) / 100));
+        auto b = clip(cast(uint) (this.blue * (100 + adj) / 100));
         // writefln("red : %s,   r : %s", red, r);
         return cast(COLORREF)((b << 16) | (g << 8) | r);
     }
 
+    Color changeShadeColor(double adj) {
+        Color rc;
+        rc.red = clip(cast(uint) (cast(double)this.red *  adj) );
+        rc.green = clip(cast(uint) (cast(double)this.green * adj));
+        rc.blue = clip(cast(uint) (cast(double)this.blue * adj));
+        rc.value = cast(uint) (rc.red << 16) | (rc.green << 8) | rc.blue;
+        rc.cref = cast(COLORREF) ((rc.blue << 16) | (rc.green << 8) | rc.red) ;
+        return rc;
+    }
 
-
-
+    Color changeShadeColorEx(int change) {
+        Color rc;
+        rc.red = clip(this.red +  change);
+        rc.green = clip(this.green + change);
+        rc.blue = clip(this.blue + change);
+        rc.value = cast(uint) (rc.red << 16) | (rc.green << 8) | rc.blue;
+        rc.cref = cast(COLORREF) ((rc.blue << 16) | (rc.green << 8) | rc.red) ;
+        return rc;
+    }
 
 } // End Color
 
@@ -166,151 +168,13 @@ int clip(double num) {
     return cast(int) round(clamp(num, 0, 255));
 }
 
-/// To hold color value
-struct RgbColor {
-    uint red;
-    uint green ;
-    uint blue ;
-    float alpha;
-    uint singleValue;
-    COLORREF cref;
-
-    this(uint clr) {
-        this.singleValue = clr ;
-        this.red = clr >> 16 ;
-        this.green = (clr & 0x00ff00) >> 8;
-        this.blue = clr & 0x0000ff ;
-        this.cref = cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red) ;
-    }
-
-    this(double r, double g, double b) {
-        this.red = cast(uint) r ;
-        this.green = cast(uint) g ;
-        this.blue = cast(uint) b ;
-        this.singleValue = cast(uint) (this.red << 16) | (this.green << 8) | this.blue ;
-        this.cref = cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red) ;
-    }
-
-    COLORREF clrRef() const {return cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red) ;}
-
-    uint getUint() const {return cast(uint) (this.red << 16) | (this.green << 8) | this.blue ;}
-
-    void printRgb() { writefln("Red - %d, Green - %d, Blue - %d", this.red, this.green, this.blue) ;}
-
-    void lighter(double al) {
-        this.alpha = al ;
-        immutable double bkg = 255 ;
-        this.red = clip(cast(uint) ((1 - al) * cast(double) bkg  + al * cast(double) this.red));
-        this.green = clip(cast(uint) ((1 - al) * cast(double) bkg + al * cast(double) this.green)) ;
-        this.blue = clip(cast(uint) ((1 - al) * cast(double) bkg  + al * cast(double) this.blue)) ;
-        //if (this.red > 255) this.red = 255;
-        //if (this.green > 255) this.green = 255;
-        //if (this.blue > 255) this.blue = 255;
-    }
-
-    void darker(double al) {
-        this.alpha = al ;
-        immutable double bkg = 0 ;
-        this.red = cast(uint) ((1 - al) * cast(double) bkg  + al * cast(double) this.red) ;
-        this.green = cast(uint) ((1 - al) * cast(double) bkg + al * cast(double) this.green) ;
-        this.blue = cast(uint) ((1 - al) * cast(double) bkg  + al * cast(double) this.blue) ;
-    }
-
-    /* Buttons and headers are drawing with two colors.
-        top side with lighter color and botton side with darker color.
-        This makes a 3D effect. So this function will make the bottom
-        color for a given color. */
-    RgbColor bottomColor(int adj) {
-        RgbColor rc;
-        rc.red = this.red - adj;
-        rc.green = this.green - adj;
-        rc.blue = this.blue - adj;
-        return rc;
-    }
-
-    RgbColor getLighterColor(int adj) {
-        RgbColor rc ;
-        rc.red = clip(this.red + adj);
-        rc.green = clip(this.green + adj);
-        rc.blue = clip(this.blue + adj);
-        //rc.red = rc.red > 255 ? 255 : rc.red;
-        //rc.green = rc.green > 255 ? 255 : rc.green;
-        //rc.blue = rc.blue > 255 ? 255 : rc.blue;
-        return rc;
-    }
-
-    // Change the RGB intesity with given adj value.
-    // Between 0-1 for reduce & above 1 to increase.
-    RgbColor changeColor(double value) const {
-        double r, g, b ;
-        r = clip(this.red * value) ;
-        g = clip(this.green * value) ;
-        b = clip(this.blue * value) ;
-
-        return RgbColor(r, g, b) ;
-    }
-
-    bool isDark() {
-		double x = ((this.red * 0.2126) + (this.green * 0.7152) + (this.blue * 0.0722));
-		return x < 40;
-	}
-
-    RgbColor changeShadeRGB(double adj) {
-        RgbColor rc;
-        rc.red = clip(cast(uint) (cast(double)this.red *  adj) );
-        rc.green = clip(cast(uint) (cast(double)this.green * adj));
-        rc.blue = clip(cast(uint) (cast(double)this.blue * adj));
-        rc.cref = cast(COLORREF) ((rc.blue << 16) | (rc.green << 8) | rc.red) ;
-        return rc;
-    }
-
-    void changeShade(double adj) {
-		this.red = clip(cast(uint)(cast(double)this.red * adj));
-		this.green = clip(cast(uint)(cast(double)this.green * adj));
-		this.blue = clip(cast(uint)(cast(double)this.blue * adj));
-		this.cref = cast(COLORREF)(((this.blue << 16) | (this.green << 8)) | (this.red));
-	}
-
-    COLORREF makeFrameColor(double adj) {
-        double re = cast(double)this.red * adj ;
-        double gr = cast(double)this.green * adj;
-        double bl = cast(double)this.blue * adj;
-        uint r = clip(cast(uint)(re));
-        uint g = clip(cast(uint)(gr));
-        uint b = clip(cast(uint)(bl));
-        return cast(COLORREF)((b << 16) | (g << 8) | r);
-    }
-
-    RgbColor mouseFocusColor(double adj) {
-
-        double re = this.red + (adj * (255 - this.red));
-        double gr = this.green + (adj * (255 - this.green));
-        double bl = this.blue + (adj * (255 - this.blue));
-        uint r = clip(cast(uint)(re));
-        uint g = clip(cast(uint)(gr));
-        uint b = clip(cast(uint)(bl));
-        return RgbColor(r, g, b);
-    }
-
-    HBRUSH getBrush() { return CreateSolidBrush(this.cref);}
-
-
-} // End struct RgbColor
-
-RgbColor getRgbColor(uint value) {
-    RgbColor rst ;
-    rst.red = value >> 16 ;
-    rst.green = (value & 0x00ff00) >> 8;
-    rst.blue = value & 0x0000ff ;
-    return rst ;
-}
-
-COLORREF getClrRef(uint value ) {
-    RgbColor rgbc = RgbColor(value) ;
-    return rgbc.clrRef ;
-}
-
 COLORREF getClrRef(uint r, uint g, uint b ) {return cast(COLORREF) ((b << 16) | (g << 8) | r) ;}
+COLORREF getClrRef(uint clr ) {
+    auto r = clr >> 16 ;
+    auto g = (clr & 0x00ff00) >> 8;
+    auto b = clr & 0x0000ff ;
+    return cast(COLORREF) ((b << 16) | (g << 8) | r) ;
+}
 
 uint fromRgb(uint red, uint green, uint blue) { return ((red << 16) | (green << 8) | blue) ;}
 
@@ -402,43 +266,43 @@ struct  HSV {
     //     return HSV(h, s, v);
     // }
 
-    RgbColor toRGB() {
-        // convert an HSV value to RGB.
-        struct tRgb {
-            double r;
-            double g;
-            double b;
-        }
+    // RgbColor toRGB() {
+    //     // convert an HSV value to RGB.
+    //     struct tRgb {
+    //         double r;
+    //         double g;
+    //         double b;
+    //     }
 
-        double c = 0.0, m = 0.0, x = 0.0;
-        tRgb t;
+    //     double c = 0.0, m = 0.0, x = 0.0;
+    //     tRgb t;
 
-        c = this.value * this.saturation;
-        x = c * (1.0 - fabs(fmod(this.hue / 60.0, 2) - 1.0));
-        m = this.value - c;
-        if (this.hue >= 0.0 && this.hue < 60.0) {
-            t = tRgb(c + m, x + m, m);
+    //     c = this.value * this.saturation;
+    //     x = c * (1.0 - fabs(fmod(this.hue / 60.0, 2) - 1.0));
+    //     m = this.value - c;
+    //     if (this.hue >= 0.0 && this.hue < 60.0) {
+    //         t = tRgb(c + m, x + m, m);
 
-        } else if (this.hue >= 60.0 && this.hue < 120.0) {
-            t = tRgb(x + m, c + m, m);
-        } else if (this.hue >= 120.0 && this.hue < 180.0) {
-            t = tRgb(m, c + m, x + m);
-        } else if (this.hue >= 180.0 && this.hue < 240.0) {
-            t = tRgb(m, x + m, c + m);
-        } else if (this.hue >= 240.0 && this.hue < 300.0) {
-            t = tRgb(x + m, m, c + m);
-        } else if (this.hue >= 300.0 && this.hue < 360.0) {
-            t = tRgb(c + m, m, x + m);
-        } else {
-            t = tRgb(m, m, m);
-        }
-        RgbColor rc;
-        rc.red = clip(cast(uint)(t.r * 255));
-        rc.green = clip(cast(uint)(t.g * 255));
-        rc.blue = clip(cast(uint)(t.b * 255));
-        // writefln("value : %f", this.value);
-        return rc;
-    }
+    //     } else if (this.hue >= 60.0 && this.hue < 120.0) {
+    //         t = tRgb(x + m, c + m, m);
+    //     } else if (this.hue >= 120.0 && this.hue < 180.0) {
+    //         t = tRgb(m, c + m, x + m);
+    //     } else if (this.hue >= 180.0 && this.hue < 240.0) {
+    //         t = tRgb(m, x + m, c + m);
+    //     } else if (this.hue >= 240.0 && this.hue < 300.0) {
+    //         t = tRgb(x + m, m, c + m);
+    //     } else if (this.hue >= 300.0 && this.hue < 360.0) {
+    //         t = tRgb(c + m, m, x + m);
+    //     } else {
+    //         t = tRgb(m, m, m);
+    //     }
+    //     RgbColor rc;
+    //     rc.red = clip(cast(uint)(t.r * 255));
+    //     rc.green = clip(cast(uint)(t.g * 255));
+    //     rc.blue = clip(cast(uint)(t.b * 255));
+    //     // writefln("value : %f", this.value);
+    //     return rc;
+    // }
 
     void setValue(int percentage, bool reduce = false) {
         double x = percentage / 100;
@@ -454,60 +318,60 @@ struct  HSV {
 
 
 
-void rgbToHsl() {
-     import std.math : isNaN ;
-     import std.stdio;
-    const RgbColor r1 = getRgbColor(0xff0000) ;
-    float min, max, l, s, maxClr, h  ;
-    RgbColor emr ;
-    emr.red = r1.red / 255 ;
-    emr.green = r1.green / 255 ;
-    emr.blue = r1.blue / 255 ;
+// void rgbToHsl() {
+//      import std.math : isNaN ;
+//      import std.stdio;
+//     const RgbColor r1 = getRgbColor(0xff0000) ;
+//     float min, max, l, s, maxClr, h  ;
+//     RgbColor emr ;
+//     emr.red = r1.red / 255 ;
+//     emr.green = r1.green / 255 ;
+//     emr.blue = r1.blue / 255 ;
 
-    min = emr.red ;
-    max = emr.red ;
-    maxClr = 0 ;
+//     min = emr.red ;
+//     max = emr.red ;
+//     maxClr = 0 ;
 
-    if (emr.green <= min) { min = emr.green ;}
-    if (emr.green >= max) { max = emr.green ; maxClr = emr.green ;}
+//     if (emr.green <= min) { min = emr.green ;}
+//     if (emr.green >= max) { max = emr.green ; maxClr = emr.green ;}
 
-    if (emr.blue <= min) { min = emr.blue ;}
-    if (emr.blue >= max) { max = emr.blue ; maxClr = emr.blue ;}
+//     if (emr.blue <= min) { min = emr.blue ;}
+//     if (emr.blue >= max) { max = emr.blue ; maxClr = emr.blue ;}
 
-    if (maxClr == 0) { h = (emr.green - emr.blue) / (max - min) ;}
-    if (maxClr == 1) { h = 2 + (emr.blue - emr.red) / (max - min) ;}
-    if (maxClr == 2) { h = 4 + (emr.red - emr.green) / (max - min) ;}
+//     if (maxClr == 0) { h = (emr.green - emr.blue) / (max - min) ;}
+//     if (maxClr == 1) { h = 2 + (emr.blue - emr.red) / (max - min) ;}
+//     if (maxClr == 2) { h = 4 + (emr.red - emr.green) / (max - min) ;}
 
-    if (isNaN!float(h)) { h = 0 ;}
-    h = h * 60 ;
-    if (h < 0) { h = h + 360 ;}
+//     if (isNaN!float(h)) { h = 0 ;}
+//     h = h * 60 ;
+//     if (h < 0) { h = h + 360 ;}
 
-    l = (min + max) / 2 ;
-    if (min == max) {
-        s = 0 ;
-    }
-    else {
-       if ( l < 0.5 ){
-            s = (max - min) / ( max + min) ;
-       }
-       else {
-            s = (max - min) / (2 - max - min) ;
-       }
-    }
+//     l = (min + max) / 2 ;
+//     if (min == max) {
+//         s = 0 ;
+//     }
+//     else {
+//        if ( l < 0.5 ){
+//             s = (max - min) / ( max + min) ;
+//        }
+//        else {
+//             s = (max - min) / (2 - max - min) ;
+//        }
+//     }
 
-    //s = s ;
-    writeln("h - ", h, " s - ", s, " l - ", l) ;
-    writeln(100 * l) ;
-}
+//     //s = s ;
+//     writeln("h - ", h, " s - ", s, " l - ", l) ;
+//     writeln(100 * l) ;
+// }
 
-void printRgb(uint clr) {
-    RgbColor rr = RgbColor(clr) ;
-    writefln("red : ") ;
-}
+// void printRgb(uint clr) {
+//     RgbColor rr = RgbColor(clr) ;
+//     writefln("red : ") ;
+// }
 
-void pritest(RgbColor rc) {
-    writefln("red: %s, green: %s, blue: %s", rc.red, rc.green, rc.blue);
-}
+// void pritest(RgbColor rc) {
+//     writefln("red: %s, green: %s, blue: %s", rc.red, rc.green, rc.blue);
+// }
 
 
 enum Colors {

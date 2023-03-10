@@ -10,7 +10,6 @@ import std.datetime.stopwatch;
 
 
 int npNumber = 1;
-wstring wcNpClass;
 bool isNpCreated;
 DWORD npStyle = WS_VISIBLE | WS_CHILD | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_HOTTRACK;
 DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
@@ -20,7 +19,6 @@ class NumberPicker : Control {
     this(Window parent, int x, int y, int w, int h) {
         if (!isNpCreated) {
             isNpCreated = true;
-            wcNpClass = "msctls_updown32";
             appData.iccEx.dwICC = ICC_UPDOWN_CLASS ;
             InitCommonControlsEx(&appData.iccEx);
         }
@@ -37,12 +35,9 @@ class NumberPicker : Control {
         mBuddyExStyle = WS_EX_LEFT | WS_EX_LTRREADING ;//| WS_EX_STATICEDGE ;//| WS_EX_LEFT ;//WS_EX_LTRREADING | WS_EX_RTLREADING | WS_EX_LEFT ;//| WS_EX_CLIENTEDGE;
         mBackColor(defBackColor) ;
         mForeColor(defForeColor);
-
-        mClsName = wcNpClass ;
-        mFmtStr = "%.02f" ;
+        mFmtStr = "%.02f";
         mValue = mMinRange;
         this.mName = format("%s_%d", "NumberPicker_", npNumber);
-         // This pen is needed to draw a white
         ++npNumber;
     }
 
@@ -237,6 +232,8 @@ class NumberPicker : Control {
         EventHandler mOnMouseLeave;
         EventHandler mOnMouseEnter;
         MouseEventHandler mOnMouseMove;
+        static wchar[] mUpdClassName = ['m', 's', 'c', 't', 'l', 's', '_', 'u', 'p', 'd', 'o', 'w', 'n', '3', '2', 0];
+        static wchar[] mBuddyClassName = ['E','d','i','t', 0];
     // endregion private members
 
     // region private functions
@@ -263,7 +260,7 @@ class NumberPicker : Control {
             this.mCtlId = Control.stCtlId ;
             this.mMyRect = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
             this.mHandle = CreateWindowEx( this.mExStyle,
-                                            mClsName.ptr,
+                                            this.mUpdClassName.ptr,
                                             null,
                                             this.mStyle,
                                             0, 0, 0, 0,
@@ -285,7 +282,7 @@ class NumberPicker : Control {
             this.mBuddyCid = Control.stCtlId;
             if (this.mBtnLeft) this.mWidth -= 2; // To match the size of a button right control.
             this.mBuddyHandle = CreateWindowEx( this.mBuddyExStyle,
-                                                "Edit".toUTF16z,
+                                                this.mBuddyClassName.ptr,
                                                 null,
                                                 this.mBuddyStyle,
                                                 this.mXpos,

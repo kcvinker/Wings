@@ -163,8 +163,8 @@ class Window : Control {
     /// This will set the gradient background color for this window.
     final void setGradientColors(uint c1, uint c2, bool r2l = false) {
         this.mBkDrawMode = WindowBkMode.gradient ;
-        this.mGdraw.c1 = RgbColor(c1);
-        this.mGdraw.c2 = RgbColor(c2);
+        this.mGdraw.c1 = Color(c1);
+        this.mGdraw.c2 = Color(c2);
         this.mGDR2L = r2l;
         this.checkRedrawNeeded() ;
     }

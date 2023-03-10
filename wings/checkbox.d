@@ -3,10 +3,12 @@ module wings.checkbox ;
 
 import wings.d_essentials;
 import wings.wings_essentials;
+import std.stdio;
 
 
 
 private int cbNumber = 1 ;
+private wchar[] mClassName = ['B','u','t','t','o','n', 0];
 /**
  * CheckBox : Control
  */
@@ -41,8 +43,6 @@ class CheckBox : Control {
         mExStyle = WS_EX_LTRREADING | WS_EX_LEFT ;
         mTxtStyle = DT_SINGLELINE | DT_VCENTER  ;
         mBackColor = parent.mBackColor ;
-
-        mClsName = "Button" ;
         this.mName = format("%s_%d", "CheckBox_", cbNumber);
         ++cbNumber;
     }
@@ -59,12 +59,13 @@ class CheckBox : Control {
     // Create the handle of CheckBox
     final void create() {
     	this.setCbStyles() ;
-        this.createHandle();
+        this.createHandle(mClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&cbWndProc) ;
             this.setCbSize() ;
         }
     }
+
 
    	private :
 		bool mChecked ;
@@ -131,14 +132,16 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                 // There is no other ways to change the back color.
                 auto hdc = cast(HDC) wParam ;
                 SetBkMode(hdc, TRANSPARENT);
-                cb.mBkBrush = CreateSolidBrush(cb.mBackColor.value);
+                cb.mBkBrush = CreateSolidBrush(cb.mBackColor.cref);
                 return cast(LRESULT) cb.mBkBrush ;
             break ;
 
             case CM_NOTIFY :
                 // We need to use this message to draw the fore color.
                 // There is no other ways to change the text color.
+
                 auto nmc = cast(NMCUSTOMDRAW *) lParam;
+                // writefln("dwDrawStage %s", BST_UNCHECKED);
                 switch (nmc.dwDrawStage) {
                     case CDDS_PREERASE :
                         return CDRF_NOTIFYPOSTERASE ;
@@ -152,7 +155,7 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                         DrawText(nmc.hdc, cb.text.toUTF16z, -1, &rct, cb.mTxtStyle) ;
                         return CDRF_SKIPDEFAULT ;
                         break ;
-                    default : break ;
+                    default:  break ;
                 } break ;
 
 
