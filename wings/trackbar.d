@@ -105,6 +105,16 @@ class TrackBar : Control {
     }
     //---------------------------------------------------------------------[20] Value
 
+    void backColor(Color value) {
+        this.mBackColor = value;
+        this.backColorSetupInternal();
+    }
+
+    override void backColor(uint value) {
+        this.mBackColor.updateColor(value);
+        this.backColorSetupInternal();
+    }
+
 
     final void create() {
         // import std.stdio;
@@ -369,6 +379,17 @@ class TrackBar : Control {
                 this.mValue = U16_MAX - value;
             else
                 this.mValue = value;
+        }
+
+        void backColorSetupInternal() {
+            if (this.mIsCreated) {
+                this.mBkBrush = this.mBackColor.getBrush();
+
+                // Here, we need to send this message.
+                // otherwise we won't see the color change until next paint 
+                this.sendMsg(TBM_SETRANGEMAX, 1, this.mMaxRange);
+                InvalidateRect(this.mHandle, null, 0);
+            }
         }
 
 } // End of TrackBar class
