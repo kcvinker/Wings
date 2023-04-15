@@ -1,7 +1,6 @@
 module wings.trackbar;
 
 import std.stdio;
-
 import wings.d_essentials;
 import wings.wings_essentials;
 
@@ -23,17 +22,13 @@ class TicData {
         this.logPoint = lp;
         num += 1;
     }
-
     void print() {
         writefln("Index %d, Physical Point %d, Logical Point %d", this.index, this.phyPoint, this.logPoint);
     }
 }
 
-
 class TrackBar : Control {
-
-    this (Window parent, int x, int y, int w, int h)
-    {
+    this (Window parent, int x, int y, int w, int h, bool bCreate = false) {
         mixin(repeatingCode); // Setting size, position, parent & font
         mName = format("TrackBar_%d", tkbNumber);
         mControlType = ControlType.trackBar;
@@ -54,17 +49,15 @@ class TrackBar : Control {
         mSelColor(0x99ff33);
         mTicColor(0x3385ff);
         ++tkbNumber;
+        if (bCreate) this.create();
     }
 
-    this (Window parent, int x, int y) {this(parent, x, y, 150, 24);}
+    this (Window parent, int x, int y, bool bCreate = false) {this(parent, x, y, 150, 24, bCreate);}
 
     // Events
     EventHandler onValueChanged,onDragging,onDragged;
 
-
-
     // Properties
-
     mixin finalProperty!("ticLength", this.mTicLen); //--------------------[1] TicLength
     mixin finalProperty!("largeChange", this.mPageSize); //----------------[2] LargeChange
     mixin finalProperty!("smallChange", this.mLineSize); //----------------[3] SmallChange
@@ -115,7 +108,6 @@ class TrackBar : Control {
         this.backColorSetupInternal();
     }
 
-
     final void create() {
         // import std.stdio;
     	this.setTkbStyle();
@@ -144,8 +136,6 @@ class TrackBar : Control {
         }
     }
 
-
-
     private:
         bool mVertical;
         bool mReversed;
@@ -156,7 +146,6 @@ class TrackBar : Control {
         bool mToolTip;
         bool mCustDraw;
         bool mFreeMove;
-
         Color mTicColor, mChannelColor, mSelColor;
         HBRUSH mBkBrush, mSelBrush;
         HPEN mChannelPen, mTicPen;
@@ -165,7 +154,6 @@ class TrackBar : Control {
         TicPosition mTicPos;
         RECT mChannelRc, mThumbRc, mMyRc;
         TicData[] mTics;
-
         int mTicWidth;
         int mMinRange;
         int mMaxRange;
@@ -179,9 +167,6 @@ class TrackBar : Control {
         int mTicCount;
         double mRange;
         DWORD mChannelFlag = BF_RECT | BF_ADJUST;
-
-
-
 
         void setTkbStyle() {
             if (this.mVertical) {
