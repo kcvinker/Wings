@@ -124,6 +124,8 @@ package {
 
     T getControl(T)(DWORD_PTR refData){ return cast(T) (cast(void*) refData) ;}
 
+
+
     Control toControl(DWORD_PTR refData) { return cast(Control) (cast(void*) refData);}
 
     /// A wrapper for SendMessage function.
@@ -183,6 +185,8 @@ package {
         enum uint CM_HSCROLL = 9009;
         enum uint CM_VSCROLL = 9010;
         enum uint CM_BUDDY_RESIZE = 9011;
+        enum uint CM_MENU_ADDED = 9012;
+
 
 
 

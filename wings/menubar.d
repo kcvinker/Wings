@@ -197,6 +197,7 @@ class MenuItem {
         MenuType mType;
         Color mFgColor;
         bool mEnabled;
+        uint mId;
 
         void insertMenuInternal(HMENU parenthmenu) {
             MENUITEMINFOW mii;
@@ -215,7 +216,6 @@ class MenuItem {
     private:
         HMENU mHmenu;
         HMENU mParentHmenu;
-        uint mId;
         uint mChildCount;
         uint mIndex;
         bool mByPos;

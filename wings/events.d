@@ -10,7 +10,7 @@ import std.utf ;
 import wings.enums;
 import wings.date_and_time ;
 import wings.commons;
-import wings.controls;
+import wings.controls: Control;
 import wings.menubar : MenuItem;
 
 
@@ -32,6 +32,7 @@ alias PaintEventHandler = void function(Control sender, PaintEventArgs e) ;
 alias DateTimeEventHandler = void function(Control sender, DateTimeEventArgs e) ;
 alias HotKeyEventHandler = void function(Control sender, HotKeyEventArgs e);
 alias MenuEventHandler = void function(MenuItem sender, EventArgs e);
+
 
 
 

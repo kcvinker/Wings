@@ -42,6 +42,7 @@ enum MouseButton {
     xButton2 = 167_77_216
 }
 
+// Used for Mouse related messages
 enum MouseButtonState {released, pressed }
 
 /// Public enum for describing control types
@@ -51,6 +52,7 @@ enum ControlType {
     trackBar, upDown
 }
 
+// Used for WM_SIZE and WM_SIZING message handlers
 enum SizedPosition {
     LeftEdge = 1,
     RightEdge,
@@ -107,6 +109,7 @@ enum HeaderColorStatus { bcOnly, fcOnly, bothColors } // for list view header co
 enum HotKeyId { hotSnapWindow = -2, hotSnapDeskTop = -1} // For using in wm_hotkey message handler
 enum ModifierKeys { altKey = 1, ctrlKey = 2, shiftKey = 4, winKey = 8 } // ,,
 
+enum MenuType { baseMenu, menuItem, popumMenu, contextMenu, contextPopup, separator, menuBar }
 
 
 

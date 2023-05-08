@@ -16,6 +16,8 @@ import wings.enums;
 import wings.commons;
 import wings.window ;
 import wings.colors;
+import wings.contextmenu;
+
 
 enum repeatingCode = "  mWidth = w ;
                         mHeight = h ;
@@ -155,6 +157,18 @@ class Control {
     void hide() { ShowWindow(this.mHandle, SW_HIDE);}
 
 
+    final ContextMenu contextMenu() {return this.mCmenu;}
+    final void contextMenu(ContextMenu value) {
+        this.mCmenu = value;
+        if (!this.mCmenu.mParent) this.mCmenu.mParent = this;
+        this.mCmenu.setDummyControl();
+    }
+    final void setContextMenu(string[] menuNames ...) {
+        auto cmenu = new ContextMenu(this, menuNames);
+        this.mCmenu = cmenu;
+    }
+
+
 
 
     protected :
@@ -170,13 +184,10 @@ class Control {
         bool mIsCreated;
         bool mBaseFontChanged;
         bool mVisible = true;
-        Font mFont;
-        ControlType mControlType;
-        static int mSubClassId = 1000;
+
+
+
         static int stCtlId = 100 ;
-
-
-
 
         // A simple helper function for convert a control to DWORD_PTR
         final DWORD_PTR toDwPtr() {return cast(DWORD_PTR) (cast(void*) this);} // Protected
@@ -188,6 +199,8 @@ class Control {
 
 
     package:
+        Font mFont;
+        ControlType mControlType;
         bool lDownHappened;
         bool rDownHappened;
         bool isMouseEntered;
@@ -198,6 +211,8 @@ class Control {
         HWND mHandle;
         HBRUSH mBkBrush;
         Window mParent ;
+        ContextMenu mCmenu;
+        static int mSubClassId = 1000;
 
         final void createHandle(wchar* clsname) {  // protected
             // This function works for almost all controls except combo box.
