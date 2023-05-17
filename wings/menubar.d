@@ -198,6 +198,7 @@ class MenuItem {
         Color mFgColor;
         bool mEnabled;
         uint mId;
+        HMENU mHmenu;
 
         void insertMenuInternal(HMENU parenthmenu) {
             MENUITEMINFOW mii;
@@ -213,8 +214,13 @@ class MenuItem {
             this.mCreated = true;
         }
 
+        MenuItem getChildFromIndex(int index) {
+            foreach (key, menu; this.mMenus) {if (menu.mIndex == index) return menu;}
+            return null;
+        }
+
     private:
-        HMENU mHmenu;
+
         HMENU mParentHmenu;
         uint mChildCount;
         uint mIndex;

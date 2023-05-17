@@ -7,7 +7,7 @@ pragma(lib, "gdi32.lib");
 pragma(lib, "comctl32.lib");
 pragma(lib, "gdiplus.lib");
 
-
+import std.stdio;
 import wings.d_essentials;
 import std.format;
 import std.array ;
@@ -22,7 +22,7 @@ import wings.winstyle_contsants;
 import wings.colors;
 import wings.gradient ;
 //import wings.combobox : ComboInfo;
-import wings.menubar : MenuItem;
+import wings.menubar : MenuItem, getMenuItem;
 
 import std.datetime.stopwatch ;
 //public bool isReleaseVersion ;
@@ -216,6 +216,13 @@ class Window : Control {
         bool mSizingStarted;
         WindowBkMode mBkDrawMode ;
         HWND[HWND] cmb_dict;
+        COLORREF mMenuGrayCref;
+        HBRUSH mMenuGrayBrush;
+        HBRUSH mMenuDefBgBrush;
+        HBRUSH mMenuHotBgBrush;
+        HBRUSH mMenuFrameBrush;
+        Font mMenuFont;
+        MenuItem[uint] mMenuItemDict;
 
 
         // This function is responsible for changing back color of window..
@@ -238,15 +245,18 @@ class Window : Control {
 
         final void setMenuClickHandler( MenuItem mi) { this.mMenuItems ~= mi;}
 
+        final MenuItem getMenuFromHmenu(HMENU menuHandle) {
+            foreach (key, menu; this.mMenuItemDict) {if (menu.mHmenu == menuHandle) return menu;}
+            return null;
+        }
+
 
     private : //-------------------------------
         static int mWinCount;
         static bool mMainLoopStarted;
-
         static int screenWidth;
         static int screenHeight;
         static int mGlobalHotKeyID = 100;
-
         int iNumber;
         int[] mHotKeyIDList;
         bool isLoaded;
@@ -404,9 +414,6 @@ struct HotKeyStruct {
 
 }
 
-
-
-
 void regWindowClass(wstring clsN,  HMODULE hInst) {
     WNDCLASSEXW wcEx ;
     wcEx.style         = CS_HREDRAW | CS_VREDRAW  | CS_OWNDC;
@@ -421,6 +428,8 @@ void regWindowClass(wstring clsN,  HMODULE hInst) {
     wcEx.lpszClassName = clsN.ptr;
 
     RegisterClassExW(&wcEx) ;
+
+    writeln("TVI_FIRST ", TVI_FIRST);
 
 }
 
@@ -444,15 +453,11 @@ void trackMouseMove(HWND hw) {
 }
 
 
-
 /// WndProc function for Window class
 extern(Windows)
 LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothrow {
-
     try {
-
-        auto win = cast(Window) (cast(void *) GetWindowLongPtrW(hWnd, GWLP_USERDATA)) ;
-
+        auto win = cast(Window) (cast(void *) GetWindowLongPtrW(hWnd, GWLP_USERDATA));
         switch (message) {
 
             case WM_SHOWWINDOW :
@@ -509,7 +514,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 auto ctlHwnd = cast(HWND) lParam ;
                 // If user uses a ComboBox, it contains a ListBox in it.
                 // So, 'ctlHwnd' might be a handle of that ListBox. Or it might be a normal ListBox too.
-                // So, we need to check it before disptch this message to that listbox.
+                // So, we need to check it before dispatch this message to that listbox.
                 // Because, if it is from Combo's listbox, there is no Wndproc function for that ListBox.
 
                 auto cmb = win.cmb_dict.get(ctlHwnd, null);
@@ -523,16 +528,12 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
             case WM_COMMAND :
                 switch (HIWORD(wParam)) {
                     case 0: // It's from menu
-                        if (win.mMenuItems.length > 0) {
-                            uint mid = cast(uint) LOWORD(wParam);
-                            foreach (mnu; win.mMenuItems) {
-                                if (mnu.menuID == mid) {
-                                    auto ea = new EventArgs();
-                                    mnu.clickHandler(ea);
-                                    break;
-                                }
-                            }
+                        auto mid = cast(uint)(LOWORD(wParam));
+                        auto menu = win.mMenuItemDict.get(mid, null);
+                        if (menu) {
+                            if (menu.onClick) menu.onClick(menu, new EventArgs());
                         }
+                        return 0;
                     break;
                     case 1: // It's from accelerator key
                     default: // It's from a control
@@ -713,8 +714,6 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 return 0;
             break;
 
-
-
             case WM_SYSCOMMAND :
                 auto uMsg = cast(UINT) (wParam & 0xFFF0) ;
                 switch (uMsg) {
@@ -773,6 +772,88 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 if (hWnd == appData.mainWinHandle) PostQuitMessage(0);
             break;
 
+            case WM_MEASUREITEM:
+                auto pmi = cast(LPMEASUREITEMSTRUCT)lParam;
+                auto mi = getMenuItem(pmi.itemData);
+                if (mi.mType == MenuType.baseMenu) {
+                    auto hdc = GetDC(hWnd);
+                    scope(exit) ReleaseDC(hWnd, hdc);
+                    SIZE size;
+                    GetTextExtentPoint32W(hdc, cast(wchar*) mi.mWideText, mi.mText.length, &size);
+                    pmi.itemWidth = size.cx + 3;
+                    pmi.itemHeight = size.cy;
+                } else {
+                    pmi.itemWidth = 100;
+                    pmi.itemHeight = 25;
+                }
+                return 1;
+            break;
+
+            case WM_DRAWITEM:
+                auto dis = cast(LPDRAWITEMSTRUCT) lParam;
+                auto mi = getMenuItem(dis.itemData);
+                COLORREF txtClrRef = mi.mFgColor.cref;
+                if (dis.itemState == 320 || dis.itemState == 257) {
+                    if (mi.mEnabled) {
+                        immutable RECT rc = RECT(dis.rcItem.left + 5, dis.rcItem.top + 1,
+                                    dis.rcItem.right, dis.rcItem.bottom);
+                        FillRect(dis.hDC, &rc, win.mMenuHotBgBrush);
+                        FrameRect(dis.hDC, &rc, win.mMenuFrameBrush);
+                        txtClrRef = 0x00000000;
+                    } else {
+                        FillRect(dis.hDC, &dis.rcItem, win.mMenuGrayBrush);
+                        txtClrRef = win.mMenuGrayCref;
+                    }
+                } else {
+                    FillRect(dis.hDC, &dis.rcItem, win.mMenuDefBgBrush);
+                    if (!mi.mEnabled) txtClrRef = win.mMenuGrayCref;
+                }
+
+                SetBkMode(dis.hDC, 1);
+                if (mi.mType == MenuType.baseMenu) {
+                    dis.rcItem.left += 10;
+                } else {
+                    dis.rcItem.left += 25;
+                }
+                SelectObject(dis.hDC, win.mMenuFont.handle);
+                SetTextColor(dis.hDC, txtClrRef);
+                DrawTextW(dis.hDC, mi.mWideText, -1, &dis.rcItem, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
+                return 0;
+            break;
+
+            case CM_MENU_ADDED:
+                // De-reference the pointer and put the menu item in our dict
+                win.mMenuItemDict[cast(uint)wParam] = *(cast(MenuItem*) (cast(void*)lParam));
+                writeln("Added menu name : ", win.mMenuItemDict[cast(uint)wParam].mText);
+                return 0;
+            break;
+
+            case WM_MENUSELECT:
+                auto pmenu = win.getMenuFromHmenu(cast(HMENU) lParam);
+                immutable int mid = cast(int) LOWORD(wParam); // Could be an id of a child menu or index of a child menu
+                immutable WORD hwwpm = HIWORD(wParam);
+                if (pmenu) {
+                    MenuItem menu;
+                    switch (hwwpm) {
+                        case 33_152: // A normal child menu. We can use mid ad menu id.
+                            menu = win.mMenuItemDict[mid]; break;
+                        case 33_168: // A popup child menu. We can use mid as index.
+                            menu = pmenu.getChildFromIndex(mid); break;
+                        default: break;
+                    }
+                    if (menu && menu.onFocus) menu.onFocus(menu, new EventArgs());
+                }
+            break;
+
+            case WM_INITMENUPOPUP:
+                auto menu = win.getMenuFromHmenu(cast(HMENU) wParam);
+                if (menu && menu.onPopup) menu.onPopup(menu, new EventArgs());
+            break;
+
+            case WM_UNINITMENUPOPUP:
+                auto menu = win.getMenuFromHmenu(cast(HMENU) wParam);
+                if (menu && menu.onCloseup) menu.onCloseup(menu, new EventArgs());
+            break;
 
             default: break ;
         }
