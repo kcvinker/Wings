@@ -26,6 +26,8 @@ public import wings.radiobutton;
 public import wings.textbox;
 public import wings.trackbar;
 public import wings.treeview;
+public import wings.dialogs;
+
 
 
 
