@@ -50,6 +50,7 @@ class FileOpenDialog : DialogBase {
 
     mixin finalProperty!("multiSelection", this.mMultiSel);
     mixin finalProperty!("showHiddenFiles", this.mShowHidden);
+    final string[] fileNames() {return this.mSelFiles;}
 
     final bool showDialog(HWND hwnd = null) {
         writeln("in dialog ");
@@ -60,6 +61,24 @@ class FileOpenDialog : DialogBase {
     private:
     bool mMultiSel;
     bool mShowHidden;
+    string[] mSelFiles;
+
+    // If user selects multi selection property, we will get all the
+    // selected files in buffer with null character separated.
+    // We need to loop throughi it and extract the file names.
+    void extractFileNames(wchar[] buff, int startPos) {
+        int offset = startPos;
+        string dirPath = buff[0..startPos - 1].to!string;
+        for (int i = startPos; i < MAX_PATH; i++) {
+            wchar wc = buff[i];
+            if (wc == '\u0000') {
+                wchar[] slice = buff[offset..i];
+                offset = i + 1;
+                this.mSelFiles ~= format("%s\\%s", dirPath, slice.to!string);
+                if (buff[offset] == '\u0000') break;
+            }
+        }
+    }
 }
 
 class FileSaveDialog : DialogBase {
@@ -131,9 +150,10 @@ bool showDialogHelper(T)(T obj, bool isOpen, HWND hwnd) {
     if (isOpen) {
         ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
         auto me = cast(FileOpenDialog) obj;
-        if (me.multiSelection) ofn.Flags |= OFN_ALLOWMULTISELECT;
+        if (me.multiSelection) ofn.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
         if (me.showHiddenFiles) ofn.Flags |= OFN_FORCESHOWHIDDEN;
         ret = GetOpenFileNameW(&ofn);
+        if (ret && me.mMultiSel) me.extractFileNames(buffer, ofn.nFileOffset);
     } else {
         ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
         ret = GetSaveFileNameW(&ofn);
@@ -146,6 +166,5 @@ bool showDialogHelper(T)(T obj, bool isOpen, HWND hwnd) {
     }
     return false;
 }
-
 
 
