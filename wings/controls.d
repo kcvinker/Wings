@@ -36,7 +36,7 @@ class Control {
         void text(string value) {
             this.mText = value ;
             if (this.mIsCreated) {
-                // TODO
+                SetWindowTextW(this.mHandle, this.mText.toUTF16z);
             }
         }
 
@@ -70,6 +70,8 @@ class Control {
         /// Set & get the name of the control
         mixin finalProperty!("name", this.mName);
 
+
+
         // /// Returns the type of a control
         // final ControlType controlType() {return this.mControlType;}
 
@@ -99,6 +101,9 @@ class Control {
                 this.sendMsg(WM_SETFONT, this.mFont.handle, 1) ;
             }
         }
+
+        int right() {return this.mRect.right;}
+        int bottom() {return this.mRect.bottom;}
 
         void printNotifs() {
             enum TRBN_FIRST = -1501U;
@@ -210,6 +215,7 @@ class Control {
         Window mParent ;
         ContextMenu mCmenu;
         static int mSubClassId = 1000;
+        int mRight, mBottom;
 
         void createHandleInternal(wchar* clsname) {  // protected
             // This function works for almost all controls except combo box.
@@ -232,6 +238,7 @@ class Control {
                 this.mIsCreated = true;
                 if (!this.mBaseFontChanged) this.mFont = this.mParent.font;
                 this.createLogFontInternal();
+                this.getRightAndBottom();
 
             }
         }
@@ -417,8 +424,17 @@ class Control {
 
     private :
         int mLogNum = 1;
+        RECT mRect;
         // int widthOffset = 20; // Might be useless
         // int heightOffset = 3;
+
+        void getRightAndBottom() {
+            // RECT rc;
+            GetClientRect(this.mHandle, &this.mRect);
+            // this.mRight = rc.right;
+            // this.mBottom = rc.bottom;
+            MapWindowPoints(this.mHandle, this.mParent.mHandle, cast(LPPOINT)&this.mRect, 2);
+        }
 
 
 

@@ -508,11 +508,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
 
             case WM_CTLCOLOREDIT :
                 auto ctlHwnd = cast(HWND) lParam;
-                writefln("tb hwnd %s", ctlHwnd);
-                auto x = SendMessageW(ctlHwnd, CM_COLOR_EDIT, wParam, lParam);
-                writefln("Return val %d", x);
-                // if (x == 0) x = toLresult(win.tbBrush);
-                return x;
+                return SendMessageW(ctlHwnd, CM_COLOR_EDIT, wParam, lParam);
             break;
 
             case WM_CTLCOLORSTATIC :

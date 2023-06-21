@@ -21,18 +21,35 @@ enum defFilter = "All Files" ~ '\0' ~ "*.*" ~ '\0';
 
 class DialogBase {
 
-    this(string title, string initDir, string filter = null) {
+    this(string title, string initDir) {
         this.mTitle = title;
         this.mInitDir = initDir;
-        this.mFilter = filter;
     }
 
     mixin finalProperty!("title", this.mTitle);
     mixin finalProperty!("initialFolder", this.mInitDir);
-    mixin finalProperty!("filter", this.mFilter);
+    // mixin finalProperty!("filter", this.mFilter); // Give a string like this - "All files\0*.*\0" or "Text Files\0*.txt\0"
     mixin finalProperty!("selectedPath", this.mSelPath);
     mixin finalProperty!("fileNameStartPos", this.mNameStart);
     mixin finalProperty!("extensionStartPos", this.mExtStart);
+
+    void setFilter(string filterName, string ext) {
+        if (this.mFilter.length > 0) {
+            this.mFilter = format("%s%s\0*%s\0", this.mFilter, filterName, ext);
+        } else {
+            this.mFilter = format("%s\0*%s\0", filterName, ext);
+        }
+    }
+
+    void allowAllFiles(bool value) {this.mAllowAllFiles = value;}
+
+    // void setFilter(string filterName, string[] ext) {
+    //     if (this.mFilter.length > 0) {
+    //         this.mFilter = format("%s\0%s\0*%s\0", this.mFilter, filterName, ext);
+    //     } else {
+    //         this.mFilter = format("%s\0%s\0", filterName, ext);
+    //     }
+    // }
 
     private:
     string mTitle;
@@ -41,11 +58,12 @@ class DialogBase {
     string mSelPath;
     int mNameStart;
     int mExtStart;
+    bool mAllowAllFiles;
 }
 
 class FileOpenDialog : DialogBase {
-    this(string title = "Open File", string initDir = "", string filter = "All files\0*.*\0") {
-        super(title, initDir, filter);
+    this(string title = "Open File", string initDir = "") {
+        super(title, initDir);
     }
 
     mixin finalProperty!("multiSelection", this.mMultiSel);
@@ -53,8 +71,8 @@ class FileOpenDialog : DialogBase {
     final string[] fileNames() {return this.mSelFiles;}
 
     final bool showDialog(HWND hwnd = null) {
-        writeln("in dialog ");
-        this.mInitDir = "C:\\Users\\kcvin\\OneDrive\\Programming\\C3\\CForms\\cforms";
+        // writeln("in dialog ");
+        // this.mInitDir = "C:\\Users\\kcvin\\OneDrive\\Programming\\C3\\CForms\\cforms";
         return showDialogHelper(this, true, hwnd);
     }
 
@@ -82,8 +100,8 @@ class FileOpenDialog : DialogBase {
 }
 
 class FileSaveDialog : DialogBase {
-    this(string title = "Save File", string initDir = "", string filter = "All files\0*.*\0") {
-        super(title, initDir, filter);
+    this(string title = "Save File", string initDir = "") {
+        super(title, initDir);
     }
 
     mixin finalProperty!("defaultExtension", this.mDefExt);
@@ -132,6 +150,11 @@ class FolderBrowserDialog : DialogBase {
 }
 
 bool showDialogHelper(T)(T obj, bool isOpen, HWND hwnd) {
+    if (obj.mFilter.length == 0) {
+        obj.mFilter = "All files\0*.*\0";
+    } else {
+        if (obj.mAllowAllFiles) obj.mFilter = format("%sAll files\0*.*\0", obj.mFilter);
+    }
     wchar[] buffer = new wchar[](MAX_PATH);
     wchar[] ttlBuff = new wchar[](MAX_PATH);
     ttlBuff[0] = '\u0000';

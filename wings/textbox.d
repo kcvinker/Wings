@@ -108,7 +108,7 @@ private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             // break;
 
             case CM_COLOR_EDIT:
-                writefln("tb hwnd in subclass %s", hWnd);
+                // writefln("tb hwnd in subclass %s", hWnd);
                 if (tb.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     if (tb.mDrawFlag & 1) SetTextColor(hdc, tb.mForeColor.cref);
