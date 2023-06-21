@@ -23,6 +23,9 @@ class RadioButton : Control
         mTxtStyle = DT_SINGLELINE | DT_VCENTER  ;
         mBackColor = parent.mBackColor;
         this.mName = format("%s_%d", "RadioButton_", rbNumber);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++rbNumber;
     }
 
@@ -30,7 +33,7 @@ class RadioButton : Control
 
     void create() {
     	this.setRbStyle();
-    	this.createHandle(mClassName.ptr);
+    	this.createHandleInternal(mClassName.ptr);
     	if (this.mHandle) {
             this.setSubClass(&rbWndProc) ;
             this.setRbSize() ;

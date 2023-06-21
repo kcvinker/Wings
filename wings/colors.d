@@ -57,6 +57,14 @@ struct Color  // This struct is used to hold the color values for all control's 
         this.cref = clr.cref;
     }
 
+    void updateColor(uint clr) {
+        this.value = clr;
+        this.red = clr >> 16;
+        this.green = (clr & 0x00ff00) >> 8;
+        this.blue = clr & 0x0000ff ;
+        this.cref = cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red);
+    }
+
     Color changeShade(double changeValue) { // Color.changeShade
         Color clr;
         clr.red = clip(this.red * changeValue) ;
@@ -161,6 +169,11 @@ struct Color  // This struct is used to hold the color values for all control's 
     }
 
 } // End Color
+
+HBRUSH makeHBRUSH(uint clr) {
+    auto c = Color(clr);
+    return CreateSolidBrush(c.cref);
+}
 
 int clip(double num) {
     import std.algorithm : clamp;

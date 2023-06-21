@@ -4,6 +4,8 @@ module wings.textbox; // Created on - 27-July-2022 07:41 AM
 import wings.d_essentials;
 import wings.wings_essentials;
 import std.datetime.stopwatch ;
+import std.stdio;
+
 
 private int tbNumber = 1 ;
 private wchar[] mClassName = ['E', 'd', 'i', 't', 0];
@@ -20,21 +22,25 @@ class TextBox : Control {
         this.mExStyle =  0x00000204 ;
         this.mBackColor(0Xffffff); // White
         this.mForeColor(0x000000); // Black
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++tbNumber;
+        this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
     }
 
     this (Window parent, int x, int y) {this(parent, x, y, 120, 25);}
     //this (Window parent, int x, int y, int w, int h) {this(parent, "", x, y, w, h);}
 
-    void create() {
+    override void createHandle() {
     	this.setTbStyle();
         // printf("textbox style %X", this.mStyle) ;
-    	this.createHandle(mClassName.ptr);
+    	this.createHandleInternal(mClassName.ptr);
     	if (this.mHandle) {
+            this.setSubClass(&tbWndProc);
+            // this.createLogFontInternal();
+            if (this.mCue.length > 0) this.sendMsg(EM_SETCUEBANNER, 0x0001, this.mCue.ptr);
 
-            this.setSubClass(&tbWndProc) ;
-            //this.createLogFontInternal();
-            if (this.mCue.length > 0) this.sendMsg(EM_SETCUEBANNER, 0x0001, this.mCue.ptr) ;
         }
     }
 
@@ -64,7 +70,7 @@ class TextBox : Control {
 
             if (this.mTxtPos == Alignment.center) {this.mStyle |= ES_CENTER;}
             else if (this.mTxtPos == Alignment.right) {this.mStyle |= ES_RIGHT;}
-            this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
+            // this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         }
 
         void finalize(UINT_PTR subid) {
@@ -76,41 +82,33 @@ class TextBox : Control {
 
 
 extern(Windows)
-private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)
-{
-    try
-    {
-        //sw.start();
-        //auto before = MonoTime.currTime();
-        TextBox tb = getControl!TextBox(refData)  ;
-        //auto tb = tbDict[0];
-        //sw.stop();
-        //auto timeElap = MonoTime.currTime - before;
-        //printf("Textbox retreiving time in nano sec : %s", timeElap);
-        switch (message)
-        {
+private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
+    try {
+        TextBox tb = getControl!TextBox(refData);
+        switch (message) {
             case WM_NCDESTROY : tb.finalize(scID); break;
-            case WM_PAINT:
-                //if (tb.mDrawFocus) {
-                //    PAINTSTRUCT ps;
-                //    auto dc = BeginPaint(hWnd, &ps);
-                //    auto fBrush = CreateSolidBrush(tb.mFrmCref);
-                //    FrameRect(dc, &ps.rcPaint, fBrush);
-                //    EndPaint(hWnd, &ps);
-                //    return 0;
-                //}
-            break;
+            // case WM_PAINT:
+            //     //if (tb.mDrawFocus) {
+            //     //    PAINTSTRUCT ps;
+            //     //    auto dc = BeginPaint(hWnd, &ps);
+            //     //    auto fBrush = CreateSolidBrush(tb.mFrmCref);
+            //     //    FrameRect(dc, &ps.rcPaint, fBrush);
+            //     //    EndPaint(hWnd, &ps);
+            //     //    return 0;
+            //     //}
+            // break;
 
-            case WM_SETFOCUS:
-                //tb.mDrawFocus = true;
+            // case WM_SETFOCUS:
+            //     //tb.mDrawFocus = true;
 
-            break;
+            // break;
 
-            case WM_KILLFOCUS:
-                //tb.mDrawFocus = false;
-            break;
+            // case WM_KILLFOCUS:
+            //     //tb.mDrawFocus = false;
+            // break;
 
             case CM_COLOR_EDIT:
+                writefln("tb hwnd in subclass %s", hWnd);
                 if (tb.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     if (tb.mDrawFlag & 1) SetTextColor(hdc, tb.mForeColor.cref);
@@ -152,24 +150,21 @@ private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
             case WM_LBUTTONDOWN : tb.mouseDownHandler(message, wParam, lParam); break ;
             case WM_LBUTTONUP : tb.mouseUpHandler(message, wParam, lParam); break ;
-            case CM_LEFTCLICK : tb.mouseClickHandler(); break;
+
             case WM_RBUTTONDOWN : tb.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : tb.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : tb.mouseRClickHandler(); break;
+
             case WM_MOUSEWHEEL : tb.mouseWheelHandler(message, wParam, lParam); break;
             case WM_MOUSEMOVE : tb.mouseMoveHandler(message, wParam, lParam); break;
             case WM_MOUSELEAVE : tb.mouseLeaveHandler(); break;
 
             default : return DefSubclassProc(hWnd, message, wParam, lParam) ;
         }
-
-
-
     }
 
     catch (Exception e)
     {
-        return DefSubclassProc(hWnd, message, wParam, lParam);
+        // return DefSubclassProc(hWnd, message, wParam, lParam);
     }
     return DefSubclassProc(hWnd, message, wParam, lParam);
 }

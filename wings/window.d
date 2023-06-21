@@ -68,7 +68,7 @@ class Window : Control {
             isWindowInit = true;
             appData = new ApplicationData( defWinFontName, defWinFontSize, defWinFontWeight);
             regWindowClass(appData.className, appData.hInstance);
-            this.checkWinVwesion();
+            // this.checkWinVwesion();
         }
 
         this.mText = txt ;
@@ -103,7 +103,7 @@ class Window : Control {
     }
 
     /// Creates the window
-    final void create() {
+    override void createHandle() {
         import std.stdio;
         setStartPos() ;
         setWindowStyles() ;
@@ -155,6 +155,7 @@ class Window : Control {
 
         if (this.mWinState == WindowState.minimized) {CloseWindow(this.mHandle); }
         if(!mMainLoopStarted) {
+            this.createControlHandles();
             mMainLoopStarted = true ;
             mainLoop() ;
         }
@@ -171,6 +172,10 @@ class Window : Control {
 
     /// closes the window
     final void close() { DestroyWindow(this.mHandle);}
+
+    final void enablePrintPoint() {
+        this.onMouseUp = &printFormPoints;
+    }
 
     final void printPoint(MouseEventArgs e) {
         import std.stdio;
@@ -223,6 +228,8 @@ class Window : Control {
         HBRUSH mMenuFrameBrush;
         Font mMenuFont;
         MenuItem[uint] mMenuItemDict;
+        Control[] mControls;
+        HBRUSH tbBrush;
 
 
         // This function is responsible for changing back color of window..
@@ -249,6 +256,8 @@ class Window : Control {
             foreach (key, menu; this.mMenuItemDict) {if (menu.mHmenu == menuHandle) return menu;}
             return null;
         }
+
+
 
 
     private : //-------------------------------
@@ -398,9 +407,24 @@ class Window : Control {
             }
         }
 
+        void createControlHandles() {
+            if (this.mControls.length) {
+                foreach (ctl; this.mControls) {
+                    if (!ctl.mIsCreated) ctl.createHandle();
+                }
+            }
+        }
+
 
 }
 //==========================END of Window CLASS=====================
+
+void printFormPoints(Control sender, MouseEventArgs e) {
+    import std.stdio;
+    static int x = 1 ;
+    writefln("[%s] X : %s, Y : %s", x, e.xPos, e.yPos) ;
+    ++x ;
+}
 
 struct HotKeyStruct {
     bool altKey;
@@ -428,9 +452,6 @@ void regWindowClass(wstring clsN,  HMODULE hInst) {
     wcEx.lpszClassName = clsN.ptr;
 
     RegisterClassExW(&wcEx) ;
-
-    writeln("TVI_FIRST ", TVI_FIRST);
-
 }
 
 // Some good back colors - 0xE8E9EB, 0xF5F5F5, 0xF2F3F5
@@ -459,44 +480,39 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
     try {
         auto win = cast(Window) (cast(void *) GetWindowLongPtrW(hWnd, GWLP_USERDATA));
         switch (message) {
-
             case WM_SHOWWINDOW :
                 if (!win.mIsLoaded) {
                     win.mIsLoaded = true ;
-                    if (win.onLoad) {
-                        auto ea = new EventArgs() ;
-                        win.onLoad(win, ea) ;
-                    }
+                    if (win.onLoad) win.onLoad(win, new EventArgs());
                 }
-
+                return 0;
             break;
 
-            case WM_ACTIVATEAPP :
+            case WM_ACTIVATEAPP:
                 if (win.onActivate || win.onDeActivate) {
                     auto ea = new EventArgs() ;
                     immutable bool flag = cast(bool) wParam ;
                     if (!flag) {
-                        if (win.onDeActivate) {
-                            win.onDeActivate(win, ea) ;
-                        }
+                        if (win.onDeActivate) win.onDeActivate(win, ea);
                         return 0 ;
-                    }      else {
-                        if (win.onActivate) {
-                            win.onActivate(win, ea) ;
-                        }
+                    } else {
+                        if (win.onActivate) win.onActivate(win, ea);
                     }
                 }
-                //print("DTN FIRST ", DTN_FIRST2);
             break;
 
             case WM_NOTIFY :
                 auto nm = cast(NMHDR*) lParam;
-                return SendMessage(nm.hwndFrom, CM_NOTIFY, wParam, lParam) ;
+                return SendMessageW(nm.hwndFrom, CM_NOTIFY, wParam, lParam) ;
             break;
 
             case WM_CTLCOLOREDIT :
                 auto ctlHwnd = cast(HWND) lParam;
-                return SendMessage(ctlHwnd, CM_COLOR_EDIT, wParam, lParam);
+                writefln("tb hwnd %s", ctlHwnd);
+                auto x = SendMessageW(ctlHwnd, CM_COLOR_EDIT, wParam, lParam);
+                writefln("Return val %d", x);
+                // if (x == 0) x = toLresult(win.tbBrush);
+                return x;
             break;
 
             case WM_CTLCOLORSTATIC :
@@ -507,7 +523,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 //} else {
                 //    return SendMessage(ctlHwnd, CM_COLOR_STATIC, wParam, lParam) ;
                 //}
-                return SendMessage(ctlHwnd, CM_COLOR_STATIC, wParam, lParam);
+                return SendMessageW(ctlHwnd, CM_COLOR_STATIC, wParam, lParam);
             break;
 
             case WM_CTLCOLORLISTBOX :
@@ -519,9 +535,9 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
 
                 auto cmb = win.cmb_dict.get(ctlHwnd, null);
                 if (cmb) {
-                    return SendMessage(cmb, CM_COLOR_CMB_LIST, wParam, lParam) ;
+                    return SendMessageW(cmb, CM_COLOR_CMB_LIST, wParam, lParam) ;
                 } else {
-                    return SendMessage(ctlHwnd, CM_COLOR_EDIT, wParam, lParam) ;
+                    return SendMessageW(ctlHwnd, CM_COLOR_EDIT, wParam, lParam) ;
                 }
             break ;
 
@@ -535,10 +551,10 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                         }
                         return 0;
                     break;
-                    case 1: // It's from accelerator key
+                    case 1: break; // It's from accelerator key
                     default: // It's from a control
                         auto ctlHwnd = cast(HWND) lParam ;
-                        return SendMessage(ctlHwnd, CM_CTLCOMMAND, wParam, lParam) ;
+                        return SendMessageW(ctlHwnd, CM_CTLCOMMAND, wParam, lParam) ;
                     break;
                 }
 
@@ -666,8 +682,8 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 }
             break ;
 
-            case WM_HSCROLL: return SendMessage(cast(HWND) lParam, CM_HSCROLL, wParam, lParam);
-            case WM_VSCROLL: return SendMessage(cast(HWND) lParam, CM_VSCROLL, wParam, lParam);
+            case WM_HSCROLL: return SendMessageW(cast(HWND) lParam, CM_HSCROLL, wParam, lParam);
+            case WM_VSCROLL: return SendMessageW(cast(HWND) lParam, CM_VSCROLL, wParam, lParam);
 
             case WM_SIZING :
                 win.mSizingStarted = true;
@@ -688,7 +704,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                     win.onSized(win, sea);
                     return 1;
                 }
-                return 0;
+
             break ;
 
             case WM_MOVE :
@@ -715,35 +731,28 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
             break;
 
             case WM_SYSCOMMAND :
-                auto uMsg = cast(UINT) (wParam & 0xFFF0) ;
+                auto uMsg = cast(UINT) (wParam & 0xFFF0);
                 switch (uMsg) {
-                    case SC_MINIMIZE :
-                        if (win.onMinimized) win.onMinimized(win, new EventArgs()) ;
+                    case SC_MINIMIZE:
+                        if (win.onMinimized) win.onMinimized(win, new EventArgs());
+                    break;
+
+                    case SC_MAXIMIZE:
+                        if (win.onMaximized) win.onMaximized(win, new EventArgs());
                     break ;
 
-                    case SC_MAXIMIZE :
-                        if (win.onMaximized) {
-                            auto ea = new EventArgs() ;
-                            win.onMaximized(win, ea) ;
-                        }
-                    break ;
-
-                    case SC_RESTORE :
-                        if (win.onRestored) {
-                            auto ea = new EventArgs() ;
-                            win.onRestored(win, ea) ;
-                        }
-                    break ;
-
-                    default : break ;
+                    case SC_RESTORE:
+                        if (win.onRestored) win.onRestored(win, new EventArgs());
+                    break;
+                    default: break ;
                 }
-            break ;
+            break;
 
             case WM_ERASEBKGND :
                 if (win.mBkDrawMode != WindowBkMode.normal) {
                     auto dch = cast(HDC) wParam ;
                     win.setBkClrInternal(dch) ;
-                    return 1; // We must return non zero value if handle this message.
+                    return cast(LRESULT)1; // We must return non zero value if handle this message.
                 }
                 // Do not return zero here. It will cause static controls's back ground looks ugly.
             break ;
@@ -824,7 +833,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
             case CM_MENU_ADDED:
                 // De-reference the pointer and put the menu item in our dict
                 win.mMenuItemDict[cast(uint)wParam] = *(cast(MenuItem*) (cast(void*)lParam));
-                writeln("Added menu name : ", win.mMenuItemDict[cast(uint)wParam].mText);
+                // writeln("Added menu name : ", win.mMenuItemDict[cast(uint)wParam].mText);
                 return 0;
             break;
 
@@ -855,7 +864,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 if (menu && menu.onCloseup) menu.onCloseup(menu, new EventArgs());
             break;
 
-            default: break ;
+            default: return DefWindowProcW(hWnd, message, wParam, lParam); break ;
         }
     }
     catch (Exception e){}

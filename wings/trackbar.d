@@ -48,8 +48,11 @@ class TrackBar : Control {
         mChannelColor(0xc2c2a3);
         mSelColor(0x99ff33);
         mTicColor(0x3385ff);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++tkbNumber;
-        if (bCreate) this.create();
+        // if (bCreate) this.createHandle();
     }
 
     this (Window parent, int x, int y, bool bCreate = false) {this(parent, x, y, 150, 24, bCreate);}
@@ -108,10 +111,10 @@ class TrackBar : Control {
         this.backColorSetupInternal();
     }
 
-    final void create() {
+    override void createHandle() {
         // import std.stdio;
     	this.setTkbStyle();
-    	this.createHandle(mClassName.ptr);
+    	this.createHandleInternal(mClassName.ptr);
     	if (this.mHandle) {
             this.setSubClass(&tkbWndProc);
             if (this.mCustDraw) this.prepareForCustDraw();
@@ -371,7 +374,7 @@ class TrackBar : Control {
                 this.mBkBrush = this.mBackColor.getBrush();
 
                 // Here, we need to send this message.
-                // otherwise we won't see the color change until next paint 
+                // otherwise we won't see the color change until next paint
                 this.sendMsg(TBM_SETRANGEMAX, 1, this.mMaxRange);
                 InvalidateRect(this.mHandle, null, 0);
             }

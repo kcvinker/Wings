@@ -3,7 +3,7 @@ module wings.menubar; // Created on 30-July-2022 06:56 PM
 import wings.d_essentials;
 import wings.wings_essentials;
 
-class MenuBar : Control {
+class MenuBar {
 
     this (Window parent, Font menuFont = null) {
         this.mHmenubar = CreateMenu();
@@ -78,6 +78,8 @@ class MenuBar : Control {
 
     private:
         HMENU mHmenubar;
+        Window mParent;
+        Font mFont;
         MenuType mType;
         int mMenuCount;
         MenuItem[string] mMenus;

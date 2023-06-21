@@ -12,6 +12,7 @@ module wings.listview; // Created on : 01-Jun-22 11:26:46 AM
 */
 
 
+import std.stdio ;
 import std.conv ;
 import std.algorithm ;
 import wings.d_essentials;
@@ -54,7 +55,11 @@ class ListView : Control {
         mHdrForeColor(0x000000);
         mHdrFont = parent.font;
         this.mName = format("%s_%d", "ListView_", lvNumber);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++lvNumber;
+
 
     }
 
@@ -62,9 +67,9 @@ class ListView : Control {
     this(Window parent, int x, int y) { this(parent, x, y, 250, 200);}
 
 
-    final void create() { //=======================================================CREATE FUNC
+    override void createHandle() { //=======================================================CREATE FUNC
     	this.adjustLVStyles() ;
-        this.createHandle(mClassName.ptr);
+        this.createHandleInternal(mClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&lvWndProc) ;
             this.setLvExStyles();
@@ -738,6 +743,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_MOUSEWHEEL : lv.mouseWheelHandler(message, wParam, lParam); break;
             case WM_MOUSEMOVE : lv.mouseMoveHandler(message, wParam, lParam); break;
             case WM_MOUSELEAVE : lv.mouseLeaveHandler(); break;
+            case WM_CONTEXTMENU: if (lv.mCmenu) lv.mCmenu.showMenu(lParam); break;
 
             //case WM_DRAWITEM :  // This is coming from child controls( aka Header)
             //    auto pdi = cast(DRAWITEMSTRUCT*) lParam;
@@ -797,8 +803,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     case LVN_ITEMCHANGING:
                     break;
                     case LVN_ITEMCHANGED:
-
-                        auto nmlv = cast(NMLISTVIEW *) lParam;
+                        auto nmlv = cast(NMLISTVIEW*) lParam;
                         if (nmlv.uNewState == 8192 || nmlv.uNewState == 4096) {
                             lv.mChecked = nmlv.uNewState == 8192 ? true : false;
                             if (lv.onCheckedChanged) {

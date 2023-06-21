@@ -21,6 +21,9 @@ class GroupBox : Control {
         mExStyle = gb_exstyle; // WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT ;
         mBackColor = parent.mBackColor ;
         this.mName = format("%s_%d", "GroupBox_", gbNumber);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++gbNumber;
     }
 
@@ -32,11 +35,11 @@ class GroupBox : Control {
         this(parent, txt, 20, 20, 150, 150);
     }
 
-    final void create() {
+    override void createHandle() {
         //if (this.mBackColor.value == this.parent.mBackColor.value) this.isPaintBkg = true;
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref );
-        this.createHandle(mClassName.ptr);
+        this.createHandleInternal(mClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&gbWndProc);
             this.getTextBounds();

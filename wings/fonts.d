@@ -37,7 +37,7 @@ class Font {
         if (createNow) this.createFontHandle();
     }
 
-    final void createFontHandle(HWND wHandle = null) {
+    void createFontHandle(HWND wHandle = null) {
         // import wings.wingdi : CreateFont;
         HDC dcHandle = GetDC(wHandle);
         immutable int iHeight = -MulDiv(this.size, GetDeviceCaps(dcHandle, LOGPIXELSY), 72) ;

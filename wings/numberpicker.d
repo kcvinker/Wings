@@ -38,13 +38,17 @@ class NumberPicker : Control {
         mFmtStr = "%.02f";
         mValue = mMinRange;
         this.mName = format("%s_%d", "NumberPicker_", npNumber);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++npNumber;
+
     }
 
     this(Window parent) {this(parent, 10, 10, 100, 27);}
     this(Window parent, int x, int y) {this(parent, x, y, 100, 27);}
 
-    final void create() {
+    override void createHandle() {
     	this.adjustNpStyles();
         this.createUpdown();
         this.createBuddy();

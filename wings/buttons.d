@@ -101,6 +101,9 @@ class Button : Control {
         mText = txt ;
         mStyle = WS_CHILD | BS_NOTIFY | WS_TABSTOP | WS_VISIBLE | BS_PUSHBUTTON;
         mExStyle = 0;
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++btnNumber;
     }
 
@@ -126,8 +129,8 @@ class Button : Control {
 
     //------------------------------------------------------------------------
     /// Create the button handle
-    final void create() {
-        this.createHandle(mClassName.ptr) ;
+    override void createHandle() {
+        this.createHandleInternal(mClassName.ptr) ;
         if (this.mHandle) {
             this.setSubClass(&btnWndProc) ;
         }
@@ -216,7 +219,6 @@ class Button : Control {
         void paintRoundGradient(HDC dc, RECT rc, GradColor gc, HPEN pen) {
             auto gradBrush = createGradientBrush(dc, rc, gc.c1, gc.c2) ;
             scope(exit) DeleteObject(gradBrush) ;
-
             SelectObject(dc, pen);
             SelectObject(dc, gradBrush);
             RoundRect(dc, rc.left, rc.top, rc.right, rc.bottom, roundCurve, roundCurve);
@@ -247,6 +249,7 @@ class Button : Control {
 
         void finalize(UINT_PTR scID) {
             // this.remSubClass(scID);
+            writeln("Button destro");
             RemoveWindowSubclass(this.mHandle, &btnWndProc, scID);
         }
     //-----------------------------------------------------------------------
@@ -292,7 +295,6 @@ private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-
         Button btn = getControl!Button(refData) ;
         //btn.log(message, "Button message ");
         switch (message) {

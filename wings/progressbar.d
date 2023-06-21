@@ -33,16 +33,19 @@ class ProgressBar : Control {
         mSpeed = 30;
         mForeColor(0x000000);
         this.mName = format("%s_%d", "ProgressBar_", pgbNumber);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++pgbNumber;
     }
 
     this(Window parent, int x, int y) { this(parent, x, y, 180, 25);}
     this(Window parent) { this(parent, 20, 20, 180, 25);}
 
-    final void create() {
+    override void createHandle() {
 		if (this.mBarStyle == ProgressBarStyle.marqueeStyle) this.mStyle |= PBS_MARQUEE;
 		if (this.mVertical) this.mStyle |= PBS_VERTICAL;
-        this.createHandle(mClassName.ptr);
+        this.createHandleInternal(mClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&pgbWndProc);
             if (this.mMinValue != 0 || this.mMaxValue != 100)

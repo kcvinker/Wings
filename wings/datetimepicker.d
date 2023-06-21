@@ -67,6 +67,9 @@ class DateTimePicker : Control {
         this.mExStyle = 0 ;
         this.mFormat = DtpFormat.custom ;
         this.mFormatString = " dd-MMM-yyyy";
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++dtpNumber ;
 
     }
@@ -74,9 +77,9 @@ class DateTimePicker : Control {
     this(Window p ) { this(p, 20, 20, 140, 25) ; }
     this(Window p, int x, int y ) { this(p, x, y, 140, 25) ; }
 
-    final void create() {
+    override void createHandle() {
     	this.setDtpStyles() ;
-        this.createHandle(mClassName.ptr) ;
+        this.createHandleInternal(mClassName.ptr) ;
         if (this.mHandle) {
             this.setSubClass(&dtpWndProc) ;
             this.afterCreationStyling() ;

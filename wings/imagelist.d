@@ -1,4 +1,4 @@
-module wings.imagelist; // Created on : 03-Jun-22 12:39:17 AM  
+module wings.imagelist; // Created on : 03-Jun-22 12:39:17 AM
 
 
 
@@ -6,7 +6,7 @@ import core.sys.windows.commctrl ;
 import core.sys.windows.windows ;
 import std.utf ;
 import std.file;
-import std.path;   
+import std.path;
 
 import wings.enums;
 import wings.gdiplus;
@@ -21,14 +21,14 @@ import wings.colors;
 
 
 class ImageList {
-    this(ImageType imgTyp) { 
+    this(ImageType imgTyp) {
         this.mImgType = imgTyp;
     }
-    this(   int sX, int sY, 
+    this(   int sX, int sY,
             int initSize = 4, int growSize = 4,
             ImageOptions imgOpt = ImageOptions.none,
-            ColorOptions clrOpt = ColorOptions.defaultColor, 
-            ImageType imgTyp = ImageType.normalImage) 
+            ColorOptions clrOpt = ColorOptions.defaultColor,
+            ImageType imgTyp = ImageType.normalImage)
     {
         this.mSizeX = sX;
         this.mSizeY = sY;
@@ -44,7 +44,7 @@ class ImageList {
 
     ~this() {if (this.handle) ImageList_Destroy(this.mHandle);}
 
-    final bool isCreated() {return this.mIsCreated;}    
+    final bool isCreated() {return this.mIsCreated;}
     final HIMAGELIST handle() {return this.mHandle;}
 
     final ImageType imageType() {return this.mImgType;}
@@ -60,7 +60,7 @@ class ImageList {
     final void sizeX(int value) {this.mSizeX = value;}
 
     final int sizeY() {return this.mSizeY;}
-    final void sizeY(int value) {this.mSizeY = value;}   
+    final void sizeY(int value) {this.mSizeY = value;}
 
 
     final void createHandle() {
@@ -87,32 +87,32 @@ class ImageList {
     final void addImage(string imgFile) {
         if (this.mIsCreated) {
             // We need to call some functions from Gdi+ dll.
-            // This wrapper class will init the GdiplusStartup function            
+            // This wrapper class will init the GdiplusStartup function
             auto gp = new GdiPlus;
             auto hBitmap = gp.createHbitmapFromFile(imgFile);
             gp.shutDownGdiPlus();
             if (hBitmap) ImageList_Add(this.mHandle, hBitmap, null);
             //if (hBitmap) print("Gdi plus worked");
-        }       
+        }
     }
 
     final void addImages(string folderPath, string[] extArray = [".bmp", ".jpeg", ".jpg", ".tiff",".png"]) {
-                
+
         if (this.mIsCreated) {
             // We loop through files on that folder and check the extension.
             // If it is in our extArray, we will process it.
             auto gp = new GdiPlus; // do the gdi startup process.
             foreach (imgFile; dirEntries(folderPath, SpanMode.breadth) ) {
                 if (arraySearch(extArray, imgFile.extension) != -1) {
-                    auto hBitmap = gp.createHbitmapFromFile(imgFile);                   
-                    if (hBitmap) ImageList_Add(this.mHandle, hBitmap, null);                    
+                    auto hBitmap = gp.createHbitmapFromFile(imgFile);
+                    if (hBitmap) ImageList_Add(this.mHandle, hBitmap, null);
                 }
             }
             gp.shutDownGdiPlus(); // properly shut down gdi plus.
-        }        
+        }
     }
 
-    final void addSolidColorImage(HWND ctlHwnd, uint clr, int width, int height) {        
+    final void addSolidColorImage(HWND ctlHwnd, uint clr, int width, int height) {
         if (this.mIsCreated) {
             HDC hdc = GetDC(ctlHwnd);
             HDC compDc = CreateCompatibleDC(hdc);
@@ -126,14 +126,14 @@ class ImageList {
             ReleaseDC(ctlHwnd, hdc);
             SelectObject(compDc, oldDC);
             DeleteDC(compDc);
-        }        
+        }
     }
 
     final void addIcon(string imgFile) {
         if (this.mIsCreated) {
             if (imgFile.extension == ".ico") {
-                auto hIco =  LoadImageW(null, imgFile.toUTF16z, 1, 0, 0, LR_LOADFROMFILE);                   
-                ImageList_AddIcon(this.mHandle, hIco);                              
+                auto hIco =  LoadImageW(null, imgFile.toUTF16z, 1, 0, 0, LR_LOADFROMFILE);
+                ImageList_AddIcon(this.mHandle, hIco);
             }
         }
     }
@@ -142,12 +142,12 @@ class ImageList {
         if (this.mIsCreated) {
             foreach (imgFile; dirEntries(folderPath, SpanMode.breadth) ) {
                 if (imgFile.extension == ".ico") {
-                    auto hIco =  LoadImageW(null, imgFile.toUTF16z, 1, 0, 0, LR_LOADFROMFILE );                   
+                    auto hIco =  LoadImageW(null, imgFile.toUTF16z, 1, 0, 0, LR_LOADFROMFILE );
                     if (hIco) {
-                        auto ret = ImageList_AddIcon(this.mHandle, hIco);                        
-                    }                    
+                        auto ret = ImageList_AddIcon(this.mHandle, hIco);
+                    }
                 }
-            }    
+            }
         }
     }
 
@@ -155,19 +155,19 @@ class ImageList {
         if (this.mIsCreated) {
             auto gp = new GdiPlus; // do the gdi startup process.
             foreach (imgFile; dirEntries(folderPath, SpanMode.breadth) ) {
-                if (imgFile.extension == ".png") {                   
-                    // auto hBitmap = gp.readPngFile(imgFile);                   
+                if (imgFile.extension == ".png") {
+                    // auto hBitmap = gp.readPngFile(imgFile);
                     // if (hBitmap) {
                     //     print("Adding image", ImageList_AddMasked(this.mHandle, hBitmap, CLR_DEFAULT));
                     //     print(GetLastError());
-                    // }  
+                    // }
                     auto rr = ImageList_LoadImageW(null, imgFile.toUTF16z, 16, 16, CLR_NONE, IMAGE_BITMAP, LR_LOADFROMFILE) ;
-                    //print("imlli ", rr);              
+                    //print("imlli ", rr);
                 }
-            }  
-            gp.shutDownGdiPlus(); // properly shut down gdi plus.  
+            }
+            gp.shutDownGdiPlus(); // properly shut down gdi plus.
         }
-    }   
+    }
 
     private :
         ImageType mImgType ;
@@ -176,13 +176,13 @@ class ImageList {
         HIMAGELIST mHandle;
         bool mIsCreated;
         int mSizeX = 16;
-        int mSizeY = 16;        
+        int mSizeY = 16;
         int mInitSize = 4;
-        int mGrowSize = 4;  
+        int mGrowSize = 4;
 
 }
 
-// These two constants are missing in `commctrl.d`. 
+// These two constants are missing in `commctrl.d`.
 enum ILC_MIRROR = 0x00002000 ;
 enum ILC_PERITEMMIRROR = 0x00008000;
 

@@ -1,27 +1,19 @@
 module wings.events;
-
-
+import wings.controls : Control;
 import core.sys.windows.winuser;
 import core.sys.windows.windef;
 import core.sys.windows.windows ;
-
 import std.utf ;
+
 
 import wings.enums;
 import wings.date_and_time ;
 import wings.commons;
-import wings.controls: Control;
 import wings.menubar : MenuItem;
-
 
 import std.stdio;
 
-/// This module is for events
-
 immutable uint um_single_Click = WM_USER + 1 ;
-//immutable uint um_right_click = WM_USER + 2;
-
-
 
 alias EventHandler = void function(Control sender, EventArgs e) ;
 alias KeyEventHandler = void function(Control sender, KeyEventArgs e) ;

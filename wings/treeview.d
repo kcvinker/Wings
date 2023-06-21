@@ -22,15 +22,18 @@ class TreeView : Control {
         mForeColor(defForeColor);
         mLineClr(defForeColor);
         this.mName = format("%s_%d", "TreeView_", tvNumber);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++tvNumber;
     }
 
     this (Window parent, int x, int y) {this(parent, x, y, 250, 200);}
    // this (Window parent, int x, int y) {this(parent, x, y, 250, 200);}
 
-    void create() {
+    override void createHandle() {
     	this.setTvStyle();
-    	this.createHandle(mClassName.ptr);
+    	this.createHandleInternal(mClassName.ptr);
     	if (this.mHandle) {
             this.setSubClass(&tvWndProc) ;
             if (this.mBackColor.value != 0xFFFFFF) this.sendMsg(TVM_SETBKCOLOR, 0, this.mBackColor.cref);
@@ -204,11 +207,7 @@ class TreeNode {
         string mTxt;
         int mNodeId;
         TreeNodeNotifyHandler mNotifyHandler;
-
     }
-
-
-
 
 } // End of TreeNode Class
 

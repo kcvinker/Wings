@@ -19,6 +19,9 @@ class Label : Control {
         mBackColor = parent.mBackColor;
         mForeColor(defForeColor);
         this.mName = format("%s_%d", "Label+", lblNumber);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++lblNumber;
         //mBorder = LabelBorder.singleLine;
     }
@@ -29,10 +32,10 @@ class Label : Control {
     this(Window parent, string txt, int x, int y) { this(parent, txt, x, y, 0, 0) ; }
 
 
-    final void create() {
+    override void createHandle() {
         if (this.mBorder != LabelBorder.noBorder) adjustBorder();
         this.checkForAutoSize();
-        this.createHandle(mClassName.ptr);
+        this.createHandleInternal(mClassName.ptr);
 
         if (this.mHandle) {
             if (this.mAutoSize) this.calculateAutoSize();

@@ -7,9 +7,6 @@ import std.utf;
 import core.sys.windows.commctrl ;
 import std.conv;
 
-
-
-
 import wings.fonts;
 import wings.events;
 import wings.enums;
@@ -195,7 +192,7 @@ class Control {
         // Helper function to invalidate & redraw a control.
         final void checkRedrawNeeded() {if (this.mIsCreated) InvalidateRect(this.mHandle, null, true);} // Protected
 
-
+        abstract void createHandle() {writeln("Control's impl");}
 
 
     package:
@@ -214,10 +211,10 @@ class Control {
         ContextMenu mCmenu;
         static int mSubClassId = 1000;
 
-        final void createHandle(wchar* clsname) {  // protected
+        void createHandleInternal(wchar* clsname) {  // protected
             // This function works for almost all controls except combo box.
             // This will save us 150+ lines of code.
-            this.mCtlId = Control.stCtlId ;
+            // this.mCtlId = Control.stCtlId ;
             this.mHandle = CreateWindowEx(  this.mExStyle,
                                             clsname,
                                             this.mText.toUTF16z,
@@ -231,14 +228,11 @@ class Control {
                                             appData.hInstance,
                                             null);
             if (this.mHandle) {
-                ++Control.stCtlId; // Increasing protected static member for next control iD
+                // ++Control.stCtlId; // Increasing protected static member for next control iD
                 this.mIsCreated = true;
                 if (!this.mBaseFontChanged) this.mFont = this.mParent.font;
                 this.createLogFontInternal();
-                // writefln("TVI_ROOT %s", TVI_ROOT);
-                // writefln("TVI_FIRST %s", TVI_FIRST);
-                // writefln("TVI_LAST %s", TVI_LAST);
-                // writefln("TVI_SORT %s", TVI_SORT);
+
             }
         }
 
@@ -267,7 +261,7 @@ class Control {
             return SendMessage(this.mHandle, uMsg, cast(WPARAM) wp, cast(LPARAM) lp);
         }
 
-        final void createLogFontInternal() { // Package
+        void createLogFontInternal() { // Package
             if (!this.mFont.isCreated) this.mFont.createFontHandle(this.mHandle);
             this.sendMsg(WM_SETFONT, this.mFont.handle, 1) ;
         }
@@ -432,3 +426,4 @@ class Control {
 
 
 } // End Control Class
+

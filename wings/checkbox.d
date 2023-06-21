@@ -44,6 +44,9 @@ class CheckBox : Control {
         mTxtStyle = DT_SINGLELINE | DT_VCENTER  ;
         mBackColor = parent.mBackColor ;
         this.mName = format("%s_%d", "CheckBox_", cbNumber);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++cbNumber;
     }
 
@@ -57,9 +60,9 @@ class CheckBox : Control {
     this (Window parent, string txt, int x, int y) { this(parent, txt, x, y, 50, 20); }
 
     // Create the handle of CheckBox
-    final void create() {
+    override void createHandle() {
     	this.setCbStyles() ;
-        this.createHandle(mClassName.ptr);
+        this.createHandleInternal(mClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&cbWndProc) ;
             this.setCbSize() ;

@@ -75,6 +75,9 @@ class Calendar : Control {
         this.mStyle = WS_CHILD | WS_VISIBLE ;
         this.mExStyle = 0 ;
         this.mName = format("%s_%d", "Calendar_", calNumber);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++calNumber ;
 
         writefln("mcn first %d, mcn sel changed %d, mcn vew changed %d", MCN_FIRST, MCN_SELCHANGE, MCN_VIEWCHANGE);
@@ -82,9 +85,9 @@ class Calendar : Control {
 
     this(Window p, int x, int y) { this(p, x, y, 0, 0) ; }
 
-    final void create() {
+    override void createHandle() {
     	this.setCalenderStyles() ;
-        this.createHandle(mClassName.ptr) ;        // Calling base function
+        this.createHandleInternal(mClassName.ptr) ;        // Calling base function
         if (this.mHandle) {
             this.setSubClass(&calWndProc) ;
             RECT rct ;

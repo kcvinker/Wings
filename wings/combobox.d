@@ -10,37 +10,6 @@ import std.algorithm.mutation  ; // We have a function called 'remove'. So this 
 import wings.wings_essentials;
 
 
-//struct ComboInfo {
-//	HWND lbHwnd ;
-//	HWND tbHwnd ;
-//	HWND cmbHwnd ;
-//	bool noTbMsg ;
-//    int comboId ;
-//    int tbSubClsId ;
-//    RECT rcEdit ;
-
-//    this(COMBOBOXINFO c, HWND hw, int cId, int subId) {
-//        this.lbHwnd = c.hwndList;
-//        this.tbHwnd = c.hwndItem;
-//        this.cmbHwnd = hw;
-//        this.noTbMsg = false;
-//        this.comboId = cId;
-//        this.tbSubClsId = subId;
-//        this.rcEdit = c.rcItem;
-//    }
-
-//    void changeData(ref ComboInfo c) {
-//        this.lbHwnd = c.lbHwnd ;
-//        this.tbHwnd = c.tbHwnd ;
-//        this.cmbHwnd = c.cmbHwnd ;
-//        this.noTbMsg = c.noTbMsg ;
-
-//    }
-//}
-
-
-
-
 private int cmbNumber = 1 ;
 private int editSubClsID = 4000;
 /**
@@ -57,6 +26,9 @@ class ComboBox : Control {
         mForeColor(defForeColor) ;
         mSelIndex = -1;
         this.mName = format("%s_%d", "ComboBox_", cmbNumber);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++cmbNumber;
     }
 
@@ -102,7 +74,7 @@ class ComboBox : Control {
             this.mCmbStyle = value;
             this.mRecreateEnabled = true;
             DestroyWindow(this.mHandle);
-            this.create();
+            this.createHandle();
         } else {
             // No need to create a new one.
             this.mCmbStyle = value;
@@ -199,7 +171,7 @@ class ComboBox : Control {
 
 
     /// Create the handle of ComboBox control.
-    final void create() {
+    override void createHandle() {
         if (!this.mRecreateEnabled) this.ctlId = Control.stCtlId;
         if (this.mCmbStyle == DropDownStyle.labelCombo) {
             this.mStyle |= CBS_DROPDOWNLIST;
@@ -516,7 +488,7 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                 // NOTE: this is only work for text typing combo box.
                 if (cmb.mDrawFlag) {
                     auto hdc = cast(HDC) wParam ;
-                    SetBkMode(hdc, TRANSPARENT) ;
+                    // SetBkMode(hdc, TRANSPARENT) ;
                     if (cmb.mDrawFlag & 1) SetTextColor(hdc, cmb.mForeColor.cref) ;
                     if (cmb.mDrawFlag & 2) SetBkColor(hdc, cmb.mBackColor.cref);
                 }

@@ -21,6 +21,9 @@ class ListBox : Control {
         mBackColor(defBackColor) ;
         mForeColor(defForeColor);
         this.mName = format("%s_%d", "ListBox_", lbxNumber);
+        this.mParent.mControls ~= this;
+        this.mCtlId = Control.stCtlId;
+        ++Control.stCtlId;
         ++lbxNumber;
        // mMultiSel = true;
     }
@@ -109,7 +112,7 @@ class ListBox : Control {
     final int getHotIndex() {
         //long wp = 0;
         //long lp = 0 ;
-        if (this.mMultiSel) this,sendMsg(LB_GETCARETINDEX, 0, 0) ;
+        if (this.mMultiSel) return this.sendMsg(LB_GETCARETINDEX, 0, 0) ;
         return -1;
     }
 
@@ -182,9 +185,9 @@ class ListBox : Control {
     }
 
      // Create the handle of CheckBox
-    final void create() {
+    override void createHandle() {
     	this.setLboxStyles() ;
-        this.createHandle(mClassName.ptr);
+        this.createHandleInternal(mClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&lbxWndProc) ;
             if (this.mItems.length > 0) { // We need to add those items to list box

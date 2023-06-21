@@ -1,11 +1,12 @@
 module wings;
 
 
-public import wings.window;
 public import wings.controls;
+public import wings.events;
+public import wings.window;
 public import wings.commons;
 public import wings.contextmenu;
-public import wings.events;
+
 public import wings.enums;
 public import wings.buttons;
 public import wings.fonts;
