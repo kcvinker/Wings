@@ -29,7 +29,11 @@ class Label : Control {
     this(Window parent) { this(parent, format("Label_", lblNumber), 20, 20, 0, 0); }
     this(Window parent, int x, int y) { this(parent, format("Label_", lblNumber), x, y, 0, 0); }
     this(Window parent, string txt) { this(parent, txt, 20, 20, 0, 0); }
-    this(Window parent, string txt, int x, int y) { this(parent, txt, x, y, 0, 0); }
+    this(Window parent, string txt, int x, int y, bool bcreate = false) {
+        this(parent, txt, x, y, 0, 0);
+        if (bcreate) this.createHandle();
+
+    }
 
 
     override void createHandle() {
@@ -112,6 +116,8 @@ class Label : Control {
             this.mWidth = ss.cx + 3;
             this.mHeight = ss.cy;
             SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOMOVE);
+            InvalidateRect(this.mHandle, null, false);
+            this.getRightAndBottom();
         }
 
         void finalize(UINT_PTR scID) { // private

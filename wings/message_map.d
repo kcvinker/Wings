@@ -1,4 +1,4 @@
-module wings.message_map ;
+module wings.message_map;
 
 
 

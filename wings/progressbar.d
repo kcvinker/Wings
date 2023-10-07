@@ -5,10 +5,11 @@ module wings.progressbar;
 import wings.d_essentials;
 import wings.wings_essentials;
 import std.stdio;
+import std.conv;
 
 
 
-int pgbNumber = 1 ;
+int pgbNumber = 1;
 DWORD pgbStyle = WS_CHILD | WS_VISIBLE | PBS_SMOOTH | WS_OVERLAPPED;
 enum PBM_SETSTATE  = (WM_USER+16);
 enum PBM_GETSTATE  = 0x0420;
@@ -22,15 +23,16 @@ class ProgressBar : Control {
 
     this(Window parent, int x, int y, int w, int h) {
         mixin(repeatingCode);
-        mControlType = ControlType.progressBar ;
-        mStyle = pgbStyle; // WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP ;
-        mExStyle = pgbExStyle; // WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT ;
+        mControlType = ControlType.progressBar;
+        mStyle = pgbStyle; // WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP;
+        mExStyle = pgbExStyle; // WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT;
 		mBarStyle = ProgressBarStyle.blockStyle;
         mState = ProgressBarState.normal;
 		mMinValue = 0;
 		mMaxValue = 100;
 		mStep = 1;
         mSpeed = 30;
+        this.percFmt = "%d%%";
         mForeColor(0x000000);
         this.mName = format("%s_%d", "ProgressBar_", pgbNumber);
         this.mParent.mControls ~= this;
@@ -92,10 +94,12 @@ class ProgressBar : Control {
     final int step() {return this.mStep;}
 
 
-	final void value(int value) {
-        if (value >= this.minValue && value <= this.mMaxValue) {
-            this.mValue = value;
-		    if (this.mIsCreated) { this.sendMsg(PBM_SETPOS, value, 0);}
+	final void value(int ivalue) {
+        // writeln("value proc ", value);
+        if (ivalue >= this.minValue && value <= this.mMaxValue) {
+            this.mValue = ivalue;
+		    if (this.mIsCreated) {
+                this.sendMsg(PBM_SETPOS, ivalue, 0);}
         }
         else {
             throw new Exception("Value is not in reange");
@@ -128,7 +132,12 @@ class ProgressBar : Control {
 			}
 			if (this.mIsCreated) {
                 SetWindowLongPtr(this.mHandle, GWL_STYLE, cast(LONG_PTR)this.mStyle);
-			    if (value == ProgressBarStyle.marqueeStyle) this.sendMsg(PBM_SETMARQUEE, 1, this.mSpeed);
+			    if (value == ProgressBarStyle.marqueeStyle) {
+                    auto x = this.sendMsg(PBM_SETMARQUEE, 1, this.mSpeed);
+                    // writefln("pgb sndmsg rslt %d", x);
+                } else {
+                    this.sendMsg(PBM_SETMARQUEE, 0, 0);
+                }
             }
         }
         this.mBarStyle = value;
@@ -136,15 +145,32 @@ class ProgressBar : Control {
 
     final ProgressBarStyle style() {return this.mBarStyle;}
 
+    // final void formatString(string value) {this.percFmt = value;} // %d%% = int, %0.2f%% = double
+    // final string formatString() {return this.percFmt;}
+
+    final void decimalPrecision(int value) {
+        this.mDeciPrec = value;
+        if (value == 0) {
+            this.percFmt = "%d%%";
+        } else if(value > 0) {
+            this.percFmt = "%0." ~ value.to!string ~ "f%%";
+            // writefln("perc fmt %s", this.percFmt);
+        }
+    }
+    final int decimalPrecision() {return this.mDeciPrec;}
+
     final void startMarquee() {
-        if (this.mIsCreated && this.mBarStyle == ProgressBarStyle.marqueeStyle) {
-            this.sendMsg(PBM_SETMARQUEE, 1, this.mSpeed);
+        if (this.mIsCreated) {
+            this.style = ProgressBarStyle.marqueeStyle;
+            // auto x = this.sendMsg(PBM_SETMARQUEE, 1, this.mSpeed);
+            // writefln("pgb sndmsg rslt %d", x);
         }
     }
 
     final void stopMarquee() {
-        if (this.mIsCreated && this.mBarStyle == ProgressBarStyle.marqueeStyle) {
-            this.sendMsg(PBM_SETMARQUEE, 0, 0);
+        if (this.mIsCreated) {
+            // this.sendMsg(PBM_SETMARQUEE, 0, 0);
+            this.style = ProgressBarStyle.blockStyle;
         }
     }
 
@@ -156,25 +182,28 @@ class ProgressBar : Control {
 		ProgressBarStyle mBarStyle;
         ProgressBarState mState;
         bool mVertical, mShowPerc;
-        int mMinValue, mMaxValue, mStep, mValue, mSpeed;
+        int mMinValue, mMaxValue, mStep, mValue, mSpeed, mDeciPrec;
+        string percFmt;
 
         LRESULT drawPercentage(HWND hw, UINT msg, WPARAM wp, LPARAM lp) {
             if (this.mShowPerc && this.mBarStyle != ProgressBarStyle.marqueeStyle) {
                 auto ret = DefSubclassProc(hw, msg, wp, lp);
                 SIZE ss;
-                string vtext = format("%s%%", this.value);
+                double perc = (this.mValue * 100.0) / cast(double)this.mMaxValue;
+                // writefln("perc %f, %s, %s", perc, this.mValue, this.mMaxValue);
+                string vtext = format(this.percFmt, perc);
                 auto wtext = vtext.toUTF16z;
                 HDC hdc = GetDC(this.mHandle);
                 scope(exit) ReleaseDC(this.mHandle, hdc);
 
                 SelectObject(hdc, this.font.handle);
-                GetTextExtentPoint32(hdc, wtext, vtext.length, &ss);
+                GetTextExtentPoint32(hdc, wtext, cast(int)vtext.length, &ss);
 
                 int x = (this.mWidth - ss.cx) / 2;
                 int y = (this.mHeight - ss.cy) / 2;
                 SetBkMode(hdc, TRANSPARENT);
                 SetTextColor(hdc, this.mForeColor.cref);
-                TextOut(hdc, x, y, wtext, vtext.length );
+                TextOut(hdc, x, y, wtext, cast(int)vtext.length );
                 return ret;
             } else {
                 return DefSubclassProc(hw, msg, wp, lp);
@@ -187,15 +216,15 @@ class ProgressBar : Control {
 extern(Windows)
 private LRESULT pgbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
     try {
-        ProgressBar pgb = getControl!ProgressBar(refData) ;
+        ProgressBar pgb = getControl!ProgressBar(refData);
         //  gb.log(message);
         switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &pgbWndProc, scID); break;
             // case WM_PAINT : pgb.paintHandler(); break;
-            case WM_SETFOCUS : pgb.setFocusHandler(); break;
-            case WM_KILLFOCUS : pgb.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : pgb.mouseDownHandler(message, wParam, lParam); break ;
-            case WM_LBUTTONUP : pgb.mouseUpHandler(message, wParam, lParam); break ;
+            // case WM_SETFOCUS : pgb.setFocusHandler(); break;
+            // case WM_KILLFOCUS : pgb.killFocusHandler(); break;
+            case WM_LBUTTONDOWN : pgb.mouseDownHandler(message, wParam, lParam); break;
+            case WM_LBUTTONUP : pgb.mouseUpHandler(message, wParam, lParam); break;
             case CM_LEFTCLICK : pgb.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : pgb.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : pgb.mouseRUpHandler(message, wParam, lParam); break;
@@ -203,9 +232,8 @@ private LRESULT pgbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_MOUSEWHEEL : pgb.mouseWheelHandler(message, wParam, lParam); break;
             case WM_MOUSEMOVE : pgb.mouseMoveHandler(message, wParam, lParam); break;
             case WM_MOUSELEAVE : pgb.mouseLeaveHandler(); break;
-            case WM_PAINT: pgb.drawPercentage(hWnd, message, wParam, lParam); break;
-
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ; break;
+            case WM_PAINT : pgb.drawPercentage(hWnd, message, wParam, lParam); break;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
         }
     }
     catch (Exception e) {}

@@ -1,30 +1,30 @@
 
 // Created on 08-May-2022 10:48:00
-module wings.datetimepicker ; // Change the wndproc code - 09-feb-2023
+module wings.datetimepicker; // Change the wndproc code - 09-feb-2023
 
 import wings.d_essentials;
-import std.conv : to ;
+import std.conv : to;
 import wings.wings_essentials;
-import wings.date_and_time ;
+import wings.date_and_time;
 
 
 
-int dtpNumber = 1 ;
+int dtpNumber = 1;
 bool isDtpInit = false;
 private wchar[] mClassName = ['S','y','s','D','a','t','e','T','i','m','e','P','i','c','k','3','2', 0];
 
-enum DWORD DTN_FIRST  = (0U-740U) ;
-enum DWORD MCS_NOTRAILINGDATES = 0x40 ;
-enum DWORD MCS_SHORTDAYSOFWEEK = 0x80 ;
-enum DWORD DTM_SETMCSTYLE = DTM_FIRST + 11 ;
-enum DWORD DTN_USERSTRING = DTN_FIRST - 5 ;
+enum DWORD DTN_FIRST  = (0U-740U);
+enum DWORD MCS_NOTRAILINGDATES = 0x40;
+enum DWORD MCS_SHORTDAYSOFWEEK = 0x80;
+enum DWORD DTM_SETMCSTYLE = DTM_FIRST + 11;
+enum DWORD DTN_USERSTRING = DTN_FIRST - 5;
 enum DWORD DTM_GETIDEALSIZE = (DTM_FIRST + 15);
 
 struct NMDATETIMESTRINGW {
-    NMHDR nmhdr ;
+    NMHDR nmhdr;
     LPCWSTR pszUserString;
-    SYSTEMTIME st ;
-    DWORD dwFlags ;
+    SYSTEMTIME st;
+    DWORD dwFlags;
 }
 
 
@@ -35,7 +35,7 @@ struct NMDATETIMESTRINGW {
 class DateTimePicker : Control {
 
     /// Returns the format string of DateTimPicker
-    final string formatString() {return this.mFormatString ;}
+    final string formatString() {return this.mFormatString;}
     /// Set the format string of DateTimPicker
     final void formatString(string value) {this.setFormatString(value);  }
     /// Returns the format of DateTimPicker
@@ -50,10 +50,10 @@ class DateTimePicker : Control {
     mixin finalProperty!("showUpDown", this.mShowUpdown);
     mixin finalProperty!("value", this.mValue);
 
-	EventHandler onCalendarOpened ;
-	EventHandler onValueChanged ;
-	EventHandler onCalendarClosed ;
-	DateTimeEventHandler onTextChanged ;
+	EventHandler onCalendarOpened;
+	EventHandler onValueChanged;
+	EventHandler onCalendarClosed;
+	DateTimeEventHandler onTextChanged;
 
 	this(Window parent, int x, int y, int w, int h) {
         if (!appData.isDtpInit) {
@@ -63,67 +63,67 @@ class DateTimePicker : Control {
         }
 
         mixin(repeatingCode);
-        mControlType = ControlType.dateTimePicker ;
-        this.mExStyle = 0 ;
-        this.mFormat = DtpFormat.custom ;
+        mControlType = ControlType.dateTimePicker;
+        this.mExStyle = 0;
+        this.mFormat = DtpFormat.custom;
         this.mFormatString = " dd-MMM-yyyy";
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        ++dtpNumber ;
+        ++dtpNumber;
 
     }
 
-    this(Window p ) { this(p, 20, 20, 140, 25) ; }
-    this(Window p, int x, int y ) { this(p, x, y, 140, 25) ; }
+    this(Window p ) { this(p, 20, 20, 140, 25); }
+    this(Window p, int x, int y ) { this(p, x, y, 140, 25); }
 
     override void createHandle() {
-    	this.setDtpStyles() ;
-        this.createHandleInternal(mClassName.ptr) ;
+    	this.setDtpStyles();
+        this.createHandleInternal(mClassName.ptr);
         if (this.mHandle) {
-            this.setSubClass(&dtpWndProc) ;
-            this.afterCreationStyling() ;
+            this.setSubClass(&dtpWndProc);
+            this.afterCreationStyling();
         }
     }
 
     package :
-        int dropDownCount ; // DTN_DATETIMECHANGE notification occures two times. So we need to limit it to once.
+        int dropDownCount; // DTN_DATETIMECHANGE notification occures two times. So we need to limit it to once.
 
 
 
 	private :
-		DtpFormat mFormat ;
-		string mFormatString ;
-		bool mRightAlign ;
-		bool mFourDigitYear ;
-		DateTime mValue ;
-		bool mShowWeekNum ;
-		bool mNotdCircle ;
-    	bool mNoToday ;
-    	bool mNoTrlDates ;
-    	bool mShortDnames ;
-    	bool mShowUpdown ;
-        DWORD mCalStyle ;
+		DtpFormat mFormat;
+		string mFormatString;
+		bool mRightAlign;
+		bool mFourDigitYear;
+		DateTime mValue;
+		bool mShowWeekNum;
+		bool mNotdCircle;
+    	bool mNoToday;
+    	bool mNoTrlDates;
+    	bool mShortDnames;
+    	bool mShowUpdown;
+        DWORD mCalStyle;
 
         void setDtpStyles() { // Private
             switch (this.mFormat) {
                 case DtpFormat.custom :
-                    this.mStyle = WS_TABSTOP | WS_CHILD| WS_VISIBLE | DTS_LONGDATEFORMAT | DTS_APPCANPARSE ;
-                    break ;
+                    this.mStyle = WS_TABSTOP | WS_CHILD| WS_VISIBLE | DTS_LONGDATEFORMAT | DTS_APPCANPARSE;
+                    break;
                 case DtpFormat.longDate :
-                    this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_LONGDATEFORMAT ;
-                    break ;
+                    this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_LONGDATEFORMAT;
+                    break;
                 case DtpFormat.shortDate :
                     if (this.mFourDigitYear) {
-                        this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATECENTURYFORMAT ;
+                        this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATECENTURYFORMAT;
                     } else {
-                        this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT ;
+                        this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT;
                     }
                     break;
                 case DtpFormat.timeOnly :
-                    this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_TIMEFORMAT ;
+                    this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_TIMEFORMAT;
                     break;
-                default : break ;
+                default : break;
             }
 
             if (this.mShowWeekNum) this.mCalStyle |= MCS_WEEKNUMBERS;
@@ -155,7 +155,7 @@ class DateTimePicker : Control {
 
         void setFormatString(string fmt) { // Private
             // When user changes format string, this function will be called
-            this.mFormatString = fmt ;
+            this.mFormatString = fmt;
             if (this.mFormat != DtpFormat.custom) this.mFormat = DtpFormat.custom;
             if (this.mIsCreated) this.sendMsg(DTM_SETFORMATA, 0, this.mFormatString.ptr);
         }
@@ -166,7 +166,7 @@ class DateTimePicker : Control {
 extern(Windows)
 private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
     try {
-        DateTimePicker dtp = getControl!DateTimePicker(refData) ;
+        DateTimePicker dtp = getControl!DateTimePicker(refData);
         switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &dtpWndProc, scID); break;
             case WM_PAINT : dtp.paintHandler(); break;
@@ -183,27 +183,27 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_MOUSELEAVE : dtp.mouseLeaveHandler(); break;
 
             case CM_NOTIFY :
-                auto nm = cast(NMHDR *) lParam ;
-                //print("nm.code", nm.code) ;
+                auto nm = cast(NMHDR *) lParam;
+                //print("nm.code", nm.code);
                 switch (nm.code) {
                     case DTN_USERSTRING :
                         if (dtp.onTextChanged) {
-                            auto dts = cast(NMDATETIMESTRINGW *) lParam ;
-                            auto dea = new DateTimeEventArgs(dts.pszUserString) ;
-                            dtp.onTextChanged(dtp, dea) ;
+                            auto dts = cast(NMDATETIMESTRINGW *) lParam;
+                            auto dea = new DateTimeEventArgs(dts.pszUserString);
+                            dtp.onTextChanged(dtp, dea);
                             if (dea.handled) {
-                                sendMsg(hWnd, DTM_SETSYSTEMTIME, 0, dea.dateStruct) ;
+                                sendMsg(hWnd, DTM_SETSYSTEMTIME, 0, dea.dateStruct);
                             }
                         }
-                    break ;
+                    break;
 
                     case DTN_DROPDOWN :
                         if (dtp.onCalendarOpened) {
                             auto ea = new EventArgs();
-                            dtp.onCalendarOpened(dtp, ea) ;
-                            return 0 ;
+                            dtp.onCalendarOpened(dtp, ea);
+                            return 0;
                         }
-                    break ;
+                    break;
 
                     case DTN_DATETIMECHANGE :
                         //print("time change arrived");
@@ -213,14 +213,14 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                             dtp.mValue = DateTime(nmd.st);
                             if (dtp.onValueChanged) {
                                 auto ea = new EventArgs();
-                                dtp.onValueChanged(dtp, ea) ;
+                                dtp.onValueChanged(dtp, ea);
                                 return 0;
                             }
                         } else if (dtp.dropDownCount == 1) {
-                            dtp.dropDownCount = 0 ;
+                            dtp.dropDownCount = 0;
                             return 0;
                         }
-                    break ;
+                    break;
 
                     case DTN_FORMATQUERY :
 
@@ -229,19 +229,19 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                             auto ea = new EventArgs();
                             dtp.onCalendarClosed(dtp, ea);
                         }
-                    break ;
+                    break;
                     //--------------------------------------
 
 
 
-                    default : break ;
+                    default : break;
 
 
                 }
-                //return 1 ;
+                //return 1;
             break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }
     catch (Exception e) {}

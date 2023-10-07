@@ -2,9 +2,9 @@ module wings.imagelist; // Created on : 03-Jun-22 12:39:17 AM
 
 
 
-import core.sys.windows.commctrl ;
-import core.sys.windows.windows ;
-import std.utf ;
+import core.sys.windows.commctrl;
+import core.sys.windows.windows;
+import std.utf;
 import std.file;
 import std.path;
 
@@ -65,7 +65,7 @@ class ImageList {
 
     final void createHandle() {
         uint uFlag = cast(uint) this.mImgOpt | cast(uint) this.mClrOpt;
-        this.mHandle = ImageList_Create(this.mSizeX, this.mSizeY, uFlag, this.mInitSize, this.mGrowSize) ;
+        this.mHandle = ImageList_Create(this.mSizeX, this.mSizeY, uFlag, this.mInitSize, this.mGrowSize);
         this.mIsCreated = true;
     }
 
@@ -161,7 +161,7 @@ class ImageList {
                     //     print("Adding image", ImageList_AddMasked(this.mHandle, hBitmap, CLR_DEFAULT));
                     //     print(GetLastError());
                     // }
-                    auto rr = ImageList_LoadImageW(null, imgFile.toUTF16z, 16, 16, CLR_NONE, IMAGE_BITMAP, LR_LOADFROMFILE) ;
+                    auto rr = ImageList_LoadImageW(null, imgFile.toUTF16z, 16, 16, CLR_NONE, IMAGE_BITMAP, LR_LOADFROMFILE);
                     //print("imlli ", rr);
                 }
             }
@@ -170,7 +170,7 @@ class ImageList {
     }
 
     private :
-        ImageType mImgType ;
+        ImageType mImgType;
         ImageOptions mImgOpt;
         ColorOptions mClrOpt;
         HIMAGELIST mHandle;
@@ -183,7 +183,7 @@ class ImageList {
 }
 
 // These two constants are missing in `commctrl.d`.
-enum ILC_MIRROR = 0x00002000 ;
+enum ILC_MIRROR = 0x00002000;
 enum ILC_PERITEMMIRROR = 0x00008000;
 
 

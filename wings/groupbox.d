@@ -5,7 +5,7 @@ import wings.d_essentials;
 import wings.wings_essentials;
 
 
-int gbNumber = 1 ;
+int gbNumber = 1;
 DWORD gb_style = WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP |
                 WS_OVERLAPPED| WS_CLIPCHILDREN| WS_CLIPSIBLINGS;
 DWORD gb_exstyle = WS_EX_RIGHTSCROLLBAR| WS_EX_TRANSPARENT| WS_EX_CONTROLPARENT;
@@ -15,11 +15,11 @@ class GroupBox : Control {
 
     this(Window parent, string txt, int x, int y, int w, int h) {
         mixin(repeatingCode);
-        mControlType = ControlType.groupBox ;
-        mText = txt ;
-        mStyle = gb_style; // WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP ;
-        mExStyle = gb_exstyle; // WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT ;
-        mBackColor = parent.mBackColor ;
+        mControlType = ControlType.groupBox;
+        mText = txt;
+        mStyle = gb_style; // WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP;
+        mExStyle = gb_exstyle; // WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT;
+        mBackColor = parent.mBackColor;
         this.mName = format("%s_%d", "GroupBox_", gbNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
@@ -65,7 +65,7 @@ class GroupBox : Control {
             scope(exit) ReleaseDC(this.mHandle, hdc);
             SIZE ss;
             SelectObject(hdc, this.mFont.handle);
-            GetTextExtentPoint32(hdc, this.mText.toUTF16z, this.mText.length, &ss );
+            GetTextExtentPoint32(hdc, this.mText.toUTF16z, cast(int)this.mText.length, &ss );
             this.mTxtWidth = ss.cx + 8;
         }
 
@@ -83,7 +83,7 @@ class GroupBox : Control {
 
             SelectObject(hdc, this.font.handle);
             SetTextColor(hdc, this.mForeColor.cref);
-            TextOutW(hdc, 10, 0, this.mText.toUTF16z, this.mText.length);
+            TextOutW(hdc, 10, 0, this.mText.toUTF16z, cast(int)this.mText.length);
 
         }
 
@@ -122,7 +122,7 @@ class GroupBox : Control {
 
         void finalize(UINT_PTR scID) { // private
             // This is our destructor. Clean all the dirty stuff
-            DeleteObject(this.mBkBrush) ;
+            DeleteObject(this.mBkBrush);
             DeleteObject(this.mPen);
             RemoveWindowSubclass(this.mHandle, &gbWndProc, scID);
             // this.remSubClass(scID);
@@ -134,15 +134,15 @@ class GroupBox : Control {
 extern(Windows)
 private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
     try {
-        GroupBox gb = getControl!GroupBox(refData) ;
+        GroupBox gb = getControl!GroupBox(refData);
         //  gb.log(message);
         switch (message) {
             case WM_DESTROY : gb.finalize(scID); break;
             // case WM_PAINT : gb.paintHandler(); break;
             case WM_SETFOCUS : gb.setFocusHandler(); break;
             case WM_KILLFOCUS : gb.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : gb.mouseDownHandler(message, wParam, lParam); break ;
-            case WM_LBUTTONUP : gb.mouseUpHandler(message, wParam, lParam); break ;
+            case WM_LBUTTONDOWN : gb.mouseDownHandler(message, wParam, lParam); break;
+            case WM_LBUTTONUP : gb.mouseUpHandler(message, wParam, lParam); break;
             case CM_LEFTCLICK : gb.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : gb.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : gb.mouseRUpHandler(message, wParam, lParam); break;
@@ -158,9 +158,9 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     auto hdc = cast(HDC) wParam;
                     RECT rc = gb.clientRect();
                     FillRect(hdc, &rc, gb.mBkBrush);
-                    return 1 ;
+                    return 1;
                 }
-            break ;
+            break;
 
             case WM_PAINT:
                 auto ret = DefSubclassProc(hWnd, message, wParam, lParam);
@@ -170,7 +170,7 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
 
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ; break;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
         }
     }
     catch (Exception e) {}

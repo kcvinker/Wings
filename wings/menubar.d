@@ -241,5 +241,5 @@ class MenuItem {
 
 }
 
-MenuItem getMenuItem(ULONG_PTR refData){ return cast(MenuItem) (cast(void*) refData) ;}
+MenuItem getMenuItem(ULONG_PTR refData){ return cast(MenuItem) (cast(void*) refData);}
 

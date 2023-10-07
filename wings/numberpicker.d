@@ -19,21 +19,21 @@ class NumberPicker : Control {
     this(Window parent, int x, int y, int w, int h) {
         if (!isNpCreated) {
             isNpCreated = true;
-            appData.iccEx.dwICC = ICC_UPDOWN_CLASS ;
+            appData.iccEx.dwICC = ICC_UPDOWN_CLASS;
             InitCommonControlsEx(&appData.iccEx);
         }
 
         mixin(repeatingCode);
-        mControlType = ControlType.numberPicker ;
+        mControlType = ControlType.numberPicker;
         mMaxRange = 100;
         mMinRange = 0;
-        mDeciPrec = 0;
+        mDeciPrec = 2;
         mStep = 1;
-        mStyle = npStyle  ;
-        mExStyle = 0x00000000 ;//WS_EX_LTRREADING | WS_EX_RTLREADING | WS_EX_CLIENTEDGE ;   ES_LEFT := 0x0
-        mBuddyStyle = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP| WS_BORDER ;// | WS_CLIPCHILDREN;// WS_BORDER ;
-        mBuddyExStyle = WS_EX_LEFT | WS_EX_LTRREADING ;//| WS_EX_STATICEDGE ;//| WS_EX_LEFT ;//WS_EX_LTRREADING | WS_EX_RTLREADING | WS_EX_LEFT ;//| WS_EX_CLIENTEDGE;
-        mBackColor(defBackColor) ;
+        mStyle = npStyle;
+        mExStyle = 0x00000000;//WS_EX_LTRREADING | WS_EX_RTLREADING | WS_EX_CLIENTEDGE;   ES_LEFT := 0x0
+        mBuddyStyle = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP| WS_BORDER;// | WS_CLIPCHILDREN;// WS_BORDER;
+        mBuddyExStyle = WS_EX_LEFT | WS_EX_LTRREADING;//| WS_EX_STATICEDGE;//| WS_EX_LEFT;//WS_EX_LTRREADING | WS_EX_RTLREADING | WS_EX_LEFT;//| WS_EX_CLIENTEDGE;
+        mBackColor(defBackColor);
         mForeColor(defForeColor);
         mFmtStr = "%.02f";
         mValue = mMinRange;
@@ -46,13 +46,14 @@ class NumberPicker : Control {
     }
 
     this(Window parent) {this(parent, 10, 10, 100, 27);}
-    this(Window parent, int x, int y) {this(parent, x, y, 100, 27);}
+    this(Window parent, int x, int y) {this(parent, x, y, 70, 27);}
 
     override void createHandle() {
     	this.adjustNpStyles();
         this.createUpdown();
         this.createBuddy();
         if (this.mHandle && this.mBuddyHandle) {
+
             auto oldBuddy = cast(HWND)this.sendMsg(UDM_SETBUDDY, this.mBuddyHandle, 0); // set the edit as updown's buddy.
             this.sendMsg(UDM_SETRANGE32, cast(WPARAM) this.mMinRange, cast(LPARAM) this.mMaxRange);
 
@@ -61,6 +62,7 @@ class NumberPicker : Control {
             GetClientRect(this.mHandle, &this.mUDRect);
             this.resizeBuddy();
             SendMessageW(oldBuddy, CM_BUDDY_RESIZE, 0, 0);
+            this.getRightAndBottom();
 
             /*  This thing is a hack. The edit control is not turned on the...
                 vertical alignment without setting the WS_BORDER style.
@@ -87,6 +89,7 @@ class NumberPicker : Control {
 
         final void minRange(double value) {
             this.mMinRange = value;
+            if (this.mValue < value) this.mValue = value;
             if (this.mIsCreated) {
                 this.sendMsg(UDM_SETRANGE32, this.mMinRange, this.mMaxRange);
             }
@@ -168,6 +171,12 @@ class NumberPicker : Control {
         final int decimalPrecision() {return this.mDeciPrec;}
         final void decimalPrecision(int value) {
             this.mDeciPrec = value;
+            if (value == 0) {
+                this.mFmtStr = "%f";
+            } else {
+                this.mFmtStr = format("%%0%df", value);
+            }
+
             if (this.mIsCreated) {
                 // TODO - change window style using SetWindowLong function.
             }
@@ -195,7 +204,7 @@ class NumberPicker : Control {
 
     //endregion Properties
 
-    EventHandler onValueChanged ;
+    EventHandler onValueChanged;
     PaintEventHandler onTextPaint;
     //alias uintptr = UINT_PTR;
     package :
@@ -214,7 +223,7 @@ class NumberPicker : Control {
         double mMinRange;
         double mMaxRange;
         double mValue;
-        double mStep ;
+        double mStep;
         double mEditedValue;
         string mFmtStr;
         string mEditedText;
@@ -261,7 +270,7 @@ class NumberPicker : Control {
 
         void createUpdown() { // Private
             // Creating the updown control only.
-            this.mCtlId = Control.stCtlId ;
+            this.mCtlId = Control.stCtlId;
             this.mMyRect = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
             this.mHandle = CreateWindowEx( this.mExStyle,
                                             this.mUpdClassName.ptr,
@@ -336,7 +345,12 @@ class NumberPicker : Control {
         }
 
         void displayValue() { // Private
-            auto newStr = format(this.mFmtStr, this.mValue);
+            string newStr;
+            if (this.mDeciPrec > 0) {
+                newStr = format(this.mFmtStr, this.mValue);
+            } else {
+                newStr = format("%d", to!int(this.mValue));
+            }
             SetWindowTextW(this.mBuddyHandle, newStr.toUTF16z);
         }
 
@@ -356,11 +370,11 @@ class NumberPicker : Control {
         void npMouseMoveHandler(UINT msg, WPARAM wp, LPARAM lp) { // Private
             if (this.isMouseEntered) {
                 if (this.mOnMouseMove) {
-                    auto mea = new MouseEventArgs(msg, wp, lp) ;
-                    this.mOnMouseMove(this, mea) ;
+                    auto mea = new MouseEventArgs(msg, wp, lp);
+                    this.mOnMouseMove(this, mea);
                 }
             } else {
-                this.isMouseEntered = true ;
+                this.isMouseEntered = true;
                 if (this.mOnMouseEnter) this.mOnMouseEnter(this, new EventArgs());
             }
         }
@@ -398,7 +412,7 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     np.setValueInternal(nm.iDelta);
                     if (np.onValueChanged) np.onValueChanged(np, new EventArgs());
                 }
-            break ;
+            break;
 
             case WM_MOUSELEAVE :
                 if (np.mTrackMouseLeave) {
@@ -412,8 +426,8 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_PAINT : np.paintHandler(); break;
             case WM_SETFOCUS : np.setFocusHandler(); break;
             case WM_KILLFOCUS : np.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : np.mouseDownHandler(message, wParam, lParam); break ;
-            case WM_LBUTTONUP : np.mouseUpHandler(message, wParam, lParam); break ;
+            case WM_LBUTTONDOWN : np.mouseDownHandler(message, wParam, lParam); break;
+            case WM_LBUTTONUP : np.mouseUpHandler(message, wParam, lParam); break;
             case CM_LEFTCLICK : np.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : np.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : np.mouseRUpHandler(message, wParam, lParam); break;
@@ -421,7 +435,7 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_MOUSEWHEEL : np.mouseWheelHandler(message, wParam, lParam); break;
             case WM_MOUSEMOVE : np.npMouseMoveHandler(message, wParam, lParam); break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }
     catch (Exception e) { writeln("error ", message);}
@@ -431,7 +445,7 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 extern(Windows)
 private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
     try {
-        NumberPicker np = getControl!NumberPicker(refData)  ;
+        NumberPicker np = getControl!NumberPicker(refData);
         //printWinMsg(message);
         switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &buddyWndProc, scID ); break;
@@ -441,7 +455,7 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             //case WM_LBUTTONDBLCLK:
             //    InvalidateRect(hWnd, &np.mTBRect, true);
             //    break;
-            case WM_LBUTTONUP : np.mouseUpHandler(message, wParam, lParam); break ;
+            case WM_LBUTTONUP : np.mouseUpHandler(message, wParam, lParam); break;
             case CM_LEFTCLICK : np.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : np.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : np.mouseRUpHandler(message, wParam, lParam); break;
@@ -470,11 +484,11 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 ReleaseDC(hWnd, hdc);
                 return 1;
                 //if (np.onPaint) {
-                //    PAINTSTRUCT ps ;
-                //    BeginPaint(hWnd, &ps) ;
-                //    auto pea = new PaintEventArgs(&ps) ;
-                //    np.onTextPaint(np, pea) ;
-                //    EndPaint(hWnd, &ps) ;
+                //    PAINTSTRUCT ps;
+                //    BeginPaint(hWnd, &ps);
+                //    auto pea = new PaintEventArgs(&ps);
+                //    np.onTextPaint(np, pea);
+                //    EndPaint(hWnd, &ps);
                 //}
             break;
 
@@ -526,7 +540,7 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
              * will be sperated from it's updown. So we need to combine them once again. */
             case CM_BUDDY_RESIZE: np.resizeBuddy(); break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ; break;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
         }
     }
     catch (Exception e) {}

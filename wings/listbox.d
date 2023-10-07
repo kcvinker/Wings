@@ -2,10 +2,11 @@ module wings.listbox;
 // Created on : 27-May-22 02:42:52 PM
 
 import wings.d_essentials;
-import std.conv ;
+import std.conv;
 import std.array;
 import std.algorithm;
 import wings.wings_essentials;
+import std.stdio;
 
 
 int lbxNumber = 1;
@@ -13,12 +14,12 @@ private wchar[] mClassName = ['L', 'I', 'S', 'T', 'B', 'O', 'X', 0];
 
 class ListBox : Control {
 
-    this(Window parent, size_t x, size_t y, size_t w, size_t h) {
+    this(Window parent, int x, int y, int w, int h) {
         mixin(repeatingCode);
-        mControlType = ControlType.listBox ;
-        mStyle = WS_VISIBLE | WS_CHILD | WS_BORDER  | LBS_NOTIFY | LBS_HASSTRINGS ;
-        mExStyle = 0 ;
-        mBackColor(defBackColor) ;
+        mControlType = ControlType.listBox;
+        mStyle = WS_VISIBLE | WS_CHILD | WS_BORDER  | LBS_NOTIFY | LBS_HASSTRINGS;
+        mExStyle = 0;
+        mBackColor(defBackColor);
         mForeColor(defForeColor);
         this.mName = format("%s_%d", "ListBox_", lbxNumber);
         this.mParent.mControls ~= this;
@@ -28,7 +29,7 @@ class ListBox : Control {
        // mMultiSel = true;
     }
 
-    this(Window parent) { this(parent, 20, 20, 180, 200) ; }
+    this(Window parent) { this(parent, 20, 20, 180, 200); }
     this(Window parent, int x, int y) { this(parent, x, y, 180, 200);}
 
 
@@ -111,8 +112,8 @@ class ListBox : Control {
     /// Get the index of item under mouse pointer
     final int getHotIndex() {
         //long wp = 0;
-        //long lp = 0 ;
-        if (this.mMultiSel) return this.sendMsg(LB_GETCARETINDEX, 0, 0) ;
+        //long lp = 0;
+        if (this.mMultiSel) return cast(int)this.sendMsg(LB_GETCARETINDEX, 0, 0);
         return -1;
     }
 
@@ -129,7 +130,7 @@ class ListBox : Control {
     final string getItem(int index) in (index >= 0) {
         auto tLen = this.sendMsg(LB_GETTEXTLEN, index, 0);
         if (tLen != LB_ERR) return getItemInternal(index);
-        return NULL ;
+        return NULL;
     }
 
     /// Remove an item from listbox.
@@ -154,42 +155,42 @@ class ListBox : Control {
     /// Add an item to ListBox.
     void addItem(T)(T item) {
         string sItem = item.to!string;
-        this.mItems ~= sItem ;
-        if (this.mIsCreated) this.sendMsg(LB_ADDSTRING, 0, sItem.toUTF16z()) ;
+        this.mItems ~= sItem;
+        if (this.mIsCreated) this.sendMsg(LB_ADDSTRING, 0, sItem.toUTF16z());
     }
 
     /// Add a range of items to ListBox. (Items of different types)
     void addRange(T...)(T items) {
         if (this.mIsCreated) {
-            foreach (item ; items) {
+            foreach (item; items) {
                 auto sitem = item.to!string;
                 this.mItems ~= sitem;
                 this.sendMsg(LB_ADDSTRING, 0, sitem.toUTF16z);
             }
         } else {
-            foreach (item ; items) { this.mItems ~= item.to!string;}
+            foreach (item; items) { this.mItems ~= item.to!string;}
         }
     }
 
     /// Add a range of items to ListBox. (Items of similar type)
     void addRange(T)(T[] items) {
         if (this.mIsCreated) {
-            foreach (item ; items) {
+            foreach (item; items) {
                 auto sitem = item.to!string;
                 this.mItems ~= sitem;
                 this.sendMsg(LB_ADDSTRING, 0, sitem.toUTF16z);
             }
         } else {
-            foreach (item ; items) { this.mItems ~= item.to!string;}
+            foreach (item; items) { this.mItems ~= item.to!string;}
         }
     }
 
      // Create the handle of CheckBox
     override void createHandle() {
-    	this.setLboxStyles() ;
+    	this.setLboxStyles();
         this.createHandleInternal(mClassName.ptr);
         if (this.mHandle) {
-            this.setSubClass(&lbxWndProc) ;
+            this.setSubClass(&lbxWndProc);
             if (this.mItems.length > 0) { // We need to add those items to list box
                 foreach (item; this.mItems) this.sendMsg(LB_ADDSTRING, 0, item.toUTF16z);
                 if (this.mDummyIndex > -1) this.sendMsg(LB_SETCURSEL, this.mDummyIndex, 0);
@@ -203,7 +204,7 @@ class ListBox : Control {
 
     private :
         bool mHasSort;
-        bool mNoSel ;
+        bool mNoSel;
         bool mMultiCol;
         bool mKeyPrev;
         bool mUseVscroll;
@@ -243,7 +244,7 @@ class ListBox : Control {
         }
 
         void finalize(UINT_PTR scID) { // private
-            DeleteObject(this.mBkBrush) ;
+            DeleteObject(this.mBkBrush);
             RemoveWindowSubclass(this.mHandle, &lbxWndProc, scID);
             // this.remSubClass(scID);
         }
@@ -253,13 +254,13 @@ class ListBox : Control {
 extern(Windows)
 private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
     try {
-        ListBox lbx = getControl!ListBox(refData)  ;
+        ListBox lbx = getControl!ListBox(refData);
        // printWinMsg(message);
         switch (message) {
             case WM_DESTROY : lbx.finalize(scID); break;
             case WM_PAINT : lbx.paintHandler(); break;
-            case WM_LBUTTONDOWN : lbx.mouseDownHandler(message, wParam, lParam); break ;
-            case WM_LBUTTONUP : lbx.mouseUpHandler(message, wParam, lParam); break ;
+            case WM_LBUTTONDOWN : lbx.mouseDownHandler(message, wParam, lParam); break;
+            case WM_LBUTTONUP : lbx.mouseUpHandler(message, wParam, lParam); break;
             case CM_LEFTCLICK : lbx.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : lbx.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : lbx.mouseRUpHandler(message, wParam, lParam); break;
@@ -278,18 +279,18 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     return cast(LRESULT) lbx.mBkBrush;
 
                 }
-            break ;
+            break;
 
             case CM_CTLCOMMAND :
                 auto nCode = HIWORD(wParam);
                 switch (nCode) {
                     case LBN_DBLCLK :
                         if (lbx.onDoubleClick) lbx.onDoubleClick(lbx, new EventArgs());
-                    break ;
+                    break;
 
                     case LBN_KILLFOCUS :
                         if (lbx.onLostFocus) lbx.onLostFocus(lbx, new EventArgs());
-                    break ;
+                    break;
 
                     case LBN_SELCHANGE :
                         if (!lbx.mMultiSel) {
@@ -297,7 +298,7 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                             if (selIndx != LB_ERR) {
                                 lbx.mSelIndex = cast(int) selIndx;
                                 if (lbx.onSelectionChanged) {
-                                    auto ea = new EventArgs() ;
+                                    auto ea = new EventArgs();
                                     lbx.onSelectionChanged(lbx, ea);
                                 }
                             }
@@ -306,10 +307,10 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
                     case LBN_SETFOCUS :
                         if (lbx.onGotFocus) lbx.onGotFocus(lbx, new EventArgs());
-                    break ;
+                    break;
 
                     case LBN_SELCANCEL :
-                        break ;
+                        break;
                     case LBN_ERRSPACE :
                         //print("ERR SPACE");break;
 
@@ -317,7 +318,19 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 }
             break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ; break;
+            // case CM_WIN_THREAD_MSG:
+
+            //     // writeln("counter ");
+            //     // stdout.flush();
+            //     int en = cast(int)lParam;
+            //     auto cp = cast(char*)wParam;
+            //     auto st = cp[0..en];
+            //     // writefln("wnd proc: %s", st);
+            //     lbx.addItem(cast(string)st);
+            //     // stdout.flush();
+            //     break;
+
+            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
         }
 
     }

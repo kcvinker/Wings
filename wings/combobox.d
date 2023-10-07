@@ -1,16 +1,16 @@
 
 
-module wings.combobox ; // Created on 02-May-2022 15:02:41
+module wings.combobox; // Created on 02-May-2022 15:02:41
 
 import wings.d_essentials;
-import std.conv ;
+import std.conv;
 import std.utf;
 
-import std.algorithm.mutation  ; // We have a function called 'remove'. So this must be renamed.
+import std.algorithm.mutation; // We have a function called 'remove'. So this must be renamed.
 import wings.wings_essentials;
 
 
-private int cmbNumber = 1 ;
+private int cmbNumber = 1;
 private int editSubClsID = 4000;
 /**
  * ComboBox : Control
@@ -19,11 +19,11 @@ class ComboBox : Control {
 
     this(Window parent, int x, int y, int w, int h) {
         mixin(repeatingCode);
-        mControlType = ControlType.comboBox ;
-        mStyle = WS_CHILD | WS_VISIBLE ;
-        mExStyle = WS_EX_CLIENTEDGE ;
-        mBackColor(defBackColor) ;
-        mForeColor(defForeColor) ;
+        mControlType = ControlType.comboBox;
+        mStyle = WS_CHILD | WS_VISIBLE;
+        mExStyle = WS_EX_CLIENTEDGE;
+        mBackColor(defBackColor);
+        mForeColor(defForeColor);
         mSelIndex = -1;
         this.mName = format("%s_%d", "ComboBox_", cmbNumber);
         this.mParent.mControls ~= this;
@@ -32,35 +32,35 @@ class ComboBox : Control {
         ++cmbNumber;
     }
 
-    this(Window parent) { this(parent, 20, 20, 150, 30) ; }
-    this (Window parent, int x, int y) { this(parent, x, y, 150, 30) ; }
+    this(Window parent) { this(parent, 20, 20, 150, 30); }
+    this (Window parent, int x, int y) { this(parent, x, y, 150, 30); }
 
     /// Returns the items collection of ComboBox
-	final string[] items() {return this.mItems ;}
+	final string[] items() {return this.mItems;}
 
 
     /// Get the selected index of ComboBox.
 	final int selectedIndex() {
-        if (this.mIsCreated) this.mSelIndex = cast(int) this.sendMsg(CB_GETCURSEL, 0, 0) ;
+        if (this.mIsCreated) this.mSelIndex = cast(int) this.sendMsg(CB_GETCURSEL, 0, 0);
         return this.mSelIndex;
     }
 
     /// Set the selected index of ComboBox.
 	final void selectedIndex(int value) {
-        this.mSelIndex = value ;
+        this.mSelIndex = value;
         if (this.mIsCreated) {
-            this.sendMsg(CB_SETCURSEL, value, 0) ;
+            this.sendMsg(CB_SETCURSEL, value, 0);
         }
 	}
 
     /// Get the selected item from ComboBox.
     final string selectedItem() {
-        string result ;
+        string result;
         if (this.mIsCreated) {
-            this.mSelIndex = cast(int) this.sendMsg(CB_GETCURSEL, 0, 0) ;
+            this.mSelIndex = cast(int) this.sendMsg(CB_GETCURSEL, 0, 0);
             result = this.mItems[this.mSelIndex];
         }
-        return result ;
+        return result;
     }
 
     /// Set the drop down style of ComboBox.
@@ -70,7 +70,7 @@ class ComboBox : Control {
          * Then make it look like the old combo. So this function will do that */
         if (this.mIsCreated) {
             if (this.mCmbStyle == value) return;
-            this.mSelIndex = cast(int) this.sendMsg(CB_GETCURSEL, 0, 0) ;
+            this.mSelIndex = cast(int) this.sendMsg(CB_GETCURSEL, 0, 0);
             this.mCmbStyle = value;
             this.mRecreateEnabled = true;
             DestroyWindow(this.mHandle);
@@ -82,7 +82,7 @@ class ComboBox : Control {
     }
 
     /// Get the drop down style of ComboBox.
-    final DropDownStyle dropDownStyle() {return this.mCmbStyle ;}
+    final DropDownStyle dropDownStyle() {return this.mCmbStyle;}
 
     /// Add an item into ComboBox's items collection.
     void addItem(T)(T value) {
@@ -99,9 +99,9 @@ class ComboBox : Control {
     /// Add an array to ComboBox's items collection.
     void addRange(T)( T[] newItems) {
         if (this.mIsCreated) {
-            foreach (item ; newItems) {
+            foreach (item; newItems) {
                 auto sitem = item.makeString();
-                auto witem = toUTF16z(sitem) ;
+                auto witem = toUTF16z(sitem);
                 this.mItems ~= sitem;
                 this.sendMsg(CB_ADDSTRING, 0, witem);
             }
@@ -112,11 +112,11 @@ class ComboBox : Control {
 
     void addRange(T...)( T newItems) {
         if (this.mIsCreated) {
-            foreach (item ; newItems) {
+            foreach (item; newItems) {
                 auto sitem = item.makeString();
                 auto witem = sitem.toUTF16z;
                 this.mItems ~= sitem;
-                this.sendMsg(CB_ADDSTRING, 0, witem) ;
+                this.sendMsg(CB_ADDSTRING, 0, witem);
             }
         } else {
             foreach (value; newItems) this.mItems ~= value.makeString();
@@ -125,13 +125,13 @@ class ComboBox : Control {
 
     /// Remove the given item from ComboBox's items collection.
     void removeItem(T)(T item) {
-        zstring cmbItem = item.toUTF16z ;
+        zstring cmbItem = item.toUTF16z;
         string myItem = item.makeString();
         if (this.mItems.length > 0) {
-            this.mItems = this.mItems.remove!(a => a == myItem) ;
+            this.mItems = this.mItems.remove!(a => a == myItem);
             if (this.mIsCreated) { // Remove item from combo also.
-                auto iIndex = cast(int) this.sendMsg(CB_FINDSTRING, -1, cmbItem) ;
-                if (iIndex > -1) this.sendMsg(CB_DELETESTRING, iIndex, 0) ;
+                auto iIndex = cast(int) this.sendMsg(CB_FINDSTRING, -1, cmbItem);
+                if (iIndex > -1) this.sendMsg(CB_DELETESTRING, iIndex, 0);
             }
         }
     }
@@ -139,35 +139,35 @@ class ComboBox : Control {
     /// Remove an item at given index from ComboBox's items collection.
     final void removeItem(int index) {
         if (this.mItems.length > 0) {
-            this.mItems = this.mItems.remove(index) ;
-            if (this.mIsCreated) this.sendMsg(CB_DELETESTRING, index, 0) ;
+            this.mItems = this.mItems.remove(index);
+            if (this.mIsCreated) this.sendMsg(CB_DELETESTRING, index, 0);
         }
     }
 
     /// Delete all items from ComboBox's items collection.
     final void clearItems() {
         if (this.mItems.length > 0) {
-            this.mItems.length = 0 ;
+            this.mItems.length = 0;
             assumeSafeAppend(this.mItems);
-            if (this.mIsCreated) this.sendMsg(CB_DELETESTRING, 0, 0) ;
+            if (this.mIsCreated) this.sendMsg(CB_DELETESTRING, 0, 0);
         }
     }
 
     /// Get the count of items in ComboBox.
-    final int itemCount() {return cast(int) this.mItems.length ;}
+    final int itemCount() {return cast(int) this.mItems.length;}
 
 
 
 
-    EventHandler onSelectionChanged ;
-    EventHandler onSelectionCommitted ;
-    EventHandler onSelectionCancelled ;
-    EventHandler onTextChanged, onTextUpdated ;
-    EventHandler onListOpened, onListClosed ;
-    MouseEventHandler onTextMouseDown, onTextMouseUp ; //, onTextMouseEnter, onTextMouseLeave ;
-    MouseEventHandler onTextRightDown, onTextRightUp ;
-    KeyEventHandler onTextKeyDown, onTextKeyUp ;
-    EventHandler onTextMouseClick, onTextRightClick ;
+    EventHandler onSelectionChanged;
+    EventHandler onSelectionCommitted;
+    EventHandler onSelectionCancelled;
+    EventHandler onTextChanged, onTextUpdated;
+    EventHandler onListOpened, onListClosed;
+    MouseEventHandler onTextMouseDown, onTextMouseUp; //, onTextMouseEnter, onTextMouseLeave;
+    MouseEventHandler onTextRightDown, onTextRightUp;
+    KeyEventHandler onTextKeyDown, onTextKeyUp;
+    EventHandler onTextMouseClick, onTextRightClick;
 
 
     /// Create the handle of ComboBox control.
@@ -193,43 +193,43 @@ class ComboBox : Control {
                                         null);
         if (this.mHandle) {
             this.mIsCreated = true;
-            this.mOldHwnd = this.mHandle ;
-            this.setSubClass(&cmbWndProc) ;
-            this.setFontInternal() ;
-        	this.getComboInfo() ;
-            insertItems() ;
-            if (this.mSelIndex > -1) this.sendMsg(CB_SETCURSEL, this.mSelIndex, 0) ;
+            this.mOldHwnd = this.mHandle;
+            this.setSubClass(&cmbWndProc);
+            this.setFontInternal();
+        	this.getComboInfo();
+            insertItems();
+            if (this.mSelIndex > -1) this.sendMsg(CB_SETCURSEL, this.mSelIndex, 0);
             if (!this.mRecreateEnabled) ++Control.stCtlId;
-            this.mRecreateEnabled = false ;
+            this.mRecreateEnabled = false;
         }
     }
 
 
 	private :
-		DropDownStyle mCmbStyle ;
-		string[] mItems ;
-		int mVisItemCount ;
+		DropDownStyle mCmbStyle;
+		string[] mItems;
+		int mVisItemCount;
 		int mSelIndex = -1;
-        int ctlId ;
-		bool mRecreateEnabled ;
-        bool tbMLDownHappened, tbMRDownHappened ;
-		HBRUSH mBkBrush ;
-		HWND mOldHwnd ;
+        int ctlId;
+		bool mRecreateEnabled;
+        bool tbMLDownHappened, tbMRDownHappened;
+		HBRUSH mBkBrush;
+		HWND mOldHwnd;
         static wchar[] mClassName = ['C', 'o', 'm', 'b', 'o', 'B', 'o', 'x', 0];
-        //ComboInfo myInfo ;
+        //ComboInfo myInfo;
 
 
         // Get and save the internal info of a ComboBox.
 		void getComboInfo() { // Private
-			COMBOBOXINFO cmbInfo ;
-			cmbInfo.cbSize = cmbInfo.sizeof ;
-			this.sendMsg(CB_GETCOMBOBOXINFO, 0, &cmbInfo) ;
+			COMBOBOXINFO cmbInfo;
+			cmbInfo.cbSize = cmbInfo.sizeof;
+			this.sendMsg(CB_GETCOMBOBOXINFO, 0, &cmbInfo);
             this.mParent.cmb_dict[cmbInfo.hwndList] = this.mHandle; // Put the handle in parent's dic
             SetWindowSubclass(  cmbInfo.hwndItem,
                                 &cmbEditWndProc,
                                 UINT_PTR(editSubClsID),
                                 this.toDwPtr);
-            ++editSubClsID ;
+            ++editSubClsID;
 		}
 
         // Internal function to insert items to ComboBox.
@@ -237,16 +237,16 @@ class ComboBox : Control {
             if (this.mItems.length > 0 ) {
                 foreach (item; this.mItems) {
                     auto witem = toUTF16z(item);
-                    this.sendMsg(CB_ADDSTRING, 0, witem) ;
+                    this.sendMsg(CB_ADDSTRING, 0, witem);
                 }
             }
         }
 
         int isInComboRect(HWND hw) { // Private
-            RECT rc ;
+            RECT rc;
             GetWindowRect(hw, &rc);
-            auto pts = getMousePoints() ;
-            return PtInRect(&rc, pts) ;
+            auto pts = getMousePoints();
+            return PtInRect(&rc, pts);
         }
 
 
@@ -259,11 +259,11 @@ class ComboBox : Control {
     	}
 
         //void pCinfo(const ref ComboInfo c) {
-        //    import std.stdio : writefln ;
-        //    writefln("List handle - %s", c.lbHwnd) ;
-        //    writefln("Edit handle - %s", c.tbHwnd) ;
-        //    writefln("Combo handle - %s", this.mHandle) ;
-        //    writefln("End------------------------") ;
+        //    import std.stdio : writefln;
+        //    writefln("List handle - %s", c.lbHwnd);
+        //    writefln("Edit handle - %s", c.tbHwnd);
+        //    writefln("Combo handle - %s", this.mHandle);
+        //    writefln("End------------------------");
         //}
 
 
@@ -280,12 +280,12 @@ class ComboBox : Control {
 extern(Windows)
 private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
     try {
-        ComboBox cmb = getControl!ComboBox(refData) ;
-        //print("ComboBox Messages", message) ;
+        ComboBox cmb = getControl!ComboBox(refData);
+        //print("ComboBox Messages", message);
         switch (message) {
             case WM_DESTROY : cmb.finalize(scID); break;
             case WM_PAINT: cmb.paintHandler(); break;
-            case WM_LBUTTONUP : cmb.mouseUpHandler(message, wParam, lParam); break ;
+            case WM_LBUTTONUP : cmb.mouseUpHandler(message, wParam, lParam); break;
             case CM_LEFTCLICK : cmb.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : cmb.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : cmb.mouseRUpHandler(message, wParam, lParam); break;
@@ -310,23 +310,23 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 } else {
                     if (cmb.onMouseLeave) cmb.onMouseLeave(cmb, new EventArgs());
                 }
-            break ;
+            break;
 
             case WM_KEYDOWN :
                 // To get this message here, cmb's drop down style must be labelCombo.
                 if (cmb.onKeyDown) {
                     auto kea = new KeyEventArgs(wParam);
-                    cmb.onKeyDown(cmb, kea) ;
+                    cmb.onKeyDown(cmb, kea);
                 }
-            break ;
+            break;
 
             case WM_KEYUP :
                 // To get this message here, cmb's drop down style must be labelCombo.
                 if (cmb.onKeyUp) {
                     auto kea = new KeyEventArgs(wParam);
-                    cmb.onKeyUp(cmb, kea) ;
+                    cmb.onKeyUp(cmb, kea);
                 }
-            break ;
+            break;
 
             case CM_COLOR_CMB_LIST :
                 // We can change the colors of List area & text area of a combo. Here we are dealing with list area.
@@ -341,52 +341,52 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
                 }
                 return cast(LRESULT)cmb.mBkBrush;
-            break ;
+            break;
 
             case CM_CTLCOMMAND :
-                auto nCode = HIWORD(wParam) ;
+                auto nCode = HIWORD(wParam);
                 switch (nCode) {
                     case CBN_SELCHANGE :
                         if (cmb.onSelectionChanged) cmb.onSelectionChanged(cmb, new EventArgs());
-                    break ;
+                    break;
 
                     case CBN_SETFOCUS :
                         if (cmb.onGotFocus) cmb.onGotFocus(cmb, new EventArgs());
-                    break ;
+                    break;
 
                     case CBN_KILLFOCUS :
                         if (cmb.onLostFocus) cmb.onLostFocus(cmb, new EventArgs());
-                    break ;
+                    break;
 
                     case CBN_EDITCHANGE :
                         if (cmb.onTextChanged) cmb.onTextChanged(cmb, new EventArgs());
-                    break ;
+                    break;
 
                     case CBN_EDITUPDATE :
                         if (cmb.onTextUpdated) cmb.onTextUpdated(cmb, new EventArgs());
-                    break ;
+                    break;
 
                     case CBN_DROPDOWN :
                         if (cmb.onListOpened) cmb.onListOpened(cmb, new EventArgs());
-                    break ;
+                    break;
 
                     case CBN_CLOSEUP :
                         if (cmb.onListClosed) cmb.onListClosed(cmb, new EventArgs());
-                    break ;
+                    break;
 
                     case CBN_SELENDOK :
                         if (cmb.onSelectionCommitted) cmb.onSelectionCommitted(cmb, new EventArgs());
-                    break ;
+                    break;
 
                     case CBN_SELENDCANCEL :
                         if (cmb.onSelectionCancelled) cmb.onSelectionCancelled(cmb, new EventArgs());
                     break;
 
-                    default : break ;
+                    default : break;
                 }
-            break ;
+            break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ; break;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
         }
     }
     catch (Exception e) {}
@@ -403,103 +403,103 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 extern(Windows)
 private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  { // @suppress(dscanner.style.long_line)
     try {
-        ComboBox cmb = getControl!ComboBox(refData) ;
-        //print("ComboBox Messages", message) ;
+        ComboBox cmb = getControl!ComboBox(refData);
+        //print("ComboBox Messages", message);
         switch (message) {
             case WM_DESTROY: RemoveWindowSubclass(hWnd, &cmbEditWndProc, scID); break;
             case WM_KEYDOWN:
                 if (cmb.onTextKeyDown) {
-                    auto kea = new KeyEventArgs(wParam) ;
-                    cmb.onTextKeyDown(cmb, kea) ;
+                    auto kea = new KeyEventArgs(wParam);
+                    cmb.onTextKeyDown(cmb, kea);
                 }
-            break ;
+            break;
 
             case WM_KEYUP :
                 if (cmb.onTextKeyUp) {
-                    auto kea = new KeyEventArgs(wParam) ;
-                    cmb.onTextKeyUp(cmb, kea) ;
+                    auto kea = new KeyEventArgs(wParam);
+                    cmb.onTextKeyUp(cmb, kea);
                 }
-            break ;
+            break;
 
             case WM_LBUTTONDOWN :
                 if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    cmb.tbMLDownHappened = true ;
+                    cmb.tbMLDownHappened = true;
                     if (cmb.onTextMouseDown) {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
-                       cmb.onTextMouseDown(cmb, mea) ;
-                       return 0 ;
+                       cmb.onTextMouseDown(cmb, mea);
+                       return 0;
                     }
                 }
-            break ;
+            break;
 
             case WM_LBUTTONUP :
                 if (cmb.dropDownStyle == DropDownStyle.textCombo) {
                     if (cmb.onTextMouseUp) {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
-                       cmb.onTextMouseUp(cmb, mea) ;
+                       cmb.onTextMouseUp(cmb, mea);
                     }
                 }
                 if (cmb.tbMLDownHappened) {
-                    cmb.tbMLDownHappened = false ;
-                    sendMsg(cmb.mHandle, CM_LEFTCLICK, 0, 0) ;
+                    cmb.tbMLDownHappened = false;
+                    sendMsg(cmb.mHandle, CM_LEFTCLICK, 0, 0);
                 }
-            break ;
+            break;
 
             case CM_LEFTCLICK :
                 if (cmb.onTextMouseClick) {
-                    auto ea = new EventArgs() ;
-                    cmb.onMouseClick(cmb, ea) ;
+                    auto ea = new EventArgs();
+                    cmb.onMouseClick(cmb, ea);
                 }
-            break ;
+            break;
 
             case WM_RBUTTONDOWN :
                 if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    cmb.tbMRDownHappened = true ;
+                    cmb.tbMRDownHappened = true;
                     if (cmb.onTextRightDown) {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
-                       cmb.onTextRightDown(cmb, mea) ;
-                       return 0 ;
+                       cmb.onTextRightDown(cmb, mea);
+                       return 0;
                     }
                 }
-            break ;
+            break;
 
             case WM_RBUTTONUP :
                 if (cmb.dropDownStyle == DropDownStyle.textCombo) {
                     if (cmb.onTextRightUp) {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
-                       cmb.onTextRightUp(cmb, mea) ;
+                       cmb.onTextRightUp(cmb, mea);
                     }
                 }
                 if (cmb.tbMRDownHappened) {
-                    cmb.tbMRDownHappened = false ;
-                    sendMsg(cmb.mHandle, CM_RIGHTCLICK, 0, 0) ;
+                    cmb.tbMRDownHappened = false;
+                    sendMsg(cmb.mHandle, CM_RIGHTCLICK, 0, 0);
                 }
-            break ;
+            break;
 
             case CM_RIGHTCLICK :
                 if (cmb.onTextRightClick) {
-                    auto ea = new EventArgs() ;
-                    cmb.onTextRightClick(cmb, ea) ;
+                    auto ea = new EventArgs();
+                    cmb.onTextRightClick(cmb, ea);
                 }
-            break ;
+            break;
 
             case CM_COLOR_EDIT:
                 // Here, we receive color changing message for text box of combo.
                 // NOTE: this is only work for text typing combo box.
                 if (cmb.mDrawFlag) {
-                    auto hdc = cast(HDC) wParam ;
-                    // SetBkMode(hdc, TRANSPARENT) ;
-                    if (cmb.mDrawFlag & 1) SetTextColor(hdc, cmb.mForeColor.cref) ;
+                    auto hdc = cast(HDC) wParam;
+                    // SetBkMode(hdc, TRANSPARENT);
+                    if (cmb.mDrawFlag & 1) SetTextColor(hdc, cmb.mForeColor.cref);
                     if (cmb.mDrawFlag & 2) SetBkColor(hdc, cmb.mBackColor.cref);
                 }
-                return cast(LRESULT) cmb.mBkBrush ;
+                return cast(LRESULT) cmb.mBkBrush;
             break;
 
             case WM_MOUSEMOVE:
                 cmb.mouseMoveHandler(message, wParam, lParam);
             break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ; break;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
         }
     }
     catch (Exception e) {}

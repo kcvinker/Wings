@@ -1,6 +1,6 @@
 module wings.commons;
 pragma(lib, "UxTheme.lib");
-import std.stdio ;
+import std.stdio;
 import std.conv;
 import std.utf;
 import core.sys.windows.windows;
@@ -11,11 +11,11 @@ import wings.enums;
 import wings.fonts;
 import wings.events;
 
-package enum uint gBkColor = 0xF0F0F0; // 0xf5f5f5 ; // Global Back color for window
+package enum uint gBkColor = 0xF0F0F0; // 0xf5f5f5; // Global Back color for window
 enum string mnf1 = "\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' ";
 enum string mnf2 = "version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"";
 alias zstring = const(wchar)*; /// Alias for Const(wchar)*. A null terminated string
-alias  HTHEME = HANDLE ;
+alias  HTHEME = HANDLE;
 enum WINDOWTHEMEATTRIBUTETYPE : int { WTA_NONCLIENT = 1 }
 extern (Windows) nothrow @nogc {
     HTHEME OpenThemeData(HWND, LPCWSTR);
@@ -40,7 +40,7 @@ package {
     class ApplicationData {
         HWND mainWinHandle;
         bool isMainLoopOn;
-        bool isDtpInit ;
+        bool isDtpInit;
         wstring className;
         static HINSTANCE hInstance;
         int screenWidth;
@@ -48,28 +48,28 @@ package {
         int windowCount;
         Color appColor;
         //WindowState winState;
-        Font mainFont ;
+        Font mainFont;
         INITCOMMONCONTROLSEX iccEx;
 
         this(string fontName, int fontSize, FontWeight fw = FontWeight.normal) {
             this.className = "Wing_window";
-            this.mainFont = new Font(fontName, fontSize, fw) ;
+            this.mainFont = new Font(fontName, fontSize, fw);
             this.appColor = Color(gBkColor);
-            this.hInstance = GetModuleHandleW(null) ;
+            this.hInstance = GetModuleHandleW(null);
             this.screenWidth = GetSystemMetrics(0);
             this.screenHeight = GetSystemMetrics(1);
             this.iccEx.dwSize = INITCOMMONCONTROLSEX.sizeof;
-            this.iccEx.dwICC = ICC_STANDARD_CLASSES ;
-            InitCommonControlsEx(&this.iccEx) ;
+            this.iccEx.dwICC = ICC_STANDARD_CLASSES;
+            InitCommonControlsEx(&this.iccEx);
 
         }
     }
 
 
-    ApplicationData appData ;
-    //alias Wstring = const(wchar)* ;
-    enum uint defBackColor = 0xFFFFFF ;
-    enum uint defForeColor = 0x000000 ;
+    ApplicationData appData;
+    //alias Wstring = const(wchar)*;
+    enum uint defBackColor = 0xFFFFFF;
+    enum uint defForeColor = 0x000000;
 
     struct Area { int width, height; }
 
@@ -77,7 +77,7 @@ package {
     // We need to hold the sub class info of a control.
     // Because, when a control will be destroyed, we need..
     // to remove sub classing.
-    //struct SubClassData {SUBCLASSPROC fnPtr ; int clsId ;}
+    //struct SubClassData {SUBCLASSPROC fnPtr; int clsId;}
 
     // Window & Button are the control which supports gradient back colors.
     // So this struct will be helpful to store the required info.
@@ -93,8 +93,8 @@ package {
 
     int xFromLparam(LPARAM lpm){ return cast(int) (cast(short) LOWORD(lpm));}
     int yFromLparam(LPARAM lpm){ return cast(int) (cast(short) HIWORD(lpm));}
-    auto getXFromLp(LPARAM lp) {return cast(int) cast(short) LOWORD(lp) ;}
-    auto getYFromLp(LPARAM lp) {return cast(int) cast(short) HIWORD(lp) ;}
+    auto getXFromLp(LPARAM lp) {return cast(int) cast(short) LOWORD(lp);}
+    auto getYFromLp(LPARAM lp) {return cast(int) cast(short) HIWORD(lp);}
     auto getNmcdPtr(LPARAM lp) {return cast(NMCUSTOMDRAW*) lp;}
     POINT getMousePos(LPARAM lpm) {return POINT(cast(int) (cast(short) LOWORD(lpm)), cast(int) (cast(short) HIWORD(lpm)));}
 
@@ -122,7 +122,7 @@ package {
 
 
 
-    T getControl(T)(DWORD_PTR refData){ return cast(T) (cast(void*) refData) ;}
+    T getControl(T)(DWORD_PTR refData){ return cast(T) (cast(void*) refData);}
 
 
 
@@ -134,12 +134,12 @@ package {
     }
 
     RECT copyRect(const RECT rc) {
-        RECT nr ;
-        nr.top = rc.top ;
-        nr.bottom = rc.bottom ;
-        nr.right = rc.right ;
-        nr.left = rc.left ;
-        return nr ;
+        RECT nr;
+        nr.top = rc.top;
+        nr.bottom = rc.bottom;
+        nr.right = rc.right;
+        nr.left = rc.left;
+        return nr;
     }
 
     /* Sometimes we need to allow user to enter data of any type into a function.
@@ -150,9 +150,9 @@ package {
         wstring result;
         static if (is(T == wstring))
         {
-            result = value ;
+            result = value;
         } else {
-            result = value.to!wstring ;
+            result = value.to!wstring;
         }
         return result;
     }
@@ -179,13 +179,14 @@ package {
         enum uint CM_CTLCOMMAND = 9003;
         enum uint CM_COLOR_EDIT = 9004;
         enum uint CM_COLOR_STATIC = 9005;
-        enum uint CM_COLOR_CMB_LIST = 9006 ;
+        enum uint CM_COLOR_CMB_LIST = 9006;
         enum uint CM_COMBOTBCOLOR = 9007;
         enum uint CM_TBTXTCHANGED = 9008;
         enum uint CM_HSCROLL = 9009;
         enum uint CM_VSCROLL = 9010;
         enum uint CM_BUDDY_RESIZE = 9011;
         enum uint CM_MENU_ADDED = 9012;
+        enum uint CM_WIN_THREAD_MSG = WM_USER + 5;
 
 
 
@@ -194,9 +195,10 @@ package {
 
 
 wstring com_ttl = "Wing Message";
-void msgBox(wstring value) {MessageBoxW(null, value.ptr, com_ttl.ptr, 0 ) ;}
-void msgBox1(wstring value) {MessageBoxW(null, value.ptr, com_ttl.ptr, 0 ) ;}
-void msgBox(string value) {MessageBoxW(null, value.toUTF16z, com_ttl.ptr, 0 ) ;}
+void msgBox(wstring value) {MessageBoxW(null, value.ptr, com_ttl.ptr, 0 );}
+void msgBox1(wstring value) {MessageBoxW(null, value.ptr, com_ttl.ptr, 0 );}
+void msgBox(string value) {MessageBoxW(null, value.toUTF16z, com_ttl.ptr, 0 );}
+void msgBox(string value, string title, HWND hwnd = null) {MessageBoxW(hwnd, value.toUTF16z, title.toUTF16z, 0 );}
 
 HWND getActiveWindow() {return GetActiveWindow();}
 void setActiveWindow(HWND wind) {SetForegroundWindow(wind);}
@@ -226,7 +228,7 @@ string getCurrentDirectory() {
 
 
 /// Converts D string into wchar*
-wchar* toWchrPtr(string value){ return toUTFz!(wchar*)(value) ;}
+wchar* toWchrPtr(string value){ return toUTFz!(wchar*)(value);}
 
 /// Converts D string into Const(wchar)*
 //auto toDWString(S)(S s) { return toUTFz!(const(wchar)*)(s); }
@@ -238,22 +240,22 @@ wchar* toWchrPtr(string value){ return toUTFz!(wchar*)(value) ;}
 void printRect(const RECT rc, string msg = "rc values") {
     writeln(msg);
     writefln("Left: %d, Top: %d, Right: %d, Bottom: %d", rc.left, rc.top, rc.right, rc.bottom);
-    writeln("-------------------------------------------------") ;
+    writeln("-------------------------------------------------");
 }
 void printRect(const RECT* rc) {
     writefln("Left - %d", rc.left);
     writefln("Top - %d", rc.top);
     writefln("Right - %d", rc.right);
     writefln("Bottom - %d", rc.bottom);
-    writeln("-------------------------------------------------") ;
+    writeln("-------------------------------------------------");
 }
 
 void print(T)(string msg, T obj) {
     debug{
         import std.stdio;
-        static x = 1 ;
+        static x = 1;
         writefln("[%d]%s - %s", x, msg, obj);
-        ++x ;
+        ++x;
     }
 }
 
@@ -285,10 +287,10 @@ void printf(T...)(string fmt, T values) {
 }
 
 
-struct Dpoint{ int x ; int y ;}
+struct Dpoint{ int x; int y;}
 struct Size {
-    int width ;
-    int height ;
+    int width;
+    int height;
     bool valueReady() {return (this.width > -1 && this.height > -1) ? true : false;}
 }
 
@@ -310,7 +312,7 @@ void drawVLine(HDC hdc, int x, int y, int endp, COLORREF clrref, int penWid = 1)
 
 int arraySearch(t, u)(t[] aArray, u item ) {
     for (int i = 0; i < aArray.length; ++i) {
-        if (aArray[i] == item) return i ;
+        if (aArray[i] == item) return i;
     }
     return -1;
 }
@@ -326,13 +328,18 @@ mixin template EnableWindowsSubSystem(  ) {
 }
 
 // template RaiseEvent(alias obj, alias eventName) {
-//     auto ea = new EventArgs() ;
-//     obj.eventName(obj, ea) ;
+//     auto ea = new EventArgs();
+//     obj.eventName(obj, ea);
 // }
 
 
 
 // Wing's own messages
+
+void sendThreadMsg(int winhwnd, WPARAM wpm, LPARAM lpm) {
+    SendNotifyMessage(cast(HWND)winhwnd, CM_WIN_THREAD_MSG, wpm, lpm );
+}
+
 
 
 

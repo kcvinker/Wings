@@ -9,13 +9,13 @@ import std.stdio;
 
 //------------------------------------------------------
 
-//private DWORD btnStyle = WS_CHILD | BS_NOTIFY | WS_TABSTOP | WS_VISIBLE ;
+//private DWORD btnStyle = WS_CHILD | BS_NOTIFY | WS_TABSTOP | WS_VISIBLE;
 // private DWORD btnExStyle = 0;
 // private Button[] buttonList;
 private static int btnNumber = 1;
 // private int subClsID = 1001;
-private const int mMouseClickFlag = 0b1 ;
-private const int mMouseOverFlag = 0b1000000 ;
+private const int mMouseClickFlag = 0b1;
+private const int mMouseOverFlag = 0b1000000;
 private const int roundCurve = 5;
 private wchar[] mClassName = ['B','u','t','t','o','n', 0];
 //---------------------------------------------------------
@@ -23,28 +23,28 @@ private wchar[] mClassName = ['B','u','t','t','o','n', 0];
 
 /// Button class.
 class Button : Control {
-    import wings.gradient ;
+    import wings.gradient;
 
 // Properties
 
     /// Set the forecolor of the button.
     final override void foreColor(uint value) {
-        this.mForeColor(value) ;
+        this.mForeColor(value);
         if ((this.mDrawFlag & 1) != 1) this.mDrawFlag += 1;
         this.checkRedrawNeeded();
     }
 
     /// Get the forecolor of the button.
-    final override uint foreColor() const {return this.mForeColor.value ;}
+    final override uint foreColor() const {return this.mForeColor.value;}
 
     final override void backColor(uint value) {
-        this.mBackColor(value) ;
+        this.mBackColor(value);
         this.mFDraw.setData(this.mBackColor);
         if ((this.mDrawFlag & 2) != 2) this.mDrawFlag += 2;
         this.checkRedrawNeeded();
     }
 
-    final override uint backColor() const {return this.mBackColor.value ;}
+    final override uint backColor() const {return this.mBackColor.value;}
 
     final void setGradientColors(uint clr1, uint clr2) {
         this.mGDraw.setData(clr1, clr2);
@@ -94,35 +94,38 @@ class Button : Control {
 
 
 // Ctors
-    this(Window parent, string txt, int x, int y, int w, int h) {
+    this(Window parent, string txt, int x, int y, int w, int h, EventHandler fnPtr = null) {
         this.mName = format("%s_%d", "Button", btnNumber);
         mixin(repeatingCode);
-        mControlType = ControlType.button ;
-        mText = txt ;
+        mControlType = ControlType.button;
+        mText = txt;
         mStyle = WS_CHILD | BS_NOTIFY | WS_TABSTOP | WS_VISIBLE | BS_PUSHBUTTON;
         mExStyle = 0;
+        SetRect(&this.mRect, x, y, w, h);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++btnNumber;
+        if (fnPtr) this.onMouseClick = fnPtr;
     }
 
     this(Window parent) {
         string btxt = format("%s_%d", "Button", btnNumber);
-        this(parent, btxt, 20, 20, 120, 35) ;
+        this(parent, btxt, 20, 20, 120, 35);
     }
 
     this(Window parent, string txt) {
-        this(parent, txt, 20, 20, 120, 35) ;
+        this(parent, txt, 20, 20, 120, 35);
     }
 
-    this(Window parent, string txt, size_t x, size_t y) {
-        this(parent, txt, x, y, 120, 35) ;
+    this(Window parent, string txt, int x, int y) {
+        this(parent, txt, x, y, 120, 35);
     }
 
-    this(Window parent, size_t x, size_t y, size_t w, size_t h) {
+    this(Window parent, int x, int y, int w, int h) {
         string btxt = format("%s_%d", "Button", btnNumber);
-        this(parent, btxt, x, y, w, h) ;
+        this(parent, btxt, x, y, w, h);
+
     }
 // End of Ctors
 
@@ -130,15 +133,15 @@ class Button : Control {
     //------------------------------------------------------------------------
     /// Create the button handle
     override void createHandle() {
-        this.createHandleInternal(mClassName.ptr) ;
+        this.createHandleInternal(mClassName.ptr);
         if (this.mHandle) {
-            this.setSubClass(&btnWndProc) ;
+            this.setSubClass(&btnWndProc);
         }
     }
 
 
     package :
-        BtnDrawMode mDrawMode ;
+        BtnDrawMode mDrawMode;
         DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
 
 
@@ -151,10 +154,10 @@ class Button : Control {
 
          // Drawing a button's text at pre paint stage.
         LRESULT drawTextColor(NMCUSTOMDRAW* ncd) { // Private
-            SetTextColor(ncd.hdc, this.mForeColor.cref) ;
-            SetBkMode(ncd.hdc, 1) ;
-            DrawText(ncd.hdc, this.mText.toUTF16z, -1, &ncd.rc, this.mTxtFlag ) ;
-            return CDRF_NOTIFYPOSTPAINT ;
+            SetTextColor(ncd.hdc, this.mForeColor.cref);
+            SetBkMode(ncd.hdc, 1);
+            DrawText(ncd.hdc, this.mText.toUTF16z, -1, &ncd.rc, this.mTxtFlag );
+            return CDRF_NOTIFYPOSTPAINT;
         }
 
         // Drawing the flat color bkg
@@ -175,10 +178,10 @@ class Button : Control {
                         break;
                     }
                     return CDRF_NOTIFYPOSTPAINT;
-                break ;
-                default : break ;
+                break;
+                default : break;
             }
-            return CDRF_DODEFAULT ;
+            return CDRF_DODEFAULT;
         }
 
         // Drawing the gradient color bkg
@@ -186,7 +189,7 @@ class Button : Control {
             switch (ncd.dwDrawStage) {
                 case CDDS_PREERASE: // This happens when the paint starts
                     return CDRF_NOTIFYPOSTERASE; // Telling the program to inform us after erase
-                break ;
+                break;
                 case CDDS_PREPAINT: // We get the notification after erase happened.
                     switch (ncd.uItemState) { // We check the control state and draw
                         case mMouseClickFlag:
@@ -201,10 +204,10 @@ class Button : Control {
                         break;
                     }
                     return CDRF_NOTIFYPOSTPAINT;
-                    break ;
-                default : break ;
+                    break;
+                default : break;
             }
-            return CDRF_DODEFAULT ;
+            return CDRF_DODEFAULT;
         }
 
         // Helper function for drawing flat color bkg
@@ -217,8 +220,8 @@ class Button : Control {
 
 
         void paintRoundGradient(HDC dc, RECT rc, GradColor gc, HPEN pen) {
-            auto gradBrush = createGradientBrush(dc, rc, gc.c1, gc.c2) ;
-            scope(exit) DeleteObject(gradBrush) ;
+            auto gradBrush = createGradientBrush(dc, rc, gc.c1, gc.c2);
+            scope(exit) DeleteObject(gradBrush);
             SelectObject(dc, pen);
             SelectObject(dc, gradBrush);
             RoundRect(dc, rc.left, rc.top, rc.right, rc.bottom, roundCurve, roundCurve);
@@ -249,7 +252,7 @@ class Button : Control {
 
         void finalize(UINT_PTR scID) {
             // this.remSubClass(scID);
-            writeln("Button destro");
+            // writeln("Button destro");
             RemoveWindowSubclass(this.mHandle, &btnWndProc, scID);
         }
     //-----------------------------------------------------------------------
@@ -295,10 +298,10 @@ private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        Button btn = getControl!Button(refData) ;
+        Button btn = getControl!Button(refData);
         //btn.log(message, "Button message ");
         switch (message) {
-            case WM_DESTROY : btn.finalize(scID); break ;
+            case WM_DESTROY : btn.finalize(scID); break;
             case WM_PAINT : btn.paintHandler(); break;
             case WM_SETFOCUS :
                 btn.setFocusHandler();
@@ -308,8 +311,8 @@ private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 btn.killFocusHandler();
                 return 1;
             break;
-            case WM_LBUTTONDOWN : btn.mouseDownHandler(message, wParam, lParam); break ;
-            case WM_LBUTTONUP : btn.mouseUpHandler(message, wParam, lParam); break ;
+            case WM_LBUTTONDOWN : btn.mouseDownHandler(message, wParam, lParam); break;
+            case WM_LBUTTONUP : btn.mouseUpHandler(message, wParam, lParam); break;
             case CM_LEFTCLICK : btn.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : btn.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : btn.mouseRUpHandler(message, wParam, lParam); break;
@@ -317,9 +320,9 @@ private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_MOUSEWHEEL : btn.mouseWheelHandler(message, wParam, lParam); break;
             case WM_MOUSEMOVE : btn.mouseMoveHandler(message, wParam, lParam); break;
             case WM_MOUSELEAVE : btn.mouseLeaveHandler(); break;
-            case CM_NOTIFY : return btn.wmNotifyHandler(lParam); break ;
+            case CM_NOTIFY : return btn.wmNotifyHandler(lParam); break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }
     catch (Exception e) {}

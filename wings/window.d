@@ -10,8 +10,10 @@ pragma(lib, "gdiplus.lib");
 import std.stdio;
 import wings.d_essentials;
 import std.format;
-import std.array ;
-import std.algorithm.mutation  ; // We have a function called 'remove'. So this must be renamed.
+import std.array;
+import std.algorithm.mutation; // We have a function called 'remove'. So this must be renamed.
+import std.string;
+
 
 import wings.controls;
 import wings.commons;
@@ -20,22 +22,22 @@ import wings.fonts;
 import wings.enums;
 import wings.winstyle_contsants;
 import wings.colors;
-import wings.gradient ;
+import wings.gradient;
 //import wings.combobox : ComboInfo;
 import wings.menubar : MenuItem, getMenuItem;
 
-import std.datetime.stopwatch ;
-//public bool isReleaseVersion ;
-package HWND mainHwnd ; // A handle for main window
+import std.datetime.stopwatch;
+//public bool isReleaseVersion;
+package HWND mainHwnd; // A handle for main window
 
 // Compile time values to use later
-package enum string defWinFontName = "Tahoma" ;
-package enum int defWinFontSize = 12 ;
-package enum FontWeight defWinFontWeight = FontWeight.normal ;
+package enum string defWinFontName = "Tahoma";
+package enum int defWinFontSize = 12;
+package enum FontWeight defWinFontWeight = FontWeight.normal;
 
 package bool isWindowInit = false;
 
-DWORD newStyle = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS ;
+DWORD newStyle = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
 
 //Window[HWND] myDic; to be deleted
 
@@ -50,15 +52,16 @@ class Window : Control {
     mixin finalProperty!("maximizeBox", this.mMaxBox);
     mixin finalProperty!("minimizeBox", this.mMinBox);
 
-    //final override uint backColor() const {return this.mBackColor ;}
-    final override void backColor(uint clr) {propBackColorSetter(clr) ;}
+    //final override uint backColor() const {return this.mBackColor;}
+    final override void backColor(uint clr) {propBackColorSetter(clr);}
     final HINSTANCE hInstace() {return appData.hInstance;}
 
 
-    EventHandler onMinimized, onMaximized, onRestored, onClosing, onClosed, onLoad ;
-    EventHandler onActivate, onDeActivate, onMoving, onMoved ;
-    SizeEventHandler onSized, onSizing ;
+    EventHandler onMinimized, onMaximized, onRestored, onClosing, onClosed, onLoad;
+    EventHandler onActivate, onDeActivate, onMoving, onMoved;
+    SizeEventHandler onSized, onSizing;
     HotKeyEventHandler onHotKeyPress;
+    ThreadMsgHandler onThreadMsg;
 
 
 
@@ -71,26 +74,26 @@ class Window : Control {
             // this.checkWinVwesion();
         }
 
-        this.mText = txt ;
-        this.mWidth = w ;
-        this.mHeight = h ;
-        this.mXpos = x ;
-        this.mYpos = y ;
-        this.mStartPos = WindowPos.center ;
-        this.maximizeBox = true ;
-        this.minimizeBox = true ;
-        this.mWinStyle = WindowStyle.normalWin ;
-        this.mBkDrawMode = WindowBkMode.normal ;
+        this.mText = txt;
+        this.mWidth = w;
+        this.mHeight = h;
+        this.mXpos = x;
+        this.mYpos = y;
+        this.mStartPos = WindowPos.center;
+        this.maximizeBox = true;
+        this.minimizeBox = true;
+        this.mWinStyle = WindowStyle.normalWin;
+        this.mBkDrawMode = WindowBkMode.normal;
         //this.mWinState = WindowState.normal;
         this.mFont = appData.mainFont;
-        this.controlType = ControlType.window ;
-        this.mBackColor = appData.appColor ; // using opCall feature
+        this.controlType = ControlType.window;
+        this.mBackColor = appData.appColor; // using opCall feature
 
-        mWinCount += 1 ; // Incrementing private static variable
+        mWinCount += 1; // Incrementing private static variable
     }
 
     this () {
-        string title = format("%s_%d", "Form", mWinCount + 1) ;
+        string title = format("%s_%d", "Form", mWinCount + 1);
         this(title, 0, 0, 500, 450);
     }
 
@@ -105,8 +108,8 @@ class Window : Control {
     /// Creates the window
     override void createHandle() {
         import std.stdio;
-        setStartPos() ;
-        setWindowStyles() ;
+        setStartPos();
+        setWindowStyles();
         //auto sw = StopWatch(AutoStart.no);
         //sw.start();
 
@@ -121,7 +124,7 @@ class Window : Control {
                                         null,
                                         menuHwnd,
                                         appData.hInstance,
-                                        null) ;
+                                        null);
 
         //sw.stop();
         //print("window create speed in milli sec : ", sw.peek.total!"msecs");
@@ -130,9 +133,9 @@ class Window : Control {
             //myDic[this.mHandle] = this;   To be deleted
 
             this.mIsCreated = true;
-            if (appData.mainWinHandle == null) appData.mainWinHandle = this.mHandle ;
-            SetWindowLongPtrW(this.mHandle, GWLP_USERDATA, (cast(LONG_PTR) cast(void*) this) ) ;
-            this.setFontInternal() ;
+            if (appData.mainWinHandle == null) appData.mainWinHandle = this.mHandle;
+            SetWindowLongPtrW(this.mHandle, GWLP_USERDATA, (cast(LONG_PTR) cast(void*) this) );
+            this.setFontInternal();
             // if (!this.mVisible) {
             //         SetWindowPos(   this.mHandle, null,
             //                         this.mXpos, this.mYpos,
@@ -144,30 +147,30 @@ class Window : Control {
         }
         else {
 
-            throw new Exception("Window is not created...") ; // Do we need this ?
+            throw new Exception("Window is not created..."); // Do we need this ?
         }
     }
 
     /// This will show the form on the screen
     final void show(DWORD swParam = SW_SHOW) {
-        ShowWindow(this.mHandle, swParam) ;
-        UpdateWindow(this.mHandle) ;
+        ShowWindow(this.mHandle, swParam);
+        UpdateWindow(this.mHandle);
 
         if (this.mWinState == WindowState.minimized) {CloseWindow(this.mHandle); }
         if(!mMainLoopStarted) {
             this.createControlHandles();
-            mMainLoopStarted = true ;
-            mainLoop() ;
+            mMainLoopStarted = true;
+            mainLoop();
         }
     }
 
     /// This will set the gradient background color for this window.
     final void setGradientColors(uint c1, uint c2, bool r2l = false) {
-        this.mBkDrawMode = WindowBkMode.gradient ;
+        this.mBkDrawMode = WindowBkMode.gradient;
         this.mGdraw.c1 = Color(c1);
         this.mGdraw.c2 = Color(c2);
         this.mGDR2L = r2l;
-        this.checkRedrawNeeded() ;
+        this.checkRedrawNeeded();
     }
 
     /// closes the window
@@ -179,14 +182,14 @@ class Window : Control {
 
     final void printPoint(MouseEventArgs e) {
         import std.stdio;
-        static int x = 1 ;
-        writefln("[%s] X : %s, Y : %s", x, e.xPos, e.yPos) ;
-        ++x ;
+        static int x = 1;
+        writefln("[%s] X : %s, Y : %s", x, e.xPos, e.yPos);
+        ++x;
     }
 
     final void registerHotKey(HotKeyStruct* hks) {
         if (this.mIsCreated) {
-            uint fsMod ;
+            uint fsMod;
             if (hks.altKey) fsMod |= 0x0001;
             if (hks.ctrlKey) fsMod |= 0x0002;
             if (hks.shiftKey) fsMod |= 0x0004;
@@ -194,7 +197,7 @@ class Window : Control {
             if (!hks.repeat) fsMod |= 0x4000;
             if (!hks.altKey && !hks.ctrlKey && !hks.shiftKey && !hks.winKey ) return;
             uint vKey = cast(uint) hks.hotKey;
-            ++mGlobalHotKeyID ; // A static variable of Window class.
+            ++mGlobalHotKeyID; // A static variable of Window class.
             if (RegisterHotKey(this.mHandle, mGlobalHotKeyID, fsMod, vKey)) {
                 this.mHotKeyIDList ~= mGlobalHotKeyID;
                 hks.hotKeyID = mGlobalHotKeyID;
@@ -214,12 +217,12 @@ class Window : Control {
     // }
 
     package : //----------------------------------
-        bool misBkClrChanged ;
-        bool mIsLoaded ;
-        bool mIsMouseTracking ;
-        bool mIsMouseEntered ;
+        bool misBkClrChanged;
+        bool mIsLoaded;
+        bool mIsMouseTracking;
+        bool mIsMouseEntered;
         bool mSizingStarted;
-        WindowBkMode mBkDrawMode ;
+        WindowBkMode mBkDrawMode;
         HWND[HWND] cmb_dict;
         COLORREF mMenuGrayCref;
         HBRUSH mMenuGrayBrush;
@@ -236,18 +239,18 @@ class Window : Control {
         // in the WndProc function, in the occurance of WM_ERASEKBGND
         final void setBkClrInternal(HDC dcHandle) { // package
             RECT rct;
-            GetClientRect(this.mHandle, &rct) ;
-            HBRUSH hBr ;
-            scope(exit) DeleteObject(hBr) ;
+            GetClientRect(this.mHandle, &rct);
+            HBRUSH hBr;
+            scope(exit) DeleteObject(hBr);
 
             if (this.mBkDrawMode == WindowBkMode.singleColor ) {
-                hBr = CreateSolidBrush(this.mBackColor.cref) ;
+                hBr = CreateSolidBrush(this.mBackColor.cref);
             }
             else if (this.mBkDrawMode == WindowBkMode.gradient) {
-                hBr = createGradientBrush(dcHandle, rct, this.mGdraw.c1, this.mGdraw.c2, this.mGDR2L) ;
+                hBr = createGradientBrush(dcHandle, rct, this.mGdraw.c1, this.mGdraw.c2, this.mGDR2L);
             }
 
-            FillRect(dcHandle, &rct, hBr) ;
+            FillRect(dcHandle, &rct, hBr);
         }
 
         final void setMenuClickHandler( MenuItem mi) { this.mMenuItems ~= mi;}
@@ -286,30 +289,30 @@ class Window : Control {
         void setStartPos() { // Private
             switch (this.mStartPos) {
                 case WindowPos.center :
-                    this.mXpos = (appData.screenWidth - this.mWidth) / 2  ;
-                    this.mYpos = (appData.screenHeight - this.mHeight) / 2  ;
-                    break ;
+                    this.mXpos = (appData.screenWidth - this.mWidth) / 2;
+                    this.mYpos = (appData.screenHeight - this.mHeight) / 2;
+                    break;
 
-                case WindowPos.topLeft  : break ;
-                case WindowPos.manual   : break ;
+                case WindowPos.topLeft  : break;
+                case WindowPos.manual   : break;
 
                 case WindowPos.topMid   :
-                    this.mXpos = (appData.screenWidth - this.mWidth) / 2  ; break ;
+                    this.mXpos = (appData.screenWidth - this.mWidth) / 2; break;
                 case WindowPos.topRight :
-                    this.mXpos = appData.screenWidth - this.mWidth ; break ;
+                    this.mXpos = appData.screenWidth - this.mWidth; break;
                 case WindowPos.midLeft  :
-                    this.mYpos = (appData.screenHeight - this.mHeight) / 2 ; break ;
+                    this.mYpos = (appData.screenHeight - this.mHeight) / 2; break;
                 case WindowPos.midRight :
-                    this.mXpos = appData.screenWidth - this.mWidth ;
-                    this.mYpos = (appData.screenHeight - this.mHeight) / 2  ; break ;
+                    this.mXpos = appData.screenWidth - this.mWidth;
+                    this.mYpos = (appData.screenHeight - this.mHeight) / 2; break;
                 case WindowPos.bottomLeft :
-                    this.mYpos = appData.screenHeight - this.mHeight ; break ;
+                    this.mYpos = appData.screenHeight - this.mHeight; break;
                 case WindowPos.bottomMid :
-                    this.mXpos = (appData.screenWidth - this.mWidth) / 2  ;
-                    this.mYpos = appData.screenHeight - this.mHeight ; break ;
+                    this.mXpos = (appData.screenWidth - this.mWidth) / 2;
+                    this.mYpos = appData.screenHeight - this.mHeight; break;
                 case WindowPos.bottomRight :
-                    this.mXpos = appData.screenWidth - this.mWidth  ;
-                    this.mYpos = appData.screenHeight - this.mHeight ; break ;
+                    this.mXpos = appData.screenWidth - this.mWidth;
+                    this.mYpos = appData.screenHeight - this.mHeight; break;
                 default: break;
             }
 
@@ -318,42 +321,42 @@ class Window : Control {
         void setWindowStyles() { // Private
             switch(this.mWinStyle) {
                 case WindowStyle.fixed3D :
-                    this.mExStyle = fixed3DExStyle ;
-                    this.mStyle = fixed3DStyle ;
-                    if (!this.maximizeBox) this.mStyle = this.mStyle ^ WS_MAXIMIZEBOX ;
-                    if (!this.minimizeBox) this.mStyle = this.mStyle ^ WS_MINIMIZEBOX ;
-                break ;
+                    this.mExStyle = fixed3DExStyle;
+                    this.mStyle = fixed3DStyle;
+                    if (!this.maximizeBox) this.mStyle = this.mStyle ^ WS_MAXIMIZEBOX;
+                    if (!this.minimizeBox) this.mStyle = this.mStyle ^ WS_MINIMIZEBOX;
+                break;
                 case WindowStyle.fixedDialog :
-                    this.mExStyle = fixedDialogExStyle ;
-                    this.mStyle = fixedDialogStyle ;
-                    if (!this.maximizeBox) this.mStyle = this.mStyle ^ WS_MAXIMIZEBOX ;
-                    if (!this.minimizeBox) this.mStyle = this.mStyle ^ WS_MINIMIZEBOX ;
-                break ;
+                    this.mExStyle = fixedDialogExStyle;
+                    this.mStyle = fixedDialogStyle;
+                    if (!this.maximizeBox) this.mStyle = this.mStyle ^ WS_MAXIMIZEBOX;
+                    if (!this.minimizeBox) this.mStyle = this.mStyle ^ WS_MINIMIZEBOX;
+                break;
                 case WindowStyle.fixedSingle :
-                    this.mExStyle = fixedSingleExStyle ;
-                    this.mStyle = fixedSingleStyle ;
-                    if (!this.maximizeBox) this.mStyle = this.mStyle ^ WS_MAXIMIZEBOX ;
-                    if (!this.minimizeBox) this.mStyle = this.mStyle ^ WS_MINIMIZEBOX ;
-                break ;
+                    this.mExStyle = fixedSingleExStyle;
+                    this.mStyle = fixedSingleStyle;
+                    if (!this.maximizeBox) this.mStyle = this.mStyle ^ WS_MAXIMIZEBOX;
+                    if (!this.minimizeBox) this.mStyle = this.mStyle ^ WS_MINIMIZEBOX;
+                break;
                 case WindowStyle.normalWin :
-                    this.mExStyle = normalWinExStyle ;
-                    this.mStyle = normalWinStyle ;
-                    if (!this.maximizeBox) this.mStyle = this.mStyle ^ WS_MAXIMIZEBOX ;
-                    if (!this.minimizeBox) this.mStyle = this.mStyle ^ WS_MINIMIZEBOX ;
-                break ;
+                    this.mExStyle = normalWinExStyle;
+                    this.mStyle = normalWinStyle;
+                    if (!this.maximizeBox) this.mStyle = this.mStyle ^ WS_MAXIMIZEBOX;
+                    if (!this.minimizeBox) this.mStyle = this.mStyle ^ WS_MINIMIZEBOX;
+                break;
                 case WindowStyle.fixedTool :
-                    this.mExStyle = fixedToolExStyle ;
-                    this.mStyle = fixedToolStyle ;
-                break ;
+                    this.mExStyle = fixedToolExStyle;
+                    this.mStyle = fixedToolStyle;
+                break;
                 case WindowStyle.sizableTool :
-                    this.mExStyle = sizableToolExStyle ;
-                    this.mStyle = sizableToolStyle ;
-                break ;
+                    this.mExStyle = sizableToolExStyle;
+                    this.mStyle = sizableToolStyle;
+                break;
                 case WindowStyle.hidden:
                     this.mExStyle = WS_EX_TOOLWINDOW;
                     this.mStyle = WS_BORDER;
                 break;
-                default : break ;
+                default : break;
             }
 
             if (this.mTopMost) this.mExStyle = this.mExStyle | WS_EX_TOPMOST;
@@ -376,9 +379,9 @@ class Window : Control {
         }
 
     	void propBackColorSetter(uint clr) {   // private
-    		this.mBackColor(clr) ;
-    		this.mBkDrawMode = WindowBkMode.singleColor ;
-    		if (this.mIsCreated) InvalidateRect(this.mHandle, null, false) ;
+    		this.mBackColor(clr);
+    		this.mBkDrawMode = WindowBkMode.singleColor;
+    		if (this.mIsCreated) InvalidateRect(this.mHandle, null, false);
     	}
 
         void checkWinVwesion() {
@@ -394,6 +397,16 @@ class Window : Control {
             // }
             writefln("OS Version : %s.%s.%s.%s", ovi.dwMajorVersion,
                 ovi.dwMinorVersion, ovi.dwPlatformId, ovi.dwBuildNumber);
+        }
+
+        void setDataAtMoveMsg(int x, int y) {
+            this.mXpos = x;
+            this.mYpos = y;
+        }
+
+        void setDataAtSizeMsg(RECT rct) {
+            this.mWidth = rct.right - rct.left;
+            this.mHeight = rct.bottom - rct.top;
         }
 
         void finalize() {
@@ -421,9 +434,10 @@ class Window : Control {
 
 void printFormPoints(Control sender, MouseEventArgs e) {
     import std.stdio;
-    static int x = 1 ;
-    writefln("[%s] X : %s, Y : %s", x, e.xPos, e.yPos) ;
-    ++x ;
+    static int x = 1;
+    writefln("[%s] X : %s, Y : %s", x, e.xPos, e.yPos);
+    ++x;
+    stdout.flush();
 }
 
 struct HotKeyStruct {
@@ -439,9 +453,9 @@ struct HotKeyStruct {
 }
 
 void regWindowClass(wstring clsN,  HMODULE hInst) {
-    WNDCLASSEXW wcEx ;
+    WNDCLASSEXW wcEx;
     wcEx.style         = CS_HREDRAW | CS_VREDRAW  | CS_OWNDC;
-    wcEx.lpfnWndProc   = &mainWndProc ;
+    wcEx.lpfnWndProc   = &mainWndProc;
     wcEx.cbClsExtra    = 0;
     wcEx.cbWndExtra    = 0;
     wcEx.hInstance     = hInst;
@@ -451,13 +465,13 @@ void regWindowClass(wstring clsN,  HMODULE hInst) {
     wcEx.lpszMenuName  = null;
     wcEx.lpszClassName = clsN.ptr;
 
-    RegisterClassExW(&wcEx) ;
+    RegisterClassExW(&wcEx);
 }
 
 // Some good back colors - 0xE8E9EB, 0xF5F5F5, 0xF2F3F5
 
 void mainLoop() {
-    MSG uMsg ;
+    MSG uMsg;
     while (GetMessage(&uMsg, null, 0, 0) != 0) {
         TranslateMessage(&uMsg);
         DispatchMessage(&uMsg);
@@ -465,12 +479,12 @@ void mainLoop() {
 }
 
 void trackMouseMove(HWND hw) {
-    TRACKMOUSEEVENT tme ;
-    tme.cbSize = tme.sizeof ;
-    tme.dwFlags = TME_HOVER | TME_LEAVE ;
-    tme.dwHoverTime = HOVER_DEFAULT ;
-    tme.hwndTrack = hw ;
-    TrackMouseEvent(&tme) ;
+    TRACKMOUSEEVENT tme;
+    tme.cbSize = tme.sizeof;
+    tme.dwFlags = TME_HOVER | TME_LEAVE;
+    tme.dwHoverTime = HOVER_DEFAULT;
+    tme.hwndTrack = hw;
+    TrackMouseEvent(&tme);
 }
 
 
@@ -480,9 +494,15 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
     try {
         auto win = cast(Window) (cast(void *) GetWindowLongPtrW(hWnd, GWLP_USERDATA));
         switch (message) {
+            case CM_WIN_THREAD_MSG: // Users can send this msg from different threads.
+                if (win.onThreadMsg) {
+                    win.onThreadMsg(wParam, lParam);
+                }
+            break;
+
             case WM_SHOWWINDOW :
                 if (!win.mIsLoaded) {
-                    win.mIsLoaded = true ;
+                    win.mIsLoaded = true;
                     if (win.onLoad) win.onLoad(win, new EventArgs());
                 }
                 return 0;
@@ -490,11 +510,11 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
 
             case WM_ACTIVATEAPP:
                 if (win.onActivate || win.onDeActivate) {
-                    auto ea = new EventArgs() ;
-                    immutable bool flag = cast(bool) wParam ;
+                    auto ea = new EventArgs();
+                    immutable bool flag = cast(bool) wParam;
                     if (!flag) {
                         if (win.onDeActivate) win.onDeActivate(win, ea);
-                        return 0 ;
+                        return 0;
                     } else {
                         if (win.onActivate) win.onActivate(win, ea);
                     }
@@ -503,7 +523,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
 
             case WM_NOTIFY :
                 auto nm = cast(NMHDR*) lParam;
-                return SendMessageW(nm.hwndFrom, CM_NOTIFY, wParam, lParam) ;
+                return SendMessageW(nm.hwndFrom, CM_NOTIFY, wParam, lParam);
             break;
 
             case WM_CTLCOLOREDIT :
@@ -515,15 +535,15 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 auto ctlHwnd = cast(HWND) lParam;
                 //auto receiver = win.findComboInfo(ctlHwnd, false);
                 //if (receiver) {
-                //    return SendMessage(receiver, CM_COMBOTBCOLOR, wParam, lParam) ;
+                //    return SendMessage(receiver, CM_COMBOTBCOLOR, wParam, lParam);
                 //} else {
-                //    return SendMessage(ctlHwnd, CM_COLOR_STATIC, wParam, lParam) ;
+                //    return SendMessage(ctlHwnd, CM_COLOR_STATIC, wParam, lParam);
                 //}
                 return SendMessageW(ctlHwnd, CM_COLOR_STATIC, wParam, lParam);
             break;
 
             case WM_CTLCOLORLISTBOX :
-                auto ctlHwnd = cast(HWND) lParam ;
+                auto ctlHwnd = cast(HWND) lParam;
                 // If user uses a ComboBox, it contains a ListBox in it.
                 // So, 'ctlHwnd' might be a handle of that ListBox. Or it might be a normal ListBox too.
                 // So, we need to check it before dispatch this message to that listbox.
@@ -531,11 +551,11 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
 
                 auto cmb = win.cmb_dict.get(ctlHwnd, null);
                 if (cmb) {
-                    return SendMessageW(cmb, CM_COLOR_CMB_LIST, wParam, lParam) ;
+                    return SendMessageW(cmb, CM_COLOR_CMB_LIST, wParam, lParam);
                 } else {
-                    return SendMessageW(ctlHwnd, CM_COLOR_EDIT, wParam, lParam) ;
+                    return SendMessageW(ctlHwnd, CM_COLOR_EDIT, wParam, lParam);
                 }
-            break ;
+            break;
 
             case WM_COMMAND :
                 switch (HIWORD(wParam)) {
@@ -549,134 +569,134 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                     break;
                     case 1: break; // It's from accelerator key
                     default: // It's from a control
-                        auto ctlHwnd = cast(HWND) lParam ;
-                        return SendMessageW(ctlHwnd, CM_CTLCOMMAND, wParam, lParam) ;
+                        auto ctlHwnd = cast(HWND) lParam;
+                        return SendMessageW(ctlHwnd, CM_CTLCOMMAND, wParam, lParam);
                     break;
                 }
 
-            break ;
+            break;
 
 
             case WM_KEYUP, WM_SYSKEYUP :
                 if (win.onKeyUp) {
-                    auto ea = new KeyEventArgs(wParam) ;
-                    win.onKeyUp(win, ea) ;
+                    auto ea = new KeyEventArgs(wParam);
+                    win.onKeyUp(win, ea);
                 }
-            break ;
+            break;
 
             case WM_KEYDOWN, WM_SYSKEYDOWN :
                 if (win.onKeyDown) {
-                    auto ea = new KeyEventArgs(wParam) ;
-                    win.onKeyDown(win, ea) ;
+                    auto ea = new KeyEventArgs(wParam);
+                    win.onKeyDown(win, ea);
                 }
-            break ;
+            break;
 
             case WM_CHAR :
                 if (win.onKeyPress) {
-                    auto ea = new KeyPressEventArgs(wParam) ;
-                    win.onKeyPress(win, ea) ;
+                    auto ea = new KeyPressEventArgs(wParam);
+                    win.onKeyPress(win, ea);
                 }
-            break ;
+            break;
 
             case WM_LBUTTONDOWN :
-                win.lDownHappened = true ;
+                win.lDownHappened = true;
                 if (win.onMouseDown) {
                     auto ea = new MouseEventArgs(message, wParam, lParam);
                     win.onMouseDown(win, ea);
-                    return 0 ;
+                    return 0;
                 }
-            break ;
+            break;
 
             case WM_LBUTTONUP :
                 if (win.onMouseUp) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam) ;
-                    win.onMouseUp(win, ea) ;
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    win.onMouseUp(win, ea);
                 }
 
                 if (win.lDownHappened) {
-                    win.lDownHappened = false ;
-                    sendMsg(win.mHandle, CM_LEFTCLICK, 0, 0) ;
+                    win.lDownHappened = false;
+                    sendMsg(win.mHandle, CM_LEFTCLICK, 0, 0);
                 }
-            break ;
+            break;
 
             case CM_LEFTCLICK :
                 if (win.onMouseClick) {
-                    auto ea = new EventArgs() ;
-                    win.onMouseClick(win, ea) ;
+                    auto ea = new EventArgs();
+                    win.onMouseClick(win, ea);
                 }
-            break ;
+            break;
 
             case WM_RBUTTONDOWN :
                 win.rDownHappened = true;
                 if (win.onRightMouseDown) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam) ;
-                    win.onRightMouseDown(win, ea) ;
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    win.onRightMouseDown(win, ea);
                 }
-            break ;
+            break;
 
             case WM_RBUTTONUP :
                 if (win.onRightMouseUp) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam) ;
-                    win.onRightMouseUp(win, ea) ;
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    win.onRightMouseUp(win, ea);
                 }
 
                 if (win.rDownHappened) {
-                    win.rDownHappened = false ;
-                    sendMsg(win.mHandle, CM_RIGHTCLICK, 0, 0) ;
+                    win.rDownHappened = false;
+                    sendMsg(win.mHandle, CM_RIGHTCLICK, 0, 0);
                 }
-            break ;
+            break;
 
             case CM_RIGHTCLICK :
                 if (win.onRightClick) {
-                    auto ea = new EventArgs() ;
-                    win.onRightClick(win, ea) ;
+                    auto ea = new EventArgs();
+                    win.onRightClick(win, ea);
                 }
-            break ;
+            break;
 
             case WM_MOUSEWHEEL :
                 if (win.onMouseWheel) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam) ;
-                    win.onMouseWheel(win, ea) ;
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    win.onMouseWheel(win, ea);
                 }
-            break ;
+            break;
 
             case WM_MOUSEMOVE :
                 if (!win.mIsMouseTracking) {
-                    win.mIsMouseTracking = true ;
+                    win.mIsMouseTracking = true;
                     trackMouseMove(hWnd);
                     if (!win.mIsMouseEntered) {
                         if (win.onMouseEnter) {
-                            win.mIsMouseEntered = true ;
-                            auto ea = new EventArgs() ;
-                            win.onMouseEnter(win, ea) ;
+                            win.mIsMouseEntered = true;
+                            auto ea = new EventArgs();
+                            win.onMouseEnter(win, ea);
                         }
                     }
                 }
 
                 if (win.onMouseMove) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam) ;
-                    win.onMouseMove(win, ea) ;
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    win.onMouseMove(win, ea);
                 }
-            break ;
+            break;
 
             case WM_MOUSEHOVER :
-                if (win.mIsMouseTracking) {win.mIsMouseTracking = false ;}
+                if (win.mIsMouseTracking) {win.mIsMouseTracking = false;}
                 if (win.onMouseHover) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam) ;
-                    win.onMouseHover(win, ea) ;
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    win.onMouseHover(win, ea);
                 }
-            break ;
+            break;
 
             case WM_MOUSELEAVE :
                 if (win.mIsMouseTracking) {
-                    win.mIsMouseTracking = false ;
-                    win.mIsMouseEntered = false ;
+                    win.mIsMouseTracking = false;
+                    win.mIsMouseEntered = false;
                 }
                 if (win.onMouseLeave) {
-                    auto ea = new EventArgs() ;
-                    win.onMouseLeave(win, ea) ;
+                    auto ea = new EventArgs();
+                    win.onMouseLeave(win, ea);
                 }
-            break ;
+            break;
 
             case WM_HSCROLL: return SendMessageW(cast(HWND) lParam, CM_HSCROLL, wParam, lParam);
             case WM_VSCROLL: return SendMessageW(cast(HWND) lParam, CM_VSCROLL, wParam, lParam);
@@ -684,14 +704,15 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
             case WM_SIZING :
                 win.mSizingStarted = true;
                 auto sea = new SizeEventArgs(message, wParam, lParam);
-                win.width = sea.windowRect.right - sea.windowRect.left;
-                win.height = sea.windowRect.bottom - sea.windowRect.top;
+                // win.width = sea.windowRect.right - sea.windowRect.left;
+                // win.height = sea.windowRect.bottom - sea.windowRect.top;
+                win.setDataAtSizeMsg(sea.windowRect);
                 if (win.onSizing) {
                     win.onSizing(win, sea);
                     return 1;
                 }
                 return 0;
-            break ;
+            break;
 
             case WM_SIZE :
                 win.mSizingStarted = false;
@@ -701,23 +722,20 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                     return 1;
                 }
 
-            break ;
+            break;
 
             case WM_MOVE :
-                win.xPos = xFromLparam(lParam);
-                win.yPos = yFromLparam(lParam);
+                win.setDataAtMoveMsg(xFromLparam(lParam), yFromLparam(lParam));
                 if (win.onMoved) {
                     auto ea = new EventArgs();
                     win.onMoved(win, ea);
-                    return 0;
                 }
                 return 0;
             break;
 
             case WM_MOVING :
                 auto rct = cast(RECT*) lParam;
-                win.xPos = rct.left;
-                win.yPos = rct.top;
+                win.setDataAtMoveMsg(rct.left, rct.top);
                 if (win.onMoving) {
                     auto ea = new EventArgs();
                     win.onMoving(win, ea);
@@ -735,23 +753,23 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
 
                     case SC_MAXIMIZE:
                         if (win.onMaximized) win.onMaximized(win, new EventArgs());
-                    break ;
+                    break;
 
                     case SC_RESTORE:
                         if (win.onRestored) win.onRestored(win, new EventArgs());
                     break;
-                    default: break ;
+                    default: break;
                 }
             break;
 
             case WM_ERASEBKGND :
                 if (win.mBkDrawMode != WindowBkMode.normal) {
-                    auto dch = cast(HDC) wParam ;
-                    win.setBkClrInternal(dch) ;
+                    auto dch = cast(HDC) wParam;
+                    win.setBkClrInternal(dch);
                     return cast(LRESULT)1; // We must return non zero value if handle this message.
                 }
                 // Do not return zero here. It will cause static controls's back ground looks ugly.
-            break ;
+            break;
 
             case WM_HOTKEY :
                 if (win.onHotKeyPress) {
@@ -762,15 +780,15 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
 
             case WM_CLOSE :
                 if (win.onClosing) {
-                    auto ea = new EventArgs() ;
-                    win.onClosing(win, ea) ;
+                    auto ea = new EventArgs();
+                    win.onClosing(win, ea);
                 }
-            break ;
+            break;
 
             case WM_DESTROY :
                 if (win.onClosed) {
-                    auto ea = new EventArgs() ;
-                    win.onClosed(win, ea) ;
+                    auto ea = new EventArgs();
+                    win.onClosed(win, ea);
                 }
                 win.finalize; // Doing some housekeeping for this window.
 
@@ -784,7 +802,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                     auto hdc = GetDC(hWnd);
                     scope(exit) ReleaseDC(hWnd, hdc);
                     SIZE size;
-                    GetTextExtentPoint32W(hdc, cast(wchar*) mi.mWideText, mi.mText.length, &size);
+                    GetTextExtentPoint32W(hdc, cast(wchar*) mi.mWideText, cast(int)mi.mText.length, &size);
                     pmi.itemWidth = size.cx + 3;
                     pmi.itemHeight = size.cy;
                 } else {
@@ -860,7 +878,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 if (menu && menu.onCloseup) menu.onCloseup(menu, new EventArgs());
             break;
 
-            default: return DefWindowProcW(hWnd, message, wParam, lParam); break ;
+            default: return DefWindowProcW(hWnd, message, wParam, lParam); break;
         }
     }
     catch (Exception e){}

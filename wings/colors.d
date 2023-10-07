@@ -1,11 +1,11 @@
 module wings.colors;
 
 import std.stdio : log = writeln;
-import std.stdio ;
-import std.algorithm ;
+import std.stdio;
+import std.algorithm;
 import core.stdc.math;
 
-private import core.sys.windows.windows ;
+private import core.sys.windows.windows;
 
 
 
@@ -19,9 +19,9 @@ struct Color  // This struct is used to hold the color values for all control's 
 
     this(uint clr) {
         this.value = clr;
-        this.red = clr >> 16 ;
+        this.red = clr >> 16;
         this.green = (clr & 0x00ff00) >> 8;
-        this.blue = clr & 0x0000ff ;
+        this.blue = clr & 0x0000ff;
         this.cref = cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red);
     }
 
@@ -35,9 +35,9 @@ struct Color  // This struct is used to hold the color values for all control's 
 
     void opCall(uint clr) {
         this.value = clr;
-        this.red = clr >> 16 ;
+        this.red = clr >> 16;
         this.green = (clr & 0x00ff00) >> 8;
-        this.blue = clr & 0x0000ff ;
+        this.blue = clr & 0x0000ff;
         this.cref = cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red);
     }
 
@@ -61,15 +61,15 @@ struct Color  // This struct is used to hold the color values for all control's 
         this.value = clr;
         this.red = clr >> 16;
         this.green = (clr & 0x00ff00) >> 8;
-        this.blue = clr & 0x0000ff ;
+        this.blue = clr & 0x0000ff;
         this.cref = cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red);
     }
 
     Color changeShade(double changeValue) { // Color.changeShade
         Color clr;
-        clr.red = clip(this.red * changeValue) ;
+        clr.red = clip(this.red * changeValue);
         clr.green = clip(this.green * changeValue);
-        clr.blue = clip(this.blue * changeValue) ;
+        clr.blue = clip(this.blue * changeValue);
         clr.value = cast(uint) (clr.red << 16) | (clr.green << 8) | clr.blue;
         clr.cref = cast(COLORREF) ((clr.blue << 16) | (clr.green << 8) | clr.red);
         return clr;
@@ -154,7 +154,7 @@ struct Color  // This struct is used to hold the color values for all control's 
         rc.green = clip(cast(uint) (cast(double)this.green * adj));
         rc.blue = clip(cast(uint) (cast(double)this.blue * adj));
         rc.value = cast(uint) (rc.red << 16) | (rc.green << 8) | rc.blue;
-        rc.cref = cast(COLORREF) ((rc.blue << 16) | (rc.green << 8) | rc.red) ;
+        rc.cref = cast(COLORREF) ((rc.blue << 16) | (rc.green << 8) | rc.red);
         return rc;
     }
 
@@ -164,7 +164,7 @@ struct Color  // This struct is used to hold the color values for all control's 
         rc.green = clip(this.green + change);
         rc.blue = clip(this.blue + change);
         rc.value = cast(uint) (rc.red << 16) | (rc.green << 8) | rc.blue;
-        rc.cref = cast(COLORREF) ((rc.blue << 16) | (rc.green << 8) | rc.red) ;
+        rc.cref = cast(COLORREF) ((rc.blue << 16) | (rc.green << 8) | rc.red);
         return rc;
     }
 
@@ -181,15 +181,15 @@ int clip(double num) {
     return cast(int) round(clamp(num, 0, 255));
 }
 
-COLORREF getClrRef(uint r, uint g, uint b ) {return cast(COLORREF) ((b << 16) | (g << 8) | r) ;}
+COLORREF getClrRef(uint r, uint g, uint b ) {return cast(COLORREF) ((b << 16) | (g << 8) | r);}
 COLORREF getClrRef(uint clr ) {
-    auto r = clr >> 16 ;
+    auto r = clr >> 16;
     auto g = (clr & 0x00ff00) >> 8;
-    auto b = clr & 0x0000ff ;
-    return cast(COLORREF) ((b << 16) | (g << 8) | r) ;
+    auto b = clr & 0x0000ff;
+    return cast(COLORREF) ((b << 16) | (g << 8) | r);
 }
 
-uint fromRgb(uint red, uint green, uint blue) { return ((red << 16) | (green << 8) | blue) ;}
+uint fromRgb(uint red, uint green, uint blue) { return ((red << 16) | (green << 8) | blue);}
 
 
 struct  HSV {
@@ -332,54 +332,54 @@ struct  HSV {
 
 
 // void rgbToHsl() {
-//      import std.math : isNaN ;
+//      import std.math : isNaN;
 //      import std.stdio;
-//     const RgbColor r1 = getRgbColor(0xff0000) ;
-//     float min, max, l, s, maxClr, h  ;
-//     RgbColor emr ;
-//     emr.red = r1.red / 255 ;
-//     emr.green = r1.green / 255 ;
-//     emr.blue = r1.blue / 255 ;
+//     const RgbColor r1 = getRgbColor(0xff0000);
+//     float min, max, l, s, maxClr, h;
+//     RgbColor emr;
+//     emr.red = r1.red / 255;
+//     emr.green = r1.green / 255;
+//     emr.blue = r1.blue / 255;
 
-//     min = emr.red ;
-//     max = emr.red ;
-//     maxClr = 0 ;
+//     min = emr.red;
+//     max = emr.red;
+//     maxClr = 0;
 
-//     if (emr.green <= min) { min = emr.green ;}
-//     if (emr.green >= max) { max = emr.green ; maxClr = emr.green ;}
+//     if (emr.green <= min) { min = emr.green;}
+//     if (emr.green >= max) { max = emr.green; maxClr = emr.green;}
 
-//     if (emr.blue <= min) { min = emr.blue ;}
-//     if (emr.blue >= max) { max = emr.blue ; maxClr = emr.blue ;}
+//     if (emr.blue <= min) { min = emr.blue;}
+//     if (emr.blue >= max) { max = emr.blue; maxClr = emr.blue;}
 
-//     if (maxClr == 0) { h = (emr.green - emr.blue) / (max - min) ;}
-//     if (maxClr == 1) { h = 2 + (emr.blue - emr.red) / (max - min) ;}
-//     if (maxClr == 2) { h = 4 + (emr.red - emr.green) / (max - min) ;}
+//     if (maxClr == 0) { h = (emr.green - emr.blue) / (max - min);}
+//     if (maxClr == 1) { h = 2 + (emr.blue - emr.red) / (max - min);}
+//     if (maxClr == 2) { h = 4 + (emr.red - emr.green) / (max - min);}
 
-//     if (isNaN!float(h)) { h = 0 ;}
-//     h = h * 60 ;
-//     if (h < 0) { h = h + 360 ;}
+//     if (isNaN!float(h)) { h = 0;}
+//     h = h * 60;
+//     if (h < 0) { h = h + 360;}
 
-//     l = (min + max) / 2 ;
+//     l = (min + max) / 2;
 //     if (min == max) {
-//         s = 0 ;
+//         s = 0;
 //     }
 //     else {
 //        if ( l < 0.5 ){
-//             s = (max - min) / ( max + min) ;
+//             s = (max - min) / ( max + min);
 //        }
 //        else {
-//             s = (max - min) / (2 - max - min) ;
+//             s = (max - min) / (2 - max - min);
 //        }
 //     }
 
-//     //s = s ;
-//     writeln("h - ", h, " s - ", s, " l - ", l) ;
-//     writeln(100 * l) ;
+//     //s = s;
+//     writeln("h - ", h, " s - ", s, " l - ", l);
+//     writeln(100 * l);
 // }
 
 // void printRgb(uint clr) {
-//     RgbColor rr = RgbColor(clr) ;
-//     writefln("red : ") ;
+//     RgbColor rr = RgbColor(clr);
+//     writefln("red : ");
 // }
 
 // void pritest(RgbColor rc) {

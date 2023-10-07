@@ -5,7 +5,7 @@ module wings.radiobutton; // Created on : 23-July-22 11:43:46 AM
 import wings.d_essentials;
 import wings.wings_essentials;
 
-private int rbNumber = 1 ;
+private int rbNumber = 1;
 private wchar[] mClassName = ['B','u','t','t','o','n', 0];
 /**
  * RadioButton : Control
@@ -15,12 +15,12 @@ class RadioButton : Control
 	this (Window parent, string txt, int x, int y, int w, int h)
     {
         mixin(repeatingCode);
-        mAutoSize = true ;
-        mControlType = ControlType.radioButton ;
-        mText = txt ;
-        mStyle = WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON ;
-        mExStyle = WS_EX_LTRREADING | WS_EX_LEFT ;
-        mTxtStyle = DT_SINGLELINE | DT_VCENTER  ;
+        mAutoSize = true;
+        mControlType = ControlType.radioButton;
+        mText = txt;
+        mStyle = WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON;
+        mExStyle = WS_EX_LTRREADING | WS_EX_LEFT;
+        mTxtStyle = DT_SINGLELINE | DT_VCENTER;
         mBackColor = parent.mBackColor;
         this.mName = format("%s_%d", "RadioButton_", rbNumber);
         this.mParent.mControls ~= this;
@@ -35,9 +35,9 @@ class RadioButton : Control
     	this.setRbStyle();
     	this.createHandleInternal(mClassName.ptr);
     	if (this.mHandle) {
-            this.setSubClass(&rbWndProc) ;
-            this.setRbSize() ;
-            if (this.mChecked) this.sendMsg(BM_SETCHECK, 0x0001, 0) ;
+            this.setSubClass(&rbWndProc);
+            this.setRbSize();
+            if (this.mChecked) this.sendMsg(BM_SETCHECK, 0x0001, 0);
         }
     }
 
@@ -45,17 +45,17 @@ class RadioButton : Control
 
 
     private :
-    bool mChecked ;
-	bool mAutoSize ;
+    bool mChecked;
+	bool mAutoSize;
 	bool mChkOnClk;
-	uint mTxtStyle ;
-	HBRUSH mBkBrush ;
-    bool mRightAlign ;
+	uint mTxtStyle;
+	HBRUSH mBkBrush;
+    bool mRightAlign;
 
     void setRbStyle() {
     	if (this.mRightAlign) {
-			this.mStyle |= BS_RIGHTBUTTON ;
-			this.mTxtStyle |= DT_RIGHT ;
+			this.mStyle |= BS_RIGHTBUTTON;
+			this.mTxtStyle |= DT_RIGHT;
 		}
 		if (this.mChkOnClk) this. mStyle ^= BS_AUTORADIOBUTTON;
 
@@ -64,11 +64,11 @@ class RadioButton : Control
 
     void setRbSize() { // Private
         // We need to find the width & hight to provide the auto size feature.
-        SIZE ss ;
+        SIZE ss;
         this.sendMsg(BCM_GETIDEALSIZE, 0, &ss);
         this.mWidth = ss.cx;
         this.mHeight = ss.cy;
-        MoveWindow(this.mHandle, this.mXpos, this.mYpos, ss.cx, ss.cy, true) ;
+        MoveWindow(this.mHandle, this.mXpos, this.mYpos, ss.cx, ss.cy, true);
     }
 
     void finalize(UINT_PTR subid) { // private
@@ -83,9 +83,9 @@ extern(Windows)
 private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
 
     try {
-        RadioButton rb = getControl!RadioButton(refData)  ;
+        RadioButton rb = getControl!RadioButton(refData);
         switch (message) {
-            case WM_DESTROY : rb.finalize(scID); break ;
+            case WM_DESTROY : rb.finalize(scID); break;
             case CM_COLOR_STATIC :
             	auto hdc = cast(HDC) wParam;
                 SetBkMode(hdc, TRANSPARENT);
@@ -121,8 +121,8 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_PAINT : rb.paintHandler(); break;
             case WM_SETFOCUS : rb.setFocusHandler(); break;
             case WM_KILLFOCUS : rb.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : rb.mouseDownHandler(message, wParam, lParam); break ;
-            case WM_LBUTTONUP : rb.mouseUpHandler(message, wParam, lParam); break ;
+            case WM_LBUTTONDOWN : rb.mouseDownHandler(message, wParam, lParam); break;
+            case WM_LBUTTONUP : rb.mouseUpHandler(message, wParam, lParam); break;
             case CM_LEFTCLICK : rb.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : rb.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : rb.mouseRUpHandler(message, wParam, lParam); break;
@@ -131,7 +131,7 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_MOUSEMOVE : rb.mouseMoveHandler(message, wParam, lParam); break;
             case WM_MOUSELEAVE : rb.mouseLeaveHandler(); break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam);
         }
 
     }

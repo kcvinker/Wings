@@ -4,7 +4,7 @@ import std.stdio;
 import wings.d_essentials;
 import wings.wings_essentials;
 
-private int tkbNumber = 1 ;
+private int tkbNumber = 1;
 private wchar[] mClassName = ['m','s','c','t','l','s','_','t','r','a','c','k','b','a','r','3','2', 0];
 
 enum U16_MAX = 1 << 16;
@@ -388,7 +388,7 @@ extern(Windows)
 private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
 
     try {
-        TrackBar tkb = getControl!TrackBar(refData)  ;
+        TrackBar tkb = getControl!TrackBar(refData);
         switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &tkbWndProc, scID); break;
 
@@ -397,8 +397,8 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_PAINT : tkb.paintHandler(); break;
             case WM_SETFOCUS : tkb.setFocusHandler(); break;
             case WM_KILLFOCUS : tkb.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : tkb.mouseDownHandler(message, wParam, lParam); break ;
-            case WM_LBUTTONUP : tkb.mouseUpHandler(message, wParam, lParam); break ;
+            case WM_LBUTTONDOWN : tkb.mouseDownHandler(message, wParam, lParam); break;
+            case WM_LBUTTONUP : tkb.mouseUpHandler(message, wParam, lParam); break;
             case CM_LEFTCLICK : tkb.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : tkb.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : tkb.mouseRUpHandler(message, wParam, lParam); break;
@@ -436,27 +436,27 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                         if (tkb.onValueChanged) tkb.onValueChanged(tkb, new EventArgs());
                     break;
                     case THUMB_LINE_HIGH:
-                        tkb.setupValueInternal(tkb.sendMsg(TBM_GETPOS, 0, 0));
+                        tkb.setupValueInternal(cast(int)tkb.sendMsg(TBM_GETPOS, 0, 0));
                         tkb.mTrackChange = TrackChange.arrowHigh;
                         if (tkb.onValueChanged) tkb.onValueChanged(tkb, new EventArgs());
                     break;
                     case THUMB_LINE_LOW:
-                        tkb.setupValueInternal(tkb.sendMsg(TBM_GETPOS, 0, 0));
+                        tkb.setupValueInternal(cast(int)tkb.sendMsg(TBM_GETPOS, 0, 0));
                         tkb.mTrackChange = TrackChange.arrowLow;
                         if (tkb.onValueChanged) tkb.onValueChanged(tkb, new EventArgs());
                     break;
                     case THUMB_PAGE_HIGH:
-                        tkb.setupValueInternal(tkb.sendMsg(TBM_GETPOS, 0, 0));
+                        tkb.setupValueInternal(cast(int)tkb.sendMsg(TBM_GETPOS, 0, 0));
                         tkb.mTrackChange = TrackChange.pageHigh;
                         if (tkb.onValueChanged) tkb.onValueChanged(tkb, new EventArgs());
                     break;
                     case THUMB_PAGE_LOW:
-                        tkb.setupValueInternal(tkb.sendMsg(TBM_GETPOS, 0, 0));
+                        tkb.setupValueInternal(cast(int)tkb.sendMsg(TBM_GETPOS, 0, 0));
                         tkb.mTrackChange = TrackChange.pageLow;
                         if (tkb.onValueChanged) tkb.onValueChanged(tkb, new EventArgs());
                     break;
                     case TB_THUMBTRACK:
-                        tkb.setupValueInternal(tkb.sendMsg(TBM_GETPOS, 0, 0));
+                        tkb.setupValueInternal(cast(int)tkb.sendMsg(TBM_GETPOS, 0, 0));
                         if (tkb.onDragging) tkb.onDragging(tkb, new EventArgs());
                     break;
                     default: break;
@@ -506,7 +506,7 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 }
             break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ; break;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
         }
 
     }

@@ -2,38 +2,39 @@ module wings.events;
 import wings.controls : Control;
 import core.sys.windows.winuser;
 import core.sys.windows.windef;
-import core.sys.windows.windows ;
-import std.utf ;
+import core.sys.windows.windows;
+import std.utf;
 
 
 import wings.enums;
-import wings.date_and_time ;
+import wings.date_and_time;
 import wings.commons;
 import wings.menubar : MenuItem;
 
 import std.stdio;
 
-immutable uint um_single_Click = WM_USER + 1 ;
+immutable uint um_single_Click = WM_USER + 1;
 
-alias EventHandler = void function(Control sender, EventArgs e) ;
-alias KeyEventHandler = void function(Control sender, KeyEventArgs e) ;
-alias KeyPressEventHandler = void function(Control sender, KeyPressEventArgs e) ;
-alias MouseEventHandler = void function(Control sender, MouseEventArgs e) ;
-alias SizeEventHandler = void function(Control sender, SizeEventArgs e) ;
-alias PaintEventHandler = void function(Control sender, PaintEventArgs e) ;
-alias DateTimeEventHandler = void function(Control sender, DateTimeEventArgs e) ;
+alias EventHandler = void function(Control sender, EventArgs e);
+alias KeyEventHandler = void function(Control sender, KeyEventArgs e);
+alias KeyPressEventHandler = void function(Control sender, KeyPressEventArgs e);
+alias MouseEventHandler = void function(Control sender, MouseEventArgs e);
+alias SizeEventHandler = void function(Control sender, SizeEventArgs e);
+alias PaintEventHandler = void function(Control sender, PaintEventArgs e);
+alias DateTimeEventHandler = void function(Control sender, DateTimeEventArgs e);
 alias HotKeyEventHandler = void function(Control sender, HotKeyEventArgs e);
 alias MenuEventHandler = void function(MenuItem sender, EventArgs e);
+alias ThreadMsgHandler = void function(WPARAM wpm, LPARAM lpm);
 
 
 
 
 
 
-WORD getKeyStateWparam(WPARAM wp) {return cast(WORD) LOWORD(wp) ;}
+WORD getKeyStateWparam(WPARAM wp) {return cast(WORD) LOWORD(wp);}
 
 /// A base class for all events
-class EventArgs { bool handled ; }
+class EventArgs { bool handled; }
 
 /// Special events for mouse related messages
 class MouseEventArgs : EventArgs {
@@ -45,54 +46,54 @@ class MouseEventArgs : EventArgs {
     final int delta() {return this.mDelta;}
 
     this(UINT msg, WPARAM wp, LPARAM lp) {
-        const auto fwKeys = getKeyStateWparam(wp) ;
-       // writeln("fw_keys ", fwKeys) ;
-        this.mDelta = GET_WHEEL_DELTA_WPARAM(wp) ;
+        const auto fwKeys = getKeyStateWparam(wp);
+       // writeln("fw_keys ", fwKeys);
+        this.mDelta = GET_WHEEL_DELTA_WPARAM(wp);
 
         switch (fwKeys) {   // IMPORTANT*********** Work here --> change 4 to 5, 8 to 9 etc
             case 4 :
-                this.mShiftKey = MouseButtonState.pressed ;
-                break ;
+                this.mShiftKey = MouseButtonState.pressed;
+                break;
             case 8 :
-                this.mCtrlKey = MouseButtonState.pressed ;
-                break ;
+                this.mCtrlKey = MouseButtonState.pressed;
+                break;
             case 16 :
-                this.mButton = MouseButton.middle ;
-                break ;
+                this.mButton = MouseButton.middle;
+                break;
             case 32 :
-                this.mButton = MouseButton.xButton1 ;
-                break ;
-            default : break ;
+                this.mButton = MouseButton.xButton1;
+                break;
+            default : break;
         }
 
         switch (msg) {
             case WM_MOUSEWHEEL, WM_MOUSEMOVE, WM_MOUSEHOVER, WM_NCHITTEST :
-                this.mX = getXFromLp(lp) ;
-                this.mY = getYFromLp(lp) ;
-                break ;
+                this.mX = getXFromLp(lp);
+                this.mY = getYFromLp(lp);
+                break;
             case WM_LBUTTONDOWN, WM_LBUTTONUP :
-                this.mButton = MouseButton.left ;
-                this.mX = getXFromLp(lp) ;
-                this.mY = getYFromLp(lp) ;
-                break ;
+                this.mButton = MouseButton.left;
+                this.mX = getXFromLp(lp);
+                this.mY = getYFromLp(lp);
+                break;
             case WM_RBUTTONDOWN, WM_RBUTTONUP :
-                this.mButton = MouseButton.right ;
-                this.mX = getXFromLp(lp) ;
-                this.mY = getYFromLp(lp) ;
-                break ;
-            default : break ;
+                this.mButton = MouseButton.right;
+                this.mX = getXFromLp(lp);
+                this.mY = getYFromLp(lp);
+                break;
+            default : break;
         }
     }
 
     private :
-        int mX ;
-        int mY ;
-        int mDelta ;
-        MouseButton    mButton ;
-        MouseButtonState mShiftKey ;
-        MouseButtonState mCtrlKey ;
-        // POINT location ;
-        // int clicks ;
+        int mX;
+        int mY;
+        int mDelta;
+        MouseButton    mButton;
+        MouseButtonState mShiftKey;
+        MouseButtonState mCtrlKey;
+        // POINT location;
+        // int clicks;
 }
 
 
@@ -106,39 +107,39 @@ class KeyEventArgs : EventArgs {
     final Key modifierKey() {return this.mModifier;}
 
     this(WPARAM wp) {
-        this.mKeyCode = cast(Key) wp ;
+        this.mKeyCode = cast(Key) wp;
         switch (this.mKeyCode) {
         	case Key.shift :
-        		this.mShiftPressed = true ;
-        		this.mModifier = Key.shiftModifier ;
-        		break ;
+        		this.mShiftPressed = true;
+        		this.mModifier = Key.shiftModifier;
+        		break;
         	case Key.ctrl :
-        		this.mCtrlPressed = true ;
-        		this.mModifier = Key.ctrlModifier ;
-        		break ;
+        		this.mCtrlPressed = true;
+        		this.mModifier = Key.ctrlModifier;
+        		break;
         	case Key.alt :
-            	this.mAltPressed = true ;
-            	this.mModifier = Key.altModifier ;
-            	break ;
-            default : break ;
+            	this.mAltPressed = true;
+            	this.mModifier = Key.altModifier;
+            	break;
+            default : break;
         }
-        this.mKeyValue = this.mKeyCode ;
+        this.mKeyValue = this.mKeyCode;
     }
 
     private :
-        bool mAltPressed ;
-        bool mCtrlPressed ;
-        bool mShiftPressed ;
-        bool mSuppressKeyPress ;
-        int mKeyValue ;
-        Key mKeyCode ;
-        Key mModifier ;
+        bool mAltPressed;
+        bool mCtrlPressed;
+        bool mShiftPressed;
+        bool mSuppressKeyPress;
+        int mKeyValue;
+        Key mKeyCode;
+        Key mModifier;
     }
 
 
 class KeyPressEventArgs : EventArgs {
-	char keyChar ;
-	this(WPARAM wp) {this.keyChar = cast(char) wp ;}
+	char keyChar;
+	this(WPARAM wp) {this.keyChar = cast(char) wp;}
 }
 
 
@@ -158,30 +159,30 @@ class SizeEventArgs : EventArgs {
     }
 
     private :
-        RECT mWindowRect ;
-        SizedPosition mSizedOn ;
-        Area mClientArea ;
+        RECT mWindowRect;
+        SizedPosition mSizedOn;
+        Area mClientArea;
 
 }
 
 class PaintEventArgs : EventArgs {
     final PAINTSTRUCT* paintStruct() {return this.mPaintInfo;}
     this(PAINTSTRUCT* ps) {
-        this.mPaintInfo = ps ;
+        this.mPaintInfo = ps;
     }
     private :
-        PAINTSTRUCT* mPaintInfo ;
+        PAINTSTRUCT* mPaintInfo;
 }
 
 class DateTimeEventArgs : EventArgs {
-    import std.conv ;
+    import std.conv;
     final string dateString() {return this.mDateString;}
     final SYSTEMTIME* dateStruct() {return this.mDateStruct;}
 
-    this(LPCWSTR dtpStr) { this.mDateString = to!string(dtpStr) ; } //!(const(wchar)*)`
+    this(LPCWSTR dtpStr) { this.mDateString = to!string(dtpStr); } //!(const(wchar)*)`
     private :
-        string mDateString ;
-        SYSTEMTIME* mDateStruct ;
+        string mDateString;
+        SYSTEMTIME* mDateStruct;
 }
 
 

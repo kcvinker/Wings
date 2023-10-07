@@ -41,6 +41,16 @@ class DialogBase {
         }
     }
 
+    void setMultiFilters(string description, string[] filterList) {
+        this.mFilter = description ~ "\0";
+        auto filCount = filterList.length - 1;
+        foreach(i, filter; filterList) {
+            this.mFilter ~= "*" ~ filter;
+            if (i < filCount) this.mFilter ~= ";";
+        }
+        this.mFilter ~= "\0\0";
+    }
+
     void allowAllFiles(bool value) {this.mAllowAllFiles = value;}
 
     // void setFilter(string filterName, string[] ext) {

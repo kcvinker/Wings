@@ -12,21 +12,21 @@ module wings.listview; // Created on : 01-Jun-22 11:26:46 AM
 */
 
 
-import std.stdio ;
-import std.conv ;
-import std.algorithm ;
+import std.stdio;
+import std.conv;
+import std.algorithm;
 import wings.d_essentials;
 import wings.wings_essentials;
-import wings.imagelist ;
+import wings.imagelist;
 
 //----------------------------------------------------
 
 int bottomClrAdj = 11;
 private wchar[] mClassName = ['S','y','s','L','i','s','t','V','i','e','w','3','2', 0];
-int lvNumber = 1 ;
-wstring wcLvClass ;
+int lvNumber = 1;
+wstring wcLvClass;
 DWORD lvStyle = WS_VISIBLE|WS_CHILD|WS_CLIPCHILDREN|WS_CLIPSIBLINGS|LVS_REPORT|WS_BORDER|LVS_ALIGNLEFT|LVS_SINGLESEL;
-bool lvCreated = false ;
+bool lvCreated = false;
 enum DWORD HDN_FILTERCHANGE = HDN_FIRST - 12;
 enum DWORD HDI_STATE =  0x0200;
 
@@ -38,18 +38,18 @@ class ListView : Control {
     this(Window parent, int x, int y, int w, int h) {
         if (!lvCreated) {
             lvCreated = true;
-            appData.iccEx.dwICC = ICC_LISTVIEW_CLASSES ;
+            appData.iccEx.dwICC = ICC_LISTVIEW_CLASSES;
             InitCommonControlsEx(&appData.iccEx);
         }
 
         mixin(repeatingCode);
-        mControlType = ControlType.listView ;
+        mControlType = ControlType.listView;
         mLvStyle = ListViewStyle.report;
-        mShowGridLines = true ;
+        mShowGridLines = true;
         mFullRowSel = true;
-        mStyle = lvStyle  ;
-        mExStyle = 0 ;
-        mBackColor(0xFFFFFF) ;
+        mStyle = lvStyle;
+        mExStyle = 0;
+        mBackColor(0xFFFFFF);
         mForeColor(defForeColor);
         mHdrBackColor(0xb3cccc);
         mHdrForeColor(0x000000);
@@ -63,15 +63,15 @@ class ListView : Control {
 
     }
 
-    this(Window parent) { this(parent, 20, 20, 250, 200) ; }
+    this(Window parent) { this(parent, 20, 20, 250, 200); }
     this(Window parent, int x, int y) { this(parent, x, y, 250, 200);}
 
 
     override void createHandle() { //=======================================================CREATE FUNC
-    	this.adjustLVStyles() ;
+    	this.adjustLVStyles();
         this.createHandleInternal(mClassName.ptr);
         if (this.mHandle) {
-            this.setSubClass(&lvWndProc) ;
+            this.setSubClass(&lvWndProc);
             this.setLvExStyles();
             if (this.mLvStyle == ListViewStyle.tile) this.sendMsg(LVM_SETVIEW, 0x0004, 0);
 
@@ -83,9 +83,9 @@ class ListView : Control {
                 }
             }
 
-            this.hwHeader = ListView_GetHeader(this.mHandle)  ;
+            this.hwHeader = ListView_GetHeader(this.mHandle);
             SetWindowSubclass(this.hwHeader, &hdrWndProc, UINT_PTR(Control.mSubClassId), this.toDwPtr());
-            ++Control.mSubClassId ;
+            ++Control.mSubClassId;
 
             if (this.mBackColor.value != defBackColor) ListView_SetBkColor(this.mHandle, this.mBackColor.cref);
             if (this.mSetCbLast) {
@@ -244,9 +244,9 @@ class ListView : Control {
         /// Enable viual styles for header. Otherwise, color & font won't changes.
         final void enableHeaderVisualStyle() {
             if (this.mColumns.length > 0 ) {
-                MyHdItem hdi ;
+                MyHdItem hdi;
                 foreach (col; this.mColumns) {
-                    hdi.mask = HDI_FORMAT ;
+                    hdi.mask = HDI_FORMAT;
                     hdi.fmt = HDF_OWNERDRAW;
                     SendMessage(hwHeader, HDM_SETITEM, WPARAM(col.index), cast(LPARAM) &hdi);
                 }
@@ -393,7 +393,7 @@ class ListView : Control {
             ListViewColumn[] mColumns;
             ListViewItem[] mItems;
             ColAndIndex[] mCIList;
-            int mColIndex ;
+            int mColIndex;
             int mOldHotHdrIndx = -1;// useless
             int mHotHdr = -1;
             int mHdrHeight;
@@ -429,8 +429,8 @@ class ListView : Control {
 
         void addColumnInternal(ListViewColumn lvCol) { // Private
             lvCol.setIndex(this.stColIndex);
-            LVCOLUMNW lvc ;
-            lvc.mask = LVCF_FMT | LVCF_TEXT  | LVCF_WIDTH  | LVCF_SUBITEM ;//| LVCF_ORDER;
+            LVCOLUMNW lvc;
+            lvc.mask = LVCF_FMT | LVCF_TEXT  | LVCF_WIDTH  | LVCF_SUBITEM;//| LVCF_ORDER;
             lvc.fmt = lvCol.alignment;
             lvc.cx = lvCol.width;
             lvc.pszText = cast(wchar*) lvCol.text.toUTF16z;
@@ -517,7 +517,7 @@ class ListView : Control {
 
         // Set some EX styles...
         void setLvExStyles() { // Private
-            DWORD lvExStyle ;
+            DWORD lvExStyle;
             if (this.mShowGridLines) lvExStyle |= LVS_EX_GRIDLINES;
             if (this.mHasCheckBox) lvExStyle |= LVS_EX_CHECKBOXES;
             if (this.mFullRowSel && !this.mEditLabel) lvExStyle |= LVS_EX_FULLROWSELECT;
@@ -565,7 +565,7 @@ class ListView : Control {
             LineTo(nmcd.hdc, nmcd.rc.right, nmcd.rc.bottom);
             SelectObject(nmcd.hdc, this.mHdrFont.handle);
             SetTextColor(nmcd.hdc, this.mHdrForeColor.cref);
-            DrawText(nmcd.hdc, col.text.toUTF16z, -1, &nmcd.rc, col.mHdrTxtFlag ) ;
+            DrawText(nmcd.hdc, col.text.toUTF16z, -1, &nmcd.rc, col.mHdrTxtFlag );
             return CDRF_SKIPDEFAULT;
         }
 
@@ -624,13 +624,13 @@ class ListViewColumn {
 
     package :
         bool mDrawNeeded;
-        bool mIsHotItem ;
+        bool mIsHotItem;
 
     private :
         string mText;
         int mWidth;
         int mIndex = -1;
-        int mImgIndex = -1 ;
+        int mImgIndex = -1;
 
         int mOrder;
 
@@ -683,7 +683,7 @@ class ListViewItem {
         string mText;
         string[] mSubItems;
 
-        static int mStIndex ;
+        static int mStIndex;
 
 } // ListViewItem class
 
@@ -718,7 +718,7 @@ struct HeaderRects {
 // }
 
 struct ColAndIndex {
-    int index ;
+    int index;
     LVCOLUMNW lvc;
 }
 
@@ -726,7 +726,7 @@ enum LVN_HOTTRACK = LVN_FIRST - 21;
 extern(Windows)
 private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
     try {
-        ListView lv = getControl!ListView(refData)  ;
+        ListView lv = getControl!ListView(refData);
         //printWinMsg(message);
         switch (message) {
             case WM_DESTROY: lv.finalize(scID); break;
@@ -734,8 +734,8 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_PAINT : lv.paintHandler(); break;
             case WM_SETFOCUS : lv.setFocusHandler(); break;
             case WM_KILLFOCUS : lv.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : lv.mouseDownHandler(message, wParam, lParam); break ;
-            case WM_LBUTTONUP : lv.mouseUpHandler(message, wParam, lParam); break ;
+            case WM_LBUTTONDOWN : lv.mouseDownHandler(message, wParam, lParam); break;
+            case WM_LBUTTONUP : lv.mouseUpHandler(message, wParam, lParam); break;
             case CM_LEFTCLICK : lv.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : lv.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : lv.mouseRUpHandler(message, wParam, lParam); break;
@@ -753,7 +753,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             //        //pdi.rcItem.top += 1;
             //        pdi.rcItem.left += 1;
             //        pdi.rcItem.bottom -= 1;
-            //        pdi.rcItem.right -= 1 ;
+            //        pdi.rcItem.right -= 1;
             //    }  else {
             //        if (col.mIsHotItem) {
             //            lv.mHdrBkBrushTop = lv.mHdrColors.lightColorBrushTop;
@@ -768,8 +768,8 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             //        pdi.rcItem.left += 1;
             //        FillRect(pdi.hDC, &pdi.rcItem, lv.mHdrBkBrushTop );
             //    } else {
-            //        auto topRect = lv.makeHalfSizeRect(pdi.rcItem, true) ;
-            //        auto botRect = lv.makeHalfSizeRect(pdi.rcItem, false) ;
+            //        auto topRect = lv.makeHalfSizeRect(pdi.rcItem, true);
+            //        auto botRect = lv.makeHalfSizeRect(pdi.rcItem, false);
             //        FillRect(pdi.hDC, &topRect, lv.mHdrBkBrushTop );
             //        FillRect(pdi.hDC, &botRect, lv.mHdrBkBrushBot );
             //    }
@@ -779,8 +779,8 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             //    }
             //    if (lv.mHdrDrawFont)  SelectObject(pdi.hDC, lv.mHdrFont.handle);
             //    SetTextColor(pdi.hDC, lv.mHdrColors.foreColorRef);
-            //    pdi.rcItem.left += 1 ;
-            //    DrawText(pdi.hDC, col.text.toUTF16z, -1, &pdi.rcItem, col.mHdrTxtFlag ) ;
+            //    pdi.rcItem.left += 1;
+            //    DrawText(pdi.hDC, col.text.toUTF16z, -1, &pdi.rcItem, col.mHdrTxtFlag );
             //    return trueLresult;
             //break;
 
@@ -887,7 +887,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                     get the notification with WM_NOTIFY message. We returns the CDRF_NOTIFYITEMDRAW...
                                     value so that system will notify us when the pre paint stage begins for each item.*/
                                     //print("Draw Started", nmcd.lItemlParam);
-                                    return CDRF_NOTIFYITEMDRAW ; break;
+                                    return CDRF_NOTIFYITEMDRAW; break;
 
                                 case CDDS_ITEMPREPAINT :
                                     /* So we get the notification at the pre paint statge. We can draw the header...
@@ -910,7 +910,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                 }
                 break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ; break;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
         }
 
     }
@@ -921,7 +921,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 extern(Windows)
 private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
     try {
-       ListView lv = getControl!ListView(refData)  ;
+       ListView lv = getControl!ListView(refData);
        //printWinMsg(message);
         switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &hdrWndProc, scID); break;
@@ -934,7 +934,7 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     flag for that column. */
                 HD_HITTESTINFO hinfo;
                 hinfo.pt = getMousePos(lParam);
-                lv.mHotHdr = SendMessage(hWnd, HDM_HITTEST, 0, cast(LPARAM) &hinfo);
+                lv.mHotHdr = cast(int) SendMessage(hWnd, HDM_HITTEST, 0, cast(LPARAM) &hinfo);
 
             break;
 
@@ -974,7 +974,7 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 ReleaseDC(hWnd, hdc);
                 return 0;
             break;
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ;break;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam);break;
         }
 
     }
@@ -1011,7 +1011,7 @@ struct tagNMLVCUSTOMDRAW {
                 // User clicked on this header. Draw colors for a clicked header.
 
                 rctAdj1 = -2;
-                rctAdj2 = -1 ;
+                rctAdj2 = -1;
             } else {
                 // draw default colors
                 if (col.mIsHotItem == 1) {
@@ -1023,17 +1023,17 @@ struct tagNMLVCUSTOMDRAW {
                     this.mHdrBkBrushBot = this.mHdrColors.backColorBrushBot;
                 }
                 rctAdj1 = 0;
-                rctAdj2 = 0 ;
+                rctAdj2 = 0;
             }
             auto rct = adjustRect(nmcd.rc, rctAdj1, rctAdj2);
-            auto topRect = makeHalfSizeRect(rct, true) ;
-            auto botRect = makeHalfSizeRect(rct, false) ;
+            auto topRect = makeHalfSizeRect(rct, true);
+            auto botRect = makeHalfSizeRect(rct, false);
 
             FillRect(nmcd.hdc, &topRect,  this.mHdrBkBrushTop );
             FillRect(nmcd.hdc, &botRect,  this.mHdrBkBrushBot );
             if (this.mHdrDrawFont)  SelectObject(nmcd.hdc, this.mHdrFont.handle);
             SetTextColor(nmcd.hdc, this.mHdrColors.foreColorRef);
-            DrawText(nmcd.hdc, col.text.toUTF16z, -1, &nmcd.rc, mTxtFlag ) ;
+            DrawText(nmcd.hdc, col.text.toUTF16z, -1, &nmcd.rc, mTxtFlag );
         }
 
 

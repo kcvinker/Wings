@@ -3,7 +3,7 @@ module wings.treeview; // Created on 27-July-2022 02:25 PM
 import wings.d_essentials;
 import wings.wings_essentials;
 
-private int tvNumber = 1 ;
+private int tvNumber = 1;
 private DWORD tvStyle = WS_BORDER | WS_CHILD | WS_VISIBLE | TVS_HASLINES | TVS_HASBUTTONS |
                         TVS_LINESATROOT | TVS_DISABLEDRAGDROP;
 
@@ -15,10 +15,10 @@ class TreeView : Control {
     this (Window parent, int x, int y, int w, int h)
     {
         mixin(repeatingCode);
-        mControlType = ControlType.treeView ;
-        mStyle = tvStyle ;
-        mExStyle = 0;// | WS_EX_LEFT ;
-        mBackColor(0xFFFFFF) ;
+        mControlType = ControlType.treeView;
+        mStyle = tvStyle;
+        mExStyle = 0;// | WS_EX_LEFT;
+        mBackColor(0xFFFFFF);
         mForeColor(defForeColor);
         mLineClr(defForeColor);
         this.mName = format("%s_%d", "TreeView_", tvNumber);
@@ -35,7 +35,7 @@ class TreeView : Control {
     	this.setTvStyle();
     	this.createHandleInternal(mClassName.ptr);
     	if (this.mHandle) {
-            this.setSubClass(&tvWndProc) ;
+            this.setSubClass(&tvWndProc);
             if (this.mBackColor.value != 0xFFFFFF) this.sendMsg(TVM_SETBKCOLOR, 0, this.mBackColor.cref);
             if (this.mForeColor.value != defForeColor) this.sendMsg(TVM_SETTEXTCOLOR, 0, this.mForeColor.cref);
             if (this.mLineClr.value != defForeColor) this.sendMsg(TVM_SETLINECOLOR, 0, this.mLineClr.cref);
@@ -94,7 +94,7 @@ class TreeView : Control {
             auto tvi = TVITEMEXW();
             tvi.mask = TVIF_TEXT | TVIF_PARAM;
             tvi.pszText = cast(LPWSTR) node.text.toUTF16z();
-            tvi.cchTextMax = node.text.length;
+            tvi.cchTextMax = cast(int) node.text.length;
             tvi.iImage = node.imageIndex;
             tvi.iSelectedImage = node.selectedImageIndex;
             tvi.stateMask = TVIS_USERMASK;
@@ -212,11 +212,11 @@ class TreeNode {
 } // End of TreeNode Class
 
 mixin template msdown(alias ctl) {
-    mixin(ctl, `.lDownHappened = true ;`);
+    mixin(ctl, `.lDownHappened = true;`);
     mixin(`if (`, ctl, `.onMouseDown) {`);
         mixin(`auto mea = new MouseEventArgs(message, wParam, lParam);`);
-        mixin(ctl, `.onMouseDown(`, ctl, `mea) ;`);
-        mixin(`return 0 ;`);
+        mixin(ctl, `.onMouseDown(`, ctl, `mea);`);
+        mixin(`return 0;`);
     mixin(`}`);
 }
 
@@ -226,15 +226,15 @@ extern(Windows)
 private LRESULT tvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
 
     try {
-        TreeView tv = getControl!TreeView(refData)  ;
+        TreeView tv = getControl!TreeView(refData);
         switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &tvWndProc, scID); break;
 
             case WM_PAINT : tv.paintHandler(); break;
             case WM_SETFOCUS : tv.setFocusHandler(); break;
             case WM_KILLFOCUS : tv.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : tv.mouseDownHandler(message, wParam, lParam); break ;
-            case WM_LBUTTONUP : tv.mouseUpHandler(message, wParam, lParam); break ;
+            case WM_LBUTTONDOWN : tv.mouseDownHandler(message, wParam, lParam); break;
+            case WM_LBUTTONUP : tv.mouseUpHandler(message, wParam, lParam); break;
             case CM_LEFTCLICK : tv.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : tv.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : tv.mouseRUpHandler(message, wParam, lParam); break;
@@ -243,7 +243,7 @@ private LRESULT tvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_MOUSEMOVE : tv.mouseMoveHandler(message, wParam, lParam); break;
             case WM_MOUSELEAVE : tv.mouseLeaveHandler(); break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam) ;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam);
         }
 
     }

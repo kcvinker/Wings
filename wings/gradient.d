@@ -1,12 +1,12 @@
 
 module wings.gradient;
 
-import core.sys.windows.windows ;
-import std.stdio ;
+import core.sys.windows.windows;
+import std.stdio;
 
-import wings.colors ;
-import wings.enums ;
-import wings.commons ;
+import wings.colors;
+import wings.enums;
+import wings.commons;
 
 struct GradColor {
     Color c1;
@@ -15,7 +15,7 @@ struct GradColor {
 
 struct Gradient {
 	GradColor gcDef;
-	GradColor gcHot ;
+	GradColor gcHot;
     bool rtl;
     int iAdj = 20; // Value to add or subtract to/from RGB value.
 	HPEN defPen;
@@ -41,10 +41,10 @@ struct Gradient {
     }
 
     // Gradient changeColors(double value) const {
-    //     auto c1 = this.clr1.changeColor(value) ;
-    //     auto c2 = this.clr2.changeColor(value) ;
-    //     Gradient gd = Gradient(c1, c2, this.orientation) ;
-    //     return gd ;
+    //     auto c1 = this.clr1.changeColor(value);
+    //     auto c2 = this.clr2.changeColor(value);
+    //     Gradient gd = Gradient(c1, c2, this.orientation);
+    //     return gd;
     // }
 }
 
@@ -74,7 +74,7 @@ package HBRUSH createGradientBrush(HDC dc, RECT rct, Color c1, Color c2, bool t2
         scope(exit) DeleteObject(tBrush);
 
         tRct.left = t2b ? 0 : i;
-        tRct.top =  t2b ? i : 0 ;
+        tRct.top =  t2b ? i : 0;
         tRct.right = t2b ? rct.right : i + 1;
         tRct.bottom = t2b ? i + 1 : loopEnd;
 
