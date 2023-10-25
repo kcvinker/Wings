@@ -32,7 +32,7 @@ MenuBar mb;
 void main() {
 	// auto sw = StopWatch(AutoStart.no);
     // sw.start();
-	frm = new Window("Wing window in D Lang", 850, 400);
+	frm = new Window("Wing window in D Lang", 920, 400);
 	frm.enablePrintPoint;
 	// frm.onMouseClick = (c,e) => pb.stopMarquee();
 	// frm.backColor = 0xAABBCC;
@@ -86,11 +86,8 @@ void main() {
 	//lbl.text = "next text";
 	// lbl.create;
 
-    tk = new TrackBar(frm, 20, 145, 150, 40);
+    tk = new TrackBar(frm, 20, 145, 150, 40, true, true, &onTrackValueChanged);
     //tk.vertical = true;
-	// tk.backColor = 0xff80bf;
-	tk.customDraw = true;
-    // tk.createHandle();
 
     tv = new TreeView(frm, 185, 20, 150, 100, true);
 	tv.backColor = 0xddddbb;
@@ -117,20 +114,25 @@ void main() {
 	gb.foreColor = 0x0015ff;
     // gb.create();
 
-	pb = new ProgressBar(frm, 140, 235);
-	pb.step = 10;
+	pb = new ProgressBar(frm, 140, 235, true);
+	// pb.step = 10;
 	pb.showPercentage = true;
 	// pb.create();
 
-	cb = new CheckBox(frm, "CheckBox 1", 185, 140);
+	cb = new CheckBox(frm, "CheckBox 1", 362, 62);
 	cb.foreColor = 0x006400;
-	// cb.create();
 
-	np = new NumberPicker(frm, 20, 235); // 81
+	auto rb1 = new RadioButton(frm, "Console App", 520, 60, true);
+	auto rb2 = new RadioButton(frm, "Gui App", 520, 90, true);
+	auto cal = new Calendar(frm, 662, 30, true);
+
+	np = new NumberPicker(frm, 20, 235, true); // 81
+	np.decimalPrecision = 0;
     np.backColor = 0xccff66;
     // np.create;
 
 	auto np2 = new NumberPicker(frm, 20, 270); // 81
+	np2.buttonOnLeft = true;
     // np2.backColor = 0xccff66;
     // np2.create;
 
@@ -174,6 +176,11 @@ void onClick(Control s, EventArgs e) 	 // @suppress(dscanner.style.undocumented_
 
 void frmLoad(Control s, EventArgs e) 	{ // @suppress(dscanner.style.undocumented_declaration)
 	log("form loaded");
+}
+
+void onTrackValueChanged(Control s, EventArgs e) 	{ // @suppress(dscanner.style.undocumented_declaration)
+	pb.value = cast(int)tk.value;
+	// writefln("tk value %s", tk.value);
 }
 
 void frmKeyDown(Control s, KeyEventArgs e) {

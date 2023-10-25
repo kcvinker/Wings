@@ -4,6 +4,8 @@ module wings.radiobutton; // Created on : 23-July-22 11:43:46 AM
 
 import wings.d_essentials;
 import wings.wings_essentials;
+import std.stdio;
+
 
 private int rbNumber = 1;
 private wchar[] mClassName = ['B','u','t','t','o','n', 0];
@@ -36,7 +38,7 @@ class RadioButton : Control
         this(parent, txt, x, y, 0, 0, autoc, checkFn);
     }
 
-    void create()
+    override void createHandle()
     {
     	this.setRbStyle();
     	this.createHandleInternal(mClassName.ptr);
@@ -74,9 +76,11 @@ class RadioButton : Control
         // We need to find the width & hight to provide the auto size feature.
         SIZE ss;
         this.sendMsg(BCM_GETIDEALSIZE, 0, &ss);
-        this.mWidth = ss.cx;
+        this.mWidth = ss.cx + 20;
         this.mHeight = ss.cy;
-        MoveWindow(this.mHandle, this.mXpos, this.mYpos, ss.cx, ss.cy, true);
+        MoveWindow(this.mHandle, this.mXpos, this.mYpos, this.mWidth, this.mHeight, true);
+        // auto x = MoveWindow(this.mHandle, this.mXpos, this.mYpos, this.mWidth, this.mHeight, true);
+        // writefln("moving res %d", x);
     }
 
     void finalize(UINT_PTR subid) // private

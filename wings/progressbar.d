@@ -34,6 +34,7 @@ class ProgressBar : Control
 		mStep = 1;
         mSpeed = 30;
         this.percFmt = "%d%%";
+        this.mDeciPrec = 0;
         mForeColor(0x000000);
         this.mName = format("%s_%d", "ProgressBar_", pgbNumber);
         this.mParent.mControls ~= this;
@@ -110,17 +111,14 @@ class ProgressBar : Control
 	final void value(int ivalue)
     {
         // writeln("value proc ", value);
-        if (ivalue >= this.minValue && value <= this.mMaxValue)
+        if (this.mIsCreated)
         {
             this.mValue = ivalue;
-		    if (this.mIsCreated)
-            {
-                this.sendMsg(PBM_SETPOS, ivalue, 0);
-            }
+            auto oldval = this.sendMsg(PBM_SETPOS, ivalue, 0);
+            // if (oldval > 0) this.mValue = ivalue;
+            // writefln("value changed, old value %d", oldval);
         }
-        else {
-            throw new Exception("Value is not in reange");
-        }
+
 	}
 
 	final int value() {return this.mValue;}
@@ -181,10 +179,11 @@ class ProgressBar : Control
             this.percFmt = "%d%%";
         } else if(value > 0)
         {
-            this.percFmt = "%0." ~ value.to!string ~ "f%%";
+            this.percFmt = "%0." ~ value.to!string ~ "g%%";
             // writefln("perc fmt %s", this.percFmt);
         }
     }
+
     final int decimalPrecision() {return this.mDeciPrec;}
 
     final void startMarquee()
@@ -217,18 +216,20 @@ class ProgressBar : Control
         int mMinValue, mMaxValue, mStep, mValue, mSpeed, mDeciPrec;
         string percFmt;
 
-        LRESULT drawPercentage(HWND hw, UINT msg, WPARAM wp, LPARAM lp)
+        LRESULT drawPercentage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
-            if (this.mShowPerc && this.mBarStyle != ProgressBarStyle.marqueeStyle)
+            auto ret = DefSubclassProc(hWnd, message, wParam, lParam);
+            // writefln("showperc %s, bar style %s", this.mShowPerc, this.mBarStyle);
+            if (this.mShowPerc && this.mBarStyle == ProgressBarStyle.blockStyle)
             {
-                auto ret = DefSubclassProc(hw, msg, wp, lp);
                 SIZE ss;
-                double perc = (this.mValue * 100.0) / cast(double)this.mMaxValue;
+                double perc = (cast(double)(this.mValue * 100)) / cast(double)this.mMaxValue;
+                string vtext = this.mDeciPrec > 0 ? format(this.percFmt, perc) : format(this.percFmt, cast(int)perc);
                 // writefln("perc %f, %s, %s", perc, this.mValue, this.mMaxValue);
-                string vtext = format(this.percFmt, perc);
+
                 auto wtext = vtext.toUTF16z;
-                HDC hdc = GetDC(this.mHandle);
-                scope(exit) ReleaseDC(this.mHandle, hdc);
+                HDC hdc = GetDC(hWnd);
+                scope(exit) ReleaseDC(hWnd, hdc);
 
                 SelectObject(hdc, this.font.handle);
                 GetTextExtentPoint32(hdc, wtext, cast(int)vtext.length, &ss);
@@ -238,10 +239,12 @@ class ProgressBar : Control
                 SetBkMode(hdc, TRANSPARENT);
                 SetTextColor(hdc, this.mForeColor.cref);
                 TextOut(hdc, x, y, wtext, cast(int)vtext.length );
-                return ret;
+                // return ret;
             } else {
-                return DefSubclassProc(hw, msg, wp, lp);
+                // return DefSubclassProc(hw, msg, wp, lp);
+                writeln("243 else part");
             }
+            return ret;
         }
 
 
@@ -270,7 +273,11 @@ private LRESULT pgbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_MOUSEWHEEL : pgb.mouseWheelHandler(message, wParam, lParam); break;
             case WM_MOUSEMOVE : pgb.mouseMoveHandler(message, wParam, lParam); break;
             case WM_MOUSELEAVE : pgb.mouseLeaveHandler(); break;
-            case WM_PAINT : pgb.drawPercentage(hWnd, message, wParam, lParam); break;
+            case WM_PAINT :
+
+                return pgb.drawPercentage(hWnd, message, wParam, lParam);
+                // return ret;
+            break;
             default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
         }
     }

@@ -160,13 +160,13 @@ class Window : Control
     /// This will show the form on the screen
     final void show(DWORD swParam = SW_SHOW)
     {
+        this.createControlHandles();
         ShowWindow(this.mHandle, swParam);
         UpdateWindow(this.mHandle);
 
         if (this.mWinState == WindowState.minimized) {CloseWindow(this.mHandle); }
         if(!mMainLoopStarted)
         {
-            this.createControlHandles();
             mMainLoopStarted = true;
             mainLoop();
         }

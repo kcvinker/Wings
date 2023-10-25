@@ -17,7 +17,7 @@ DWORD swp_flag = SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER;
 
 class NumberPicker : Control
 {
-    this(Window parent, int x, int y, int w, int h, bool autoc = false, EventHandler evntFn = null)
+    this(Window parent, int x, int y, int w, int h, bool autoc = false, EventHandler evtFn = null)
     {
         if (!isNpCreated) {
             isNpCreated = true;
@@ -44,12 +44,12 @@ class NumberPicker : Control
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++npNumber;
-        if (evntFn != null) this.onValueChanged = evntFn;
+        if (evtFn != null) this.onValueChanged = evtFn;
         if (autoc) this.createHandle();
     }
 
     this(Window parent) {this(parent, 10, 10, 100, 27);}
-    this(Window parent, int x, int y,bool autoc = false, EventHandler evntFn = null )
+    this(Window parent, int x, int y, bool autoc = false, EventHandler evntFn = null )
     {
         this(parent, x, y, 70, 27, autoc, evntFn);
     }
@@ -460,6 +460,7 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case CM_NOTIFY :
                 auto nm = cast(NMUPDOWN*) lParam;
                 if (nm.hdr.code == UDN_DELTAPOS)
+                writeln("delta pos");
                 {
                     auto tbstr = np.getControlText(np.mBuddyHandle);
                     np.mValue = parse!double(tbstr);

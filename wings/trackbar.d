@@ -32,7 +32,7 @@ class TicData
 
 class TrackBar : Control
 {
-    this (Window parent, int x, int y, int w, int h, bool autoc = false, EventHandler evntFn = null)
+    this (Window parent, int x, int y, int w, int h, bool cdraw = false, bool autoc = false, EventHandler evtFn = null)
     {
         mixin(repeatingCode); // Setting size, position, parent & font
         mName = format("TrackBar_%d", tkbNumber);
@@ -50,6 +50,7 @@ class TrackBar : Control
         mMaxRange = 100;
         mFrequency = 10;
         mPageSize = 10;
+        this.mCustDraw = cdraw;
         mChannelColor(0xc2c2a3);
         mSelColor(0x99ff33);
         mTicColor(0x3385ff);
@@ -57,7 +58,7 @@ class TrackBar : Control
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++tkbNumber;
-        if (evntFn != null) this.onValueChanged = evntFn;
+        if (evtFn != null) this.onValueChanged = evtFn;
         if (autoc) this.createHandle();
     }
 
@@ -67,23 +68,24 @@ class TrackBar : Control
     EventHandler onValueChanged,onDragging,onDragged;
 
     // Properties
-    mixin finalProperty!("ticLength", this.mTicLen); //--------------------[1] TicLength
-    mixin finalProperty!("largeChange", this.mPageSize); //----------------[2] LargeChange
-    mixin finalProperty!("smallChange", this.mLineSize); //----------------[3] SmallChange
-    mixin finalProperty!("frequency", this.mFrequency); //-----------------[4] Frequency
-    mixin finalProperty!("minimum", this.mMinRange); //--------------------[5] Minimum
-    mixin finalProperty!("maximum", this.mMaxRange); //--------------------[6] Maximum
-    mixin finalProperty!("ticPosition", this.mTicPos); //------------------[7] TicPosition
-    mixin finalProperty!("toolTip", this.mToolTip); //---------------------[8] ToolTip
-    mixin finalProperty!("reverse", this.mReversed); //--------------------[9] Reverse
-    mixin finalProperty!("selectionColor", this.mSelColor); //-------------[10] SelectionColor
-    mixin finalProperty!("ticColor", this.mTicColor); //-------------------[11] ticColor
-    mixin finalProperty!("channelColor", this.mChannelColor); //-----------[12] ChannelColor
-    mixin finalProperty!("freeMove", this.mFreeMove); //-------------------[13] FreeMove
-    mixin finalProperty!("ticWidth", this.mTicWidth); //-------------------[14] ticWidth
-    mixin finalProperty!("noTics", this.mNoTics); //-----------------------[15] noTics
-    mixin finalProperty!("customDraw", this.mCustDraw); //-----------------[16] CustomDraw
-    mixin finalProperty!("channelStyle", this.mChannelSTyle); //-----------[17] ChannelStyle
+        mixin finalProperty!("ticLength", this.mTicLen); //--------------------[1] TicLength
+        mixin finalProperty!("largeChange", this.mPageSize); //----------------[2] LargeChange
+        mixin finalProperty!("smallChange", this.mLineSize); //----------------[3] SmallChange
+        mixin finalProperty!("frequency", this.mFrequency); //-----------------[4] Frequency
+        mixin finalProperty!("minimum", this.mMinRange); //--------------------[5] Minimum
+        mixin finalProperty!("maximum", this.mMaxRange); //--------------------[6] Maximum
+        mixin finalProperty!("ticPosition", this.mTicPos); //------------------[7] TicPosition
+        mixin finalProperty!("toolTip", this.mToolTip); //---------------------[8] ToolTip
+        mixin finalProperty!("reverse", this.mReversed); //--------------------[9] Reverse
+        mixin finalProperty!("selectionColor", this.mSelColor); //-------------[10] SelectionColor
+        mixin finalProperty!("ticColor", this.mTicColor); //-------------------[11] ticColor
+        mixin finalProperty!("channelColor", this.mChannelColor); //-----------[12] ChannelColor
+        mixin finalProperty!("freeMove", this.mFreeMove); //-------------------[13] FreeMove
+        mixin finalProperty!("ticWidth", this.mTicWidth); //-------------------[14] ticWidth
+        mixin finalProperty!("noTics", this.mNoTics); //-----------------------[15] noTics
+        mixin finalProperty!("customDraw", this.mCustDraw); //-----------------[16] CustomDraw
+        mixin finalProperty!("channelStyle", this.mChannelSTyle); //-----------[17] ChannelStyle
+    //
 
     final bool vertical() {return this.mVertical;}
     final void vertical(bool value)
@@ -108,7 +110,9 @@ class TrackBar : Control
     final void value(int value)
     {
         this.mValue = value;
-        if (!this.mIsCreated) {}
+        if (!this.mIsCreated) {
+
+        }
     }
     //---------------------------------------------------------------------[20] Value
 
@@ -136,6 +140,7 @@ class TrackBar : Control
             this.sendInitialMessages();
             if (this.mCustDraw) this.calculateTics();
             if (this.mSelRange) this.mSelBrush = CreateSolidBrush(this.mSelColor.cref);
+            // RedrawWindow(this.mHandle, null, null, RDW_ALLCHILDREN| RDW_INVALIDATE | RDW_ERASENOW);
             //auto x = this.sendMsg(TBM_GETPTICS, 0, 0);
             //DWORD* y = cast(DWORD*) x;
             // this.log(y[2], " track");
@@ -438,7 +443,6 @@ extern(Windows)
 private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-
     try
     {
         TrackBar tkb = getControl!TrackBar(refData);
