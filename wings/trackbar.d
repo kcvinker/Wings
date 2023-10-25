@@ -13,22 +13,27 @@ enum THUMB_PAGE_LOW = 2;
 enum THUMB_LINE_HIGH = 1;
 enum THUMB_LINE_LOW = 0;
 
-class TicData {
+class TicData
+{
     private static num = 0;
     int index,phyPoint, logPoint;
-    this(int pp, int lp) {
+    this(int pp, int lp)
+    {
         this.index = num;
         this.phyPoint = pp;
         this.logPoint = lp;
         num += 1;
     }
-    void print() {
+    void print()
+    {
         writefln("Index %d, Physical Point %d, Logical Point %d", this.index, this.phyPoint, this.logPoint);
     }
 }
 
-class TrackBar : Control {
-    this (Window parent, int x, int y, int w, int h, bool bCreate = false) {
+class TrackBar : Control
+{
+    this (Window parent, int x, int y, int w, int h, bool autoc = false, EventHandler evntFn = null)
+    {
         mixin(repeatingCode); // Setting size, position, parent & font
         mName = format("TrackBar_%d", tkbNumber);
         mControlType = ControlType.trackBar;
@@ -52,10 +57,11 @@ class TrackBar : Control {
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++tkbNumber;
-        // if (bCreate) this.createHandle();
+        if (evntFn != null) this.onValueChanged = evntFn;
+        if (autoc) this.createHandle();
     }
 
-    this (Window parent, int x, int y, bool bCreate = false) {this(parent, x, y, 150, 24, bCreate);}
+    this (Window parent, int x, int y, bool autoc = false) {this(parent, x, y, 150, 24, autoc);}
 
     // Events
     EventHandler onValueChanged,onDragging,onDragged;
@@ -80,42 +86,51 @@ class TrackBar : Control {
     mixin finalProperty!("channelStyle", this.mChannelSTyle); //-----------[17] ChannelStyle
 
     final bool vertical() {return this.mVertical;}
-    final void vertical(bool value) {
+    final void vertical(bool value)
+    {
         this.mVertical = value;
         if (this.mTicPos == TicPosition.downSide || this.mTicPos == TicPosition.upSide)
+        {
             this.mTicPos = TicPosition.rightSide;
+        }
     }
     //---------------------------------------------------------------------[18] Vertical
 
     final bool showSelection() {return this.mSelRange;}
-    final void showSelection(bool value) {
+    final void showSelection(bool value)
+    {
         this.mSelRange = value;
         if (!this.mCustDraw) this.mCustDraw = true;
     }
     //---------------------------------------------------------------------[19] ShowSelection
 
     final int value() {return this.mValue;}
-    final void value(int value) {
+    final void value(int value)
+    {
         this.mValue = value;
         if (!this.mIsCreated) {}
     }
     //---------------------------------------------------------------------[20] Value
 
-    void backColor(Color value) {
+    void backColor(Color value)
+    {
         this.mBackColor = value;
         this.backColorSetupInternal();
     }
 
-    override void backColor(uint value) {
+    override void backColor(uint value)
+    {
         this.mBackColor.updateColor(value);
         this.backColorSetupInternal();
     }
 
-    override void createHandle() {
+    override void createHandle()
+    {
         // import std.stdio;
     	this.setTkbStyle();
     	this.createHandleInternal(mClassName.ptr);
-    	if (this.mHandle) {
+    	if (this.mHandle)
+        {
             this.setSubClass(&tkbWndProc);
             if (this.mCustDraw) this.prepareForCustDraw();
             this.sendInitialMessages();
@@ -127,10 +142,12 @@ class TrackBar : Control {
         }
     }
 
-    final void setTicPos(string pos) {
+    final void setTicPos(string pos)
+    {
         import std.string;
         string p = pos.toUpper();
-        final switch(p) {
+        final switch(p)
+        {
             case "BOTH": this.mTicPos = TicPosition.bothSide; break;
             case "UP": this.mTicPos = TicPosition.upSide; break;
             case "DOWN": this.mTicPos = TicPosition.downSide; break;
@@ -171,10 +188,13 @@ class TrackBar : Control {
         double mRange;
         DWORD mChannelFlag = BF_RECT | BF_ADJUST;
 
-        void setTkbStyle() {
-            if (this.mVertical) {
+        void setTkbStyle()
+        {
+            if (this.mVertical)
+            {
                 this.mStyle |= TBS_VERT;
-                switch (this.mTicPos) {
+                switch (this.mTicPos)
+                {
                     case TicPosition.rightSide: this.mStyle |= TBS_RIGHT; break;
                     case TicPosition.leftSide: this.mStyle |= TBS_LEFT; break;
                     case TicPosition.bothSide: this.mStyle |= TBS_BOTH; break;
@@ -182,7 +202,8 @@ class TrackBar : Control {
                 }
             } else {
                 // this.mStyle |= TBS_;
-                switch (this.mTicPos) {
+                switch (this.mTicPos)
+                {
                     case TicPosition.downSide: this.mStyle |= TBS_BOTTOM; break;
                     case TicPosition.upSide: this.mStyle |= TBS_TOP; break;
                     case TicPosition.bothSide: this.mStyle |= TBS_BOTH; break;
@@ -199,13 +220,16 @@ class TrackBar : Control {
             this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         }
 
-        void prepareForCustDraw() {
+        void prepareForCustDraw()
+        {
             this.mChannelPen = CreatePen(PS_SOLID, 1, this.mChannelColor.cref);
             this.mTicPen = CreatePen(PS_SOLID, this.mTicWidth, this.mTicColor.cref);
         }
 
-        void sendInitialMessages() {
-            if (this.mReversed) {
+        void sendInitialMessages()
+        {
+            if (this.mReversed)
+            {
                 this.sendMsg(TBM_SETRANGEMIN, 1, (this.mMaxRange * -1));
                 this.sendMsg(TBM_SETRANGEMAX, 1, this.mMinRange);
             } else {
@@ -217,7 +241,8 @@ class TrackBar : Control {
             this.sendMsg(TBM_SETLINESIZE, 0, this.mLineSize);
         }
 
-        void calculateTics() {
+        void calculateTics()
+        {
             // Calculating logical & physical positions for tics.
             int twidth, numTics, stPos, enPos, channelLen, tic;
             double pFactor, range;
@@ -229,9 +254,11 @@ class TrackBar : Control {
 
             //2. Calculate thumb offset
             if (this.mVertical)
+            {
                 twidth = this.mThumbRc.bottom - this.mThumbRc.top;
-            else
+            } else {
                 twidth = this.mThumbRc.right - this.mThumbRc.left;
+            }
             this.mThumbHalf = cast(int) twidth / 2;
 
             // Now calculate required variables
@@ -245,15 +272,18 @@ class TrackBar : Control {
 
             tic = this.mMinRange + this.mFrequency;
             this.mTics ~= new TicData(stPos, 0); // Very first tic
-            for (int i = 0; i < numTics; i++) {
+            for (int i = 0; i < numTics; i++)
+            {
                 this.mTics ~= new TicData(cast(int) (tic * pFactor) + stPos, tic); // Middle tics
                 tic += this.mFrequency;
             }
             this.mTics ~= new TicData(enPos, cast(int) this.mRange); // Last tic
 
             // Now, set up single point (x/y) for tics.
-            if (this.mVertical) {
-                switch (this.mTicPos) {
+            if (this.mVertical)
+            {
+                switch (this.mTicPos)
+                {
                     case TicPosition.leftSide: this.mPoint1 = this.mThumbRc.left - 5; break;
                     case TicPosition.rightSide: this.mPoint1 = this.mThumbRc.right + 2; break;
                     case TicPosition.bothSide:
@@ -263,7 +293,8 @@ class TrackBar : Control {
                     default: break;
                 }
             } else {
-                switch (this.mTicPos) {
+                switch (this.mTicPos)
+                {
                     case TicPosition.downSide: this.mPoint1 = this.mThumbRc.bottom + 1; break;
                     case TicPosition.upSide: this.mPoint1 = this.mThumbRc.top - 4; break;
                     case TicPosition.bothSide:
@@ -275,35 +306,43 @@ class TrackBar : Control {
             }
         }
 
-        void drawHorizontalTicsDown(HDC hdc, int px, int py) {
+        void drawHorizontalTicsDown(HDC hdc, int px, int py)
+        {
             MoveToEx(hdc, px, py, NULL);
             LineTo(hdc, px, py + this.mTicLen);
         }
 
-        void drawHorizontalTicsUpper(HDC hdc, int px, int py) {
+        void drawHorizontalTicsUpper(HDC hdc, int px, int py)
+        {
             MoveToEx(hdc, px, py, NULL);
             LineTo(hdc, px, py - this.mTicLen);
         }
 
-        void drawVerticalTics(HDC hdc, int px, int py) {
+        void drawVerticalTics(HDC hdc, int px, int py)
+        {
             MoveToEx(hdc, px, py, NULL);
             LineTo(hdc, px + this.mTicLen, py);
         }
 
-        RECT getThumbRect() {
+        RECT getThumbRect()
+        {
             RECT rc;
             this.sendMsg(TBM_GETTHUMBRECT, 0, &rc);
             return rc;
         }
 
-        void drawTics(HDC hdc) {
+        void drawTics(HDC hdc)
+        {
             SelectObject(hdc, this.mTicPen);
-            if (this.mVertical) {
-                switch (this.mTicPos) {
+            if (this.mVertical)
+            {
+                switch (this.mTicPos)
+                {
                     case TicPosition.rightSide, TicPosition.leftSide:
                         foreach (p; this.mTics) this.drawVerticalTics(hdc, this.mPoint1, p.phyPoint); break;
                     case TicPosition.bothSide:
-                        foreach (p; this.mTics) {
+                        foreach (p; this.mTics)
+                        {
                             this.drawVerticalTics(hdc, this.mPoint1, p.phyPoint);
                             this.drawVerticalTics(hdc, this.mPoint2, p.phyPoint);
                         }
@@ -312,11 +351,13 @@ class TrackBar : Control {
                 }
 
             } else {
-                switch (this.mTicPos) {
+                switch (this.mTicPos)
+                {
                     case TicPosition.upSide, TicPosition.downSide:
                         foreach (p; this.mTics) this.drawHorizontalTicsDown(hdc, p.phyPoint, this.mPoint1);break;
                     case TicPosition.bothSide:
-                        foreach (p; this.mTics) {
+                        foreach (p; this.mTics)
+                        {
                             this.drawHorizontalTicsDown(hdc, p.phyPoint, this.mPoint1);
                             this.drawHorizontalTicsUpper(hdc, p.phyPoint, this.mPoint2);
                         }
@@ -326,7 +367,8 @@ class TrackBar : Control {
             }
         }
 
-        bool fillChannelRect(NMCUSTOMDRAW * nm, RECT trc) {
+        bool fillChannelRect(NMCUSTOMDRAW * nm, RECT trc)
+        {
             /*  If show_selection property is enabled in this trackbar,
                 we need to show the area between thumb and channel starting in diff color.
                 But we need to check if the trackbar is reversed or not.
@@ -336,10 +378,12 @@ class TrackBar : Control {
             bool result = false;
             RECT rct;
 
-            if (this.mVertical) {
+            if (this.mVertical)
+            {
                 rct.left = nm.rc.left;
                 rct.right = nm.rc.right;
-                if (this.mReversed) {
+                if (this.mReversed)
+                {
                     rct.top = trc.bottom;
                     rct.bottom = nm.rc.bottom;
                 } else {
@@ -349,7 +393,8 @@ class TrackBar : Control {
             } else {
                 rct.top = nm.rc.top;
                 rct.bottom = nm.rc.bottom;
-                if (this.mReversed) {
+                if (this.mReversed)
+                {
                     rct.left = trc.right;
                     rct.right = nm.rc.right;
                 } else {
@@ -362,15 +407,20 @@ class TrackBar : Control {
             return result;
         }
 
-        void setupValueInternal(int value) {
+        void setupValueInternal(int value)
+        {
             if (this.mReversed)
+            {
                 this.mValue = U16_MAX - value;
-            else
+            } else {
                 this.mValue = value;
+            }
         }
 
-        void backColorSetupInternal() {
-            if (this.mIsCreated) {
+        void backColorSetupInternal()
+        {
+            if (this.mIsCreated)
+            {
                 this.mBkBrush = this.mBackColor.getBrush();
 
                 // Here, we need to send this message.
@@ -385,11 +435,15 @@ class TrackBar : Control {
 
 
 extern(Windows)
-private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
+private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                                UINT_PTR scID, DWORD_PTR refData)
+{
 
-    try {
+    try
+    {
         TrackBar tkb = getControl!TrackBar(refData);
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &tkbWndProc, scID); break;
 
             case CM_COLOR_STATIC: return cast(LRESULT) tkb.mBkBrush; break;
@@ -408,23 +462,28 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_MOUSELEAVE : tkb.mouseLeaveHandler(); break;
             case CM_HSCROLL, CM_VSCROLL:
                 auto lwp = LOWORD(wParam);
-                switch (lwp) {
+                switch (lwp)
+                {
                     case TB_THUMBPOSITION:
                         tkb.setupValueInternal(HIWORD(wParam));
-                        if (!tkb.mFreeMove) {
+                        if (!tkb.mFreeMove)
+                        {
                             int pos = tkb.mValue;
                             double half = tkb.mFrequency / 2;
                             auto diff = pos % tkb.mFrequency;
                             if (diff >= half)
+                            {
                                 pos = (tkb.mFrequency - diff) + tkb.mValue;
-                            else if (diff < half)
+                            } else if (diff < half) {
                                 pos =  tkb.mValue - diff;
+                            }
 
                             if (tkb.mReversed)
+                            {
                                 tkb.sendMsg(TBM_SETPOS, true, (pos * -1));
-                            else
+                            } else {
                                 tkb.sendMsg(TBM_SETPOS, true, pos);
-
+                            }
                             tkb.mValue = pos;
                         }
 
@@ -464,33 +523,41 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 break;
             case CM_NOTIFY:
                 auto nmh = cast(LPNMHDR) lParam;
-                final switch (nmh.code) {
+                final switch (nmh.code)
+                {
                     case NM_CUSTOMDRAW:
-                        if (tkb.mCustDraw) {
+                        if (tkb.mCustDraw)
+                        {
                             auto nmcd = cast(LPNMCUSTOMDRAW) lParam;
                             if (nmcd.dwDrawStage == CDDS_PREPAINT) return CDRF_NOTIFYITEMDRAW;
 
-                            if (nmcd.dwDrawStage ==  CDDS_ITEMPREPAINT) {
-                                if (nmcd.dwItemSpec == TBCD_TICS) {
-                                    if (!tkb.mNoTics) {
+                            if (nmcd.dwDrawStage ==  CDDS_ITEMPREPAINT)
+                            {
+                                if (nmcd.dwItemSpec == TBCD_TICS)
+                                {
+                                    if (!tkb.mNoTics)
+                                    {
                                         tkb.drawTics(nmcd.hdc);
                                         return CDRF_SKIPDEFAULT;
                                     }
                                 }
 
-                                if (nmcd.dwItemSpec == TBCD_CHANNEL) {
+                                if (nmcd.dwItemSpec == TBCD_CHANNEL)
+                                {
                                     /* Python proect is using EDGE_SUNKEN style without BF_FLAT.
                                     But D gives a strange outline in those flags. So I decided to use...
                                     these flags. But in this case, we don't need to reduce 1 point from...
                                     the coloring rect. It looks perfect without changing rect. */
-                                    if (tkb.mChannelSTyle == ChannelStyle.classic) {
+                                    if (tkb.mChannelSTyle == ChannelStyle.classic)
+                                    {
                                         DrawEdge(nmcd.hdc, &nmcd.rc, BDR_SUNKENOUTER, tkb.mChannelFlag);
                                     } else {
                                         SelectObject(nmcd.hdc, tkb.mChannelPen);
                                         Rectangle(nmcd.hdc, nmcd.rc.left, nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom );
                                     }
 
-                                    if (tkb.mSelRange) { // Fill the selection range
+                                    if (tkb.mSelRange) // Fill the selection range
+                                    {
                                         auto rc = tkb.getThumbRect();
                                         if (tkb.fillChannelRect(nmcd, rc)) InvalidateRect(hWnd, &nmcd.rc, false);
                                     }
@@ -498,7 +565,9 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                     return CDRF_SKIPDEFAULT;
                                 }
                             }
-                        } else { return CDRF_DODEFAULT;}
+                        } else {
+                            return CDRF_DODEFAULT;
+                        }
                     break;
                     case 4_294_967_280: // con.TRBN_THUMBPOSCHANGING:
                         tkb.mTrackChange = TrackChange.mouseClick;

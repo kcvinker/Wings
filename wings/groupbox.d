@@ -9,11 +9,14 @@ int gbNumber = 1;
 DWORD gb_style = WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP |
                 WS_OVERLAPPED| WS_CLIPCHILDREN| WS_CLIPSIBLINGS;
 DWORD gb_exstyle = WS_EX_RIGHTSCROLLBAR| WS_EX_TRANSPARENT| WS_EX_CONTROLPARENT;
+
 private wchar[] mClassName = ['B','u','t','t','o','n', 0];
 
-class GroupBox : Control {
+class GroupBox : Control
+{
 
-    this(Window parent, string txt, int x, int y, int w, int h) {
+    this(Window parent, string txt, int x, int y, int w, int h, bool autoc = false)
+    {
         mixin(repeatingCode);
         mControlType = ControlType.groupBox;
         mText = txt;
@@ -25,29 +28,34 @@ class GroupBox : Control {
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++gbNumber;
+        if (autoc) this.createHandle();
     }
 
-    this(Window parent, string txt, int x, int y) {
-        this(parent, txt, x, y, 150, 150);
+    this(Window parent, string txt, int x, int y, bool autoc = false)
+    {
+        this(parent, txt, x, y, 150, 150, autoc);
     }
 
-    this(Window parent, string txt) {
-        this(parent, txt, 20, 20, 150, 150);
+    this(Window parent, string txt, bool autoc = false)
+    {
+        this(parent, txt, 20, 20, 150, 150, autoc);
     }
 
-    override void createHandle() {
+    override void createHandle()
+    {
         //if (this.mBackColor.value == this.parent.mBackColor.value) this.isPaintBkg = true;
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref );
         this.createHandleInternal(mClassName.ptr);
-        if (this.mHandle) {
+        if (this.mHandle)
+        {
             this.setSubClass(&gbWndProc);
             this.getTextBounds();
-
         }
     }
 
-    override final void text(string value) {
+    override final void text(string value)
+    {
         this.mText = value;
         if (this.mIsCreated) this.getTextBounds();
         this.checkRedrawNeeded();
@@ -60,7 +68,8 @@ class GroupBox : Control {
         bool isPaintBkg;
         int mTxtWidth;
 
-        void getTextBounds() {
+        void getTextBounds()
+        {
             HDC hdc = GetDC(this.mHandle);
             scope(exit) ReleaseDC(this.mHandle, hdc);
             SIZE ss;
@@ -84,7 +93,6 @@ class GroupBox : Control {
             SelectObject(hdc, this.font.handle);
             SetTextColor(hdc, this.mForeColor.cref);
             TextOutW(hdc, 10, 0, this.mText.toUTF16z, cast(int)this.mText.length);
-
         }
 
         // void drawTextDblBuff() {
@@ -120,7 +128,8 @@ class GroupBox : Control {
         //     BitBlt(hdc, 10, 0, ss.cx, ss.cy, dcMem, 0, 0, SRCCOPY);
         // }
 
-        void finalize(UINT_PTR scID) { // private
+        void finalize(UINT_PTR scID)
+        { // private
             // This is our destructor. Clean all the dirty stuff
             DeleteObject(this.mBkBrush);
             DeleteObject(this.mPen);
@@ -132,11 +141,15 @@ class GroupBox : Control {
 } // End of GroupBox class
 
 extern(Windows)
-private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
-    try {
+private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                                UINT_PTR scID, DWORD_PTR refData)
+{
+    try
+    {
         GroupBox gb = getControl!GroupBox(refData);
         //  gb.log(message);
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY : gb.finalize(scID); break;
             // case WM_PAINT : gb.paintHandler(); break;
             case WM_SETFOCUS : gb.setFocusHandler(); break;
@@ -152,9 +165,9 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_MOUSELEAVE : gb.mouseLeaveHandler(); break;
             case WM_GETTEXTLENGTH: return 0;
 
-
             case WM_ERASEBKGND :
-                if (gb.mDrawFlag ) {
+                if (gb.mDrawFlag )
+                {
                     auto hdc = cast(HDC) wParam;
                     RECT rc = gb.clientRect();
                     FillRect(hdc, &rc, gb.mBkBrush);
@@ -167,9 +180,6 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                 gb.drawText();
                 return ret;
             break;
-
-
-
             default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
         }
     }

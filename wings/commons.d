@@ -65,6 +65,34 @@ package {
         }
     }
 
+    union StringOrInt
+    {
+        string svalue;
+        int ivalue;
+    }
+
+    struct ColumnResult
+    {
+        bool isString;
+        StringOrInt value;
+    }
+
+    ColumnResult getIntOrString(T)(T arg)
+    {
+        ColumnResult cres;
+        static if (is(typeof(arg) == int))
+        {
+            cres.value.ivalue = arg;
+            cres.isString = false;
+        }
+        else static if (is(typeof(arg) == double))
+        {
+           cres.isString = true;
+           cres.svalue = arg;
+        }
+        return cres;
+    }
+
 
     ApplicationData appData;
     //alias Wstring = const(wchar)*;
@@ -157,10 +185,10 @@ package {
         return result;
     }
 
-    string makeString(T)(T item) {
+    string makeString(T)(T item)
+    {
         static if (is(T == string)) return item;
         return to!string(item);
-
     }
 
     void printWinMsg(uint msg) {

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<NotepadPlus>
+    <Session activeView="0">
+        <mainView activeIndex="0">
+            <File firstVisibleLine="554" xOffset="0" scrollWidth="1350" startPos="20650" endPos="20650" selMode="0" offset="0" wrapCount="1" lang="D" encoding="-1" userReadOnly="no" filename="C:\Users\kcvin\OneDrive\Programming\D_Lang\Wings\wings\window.d" backupFilePath="" originalFileLastModifTimestamp="-410972377" originalFileLastModifTimestampHigh="31063136" tabColourId="-1" mapFirstVisibleDisplayLine="-1" mapFirstVisibleDocLine="-1" mapLastVisibleDocLine="-1" mapNbLine="-1" mapHigherPos="-1" mapWidth="-1" mapHeight="-1" mapKByteInDoc="512" mapWrapIndentMode="-1" mapIsWrap="no" />
+        </mainView>
+        <subView activeIndex="0" />
+    </Session>
+</NotepadPlus>

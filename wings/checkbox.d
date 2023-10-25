@@ -12,15 +12,18 @@ private wchar[] mClassName = ['B','u','t','t','o','n', 0];
 /**
  * CheckBox : Control
  */
-class CheckBox : Control {
+class CheckBox : Control
+{
 
     /// Get the checked state of CheckBox.
     final bool checked() {return this.mChecked;}
 
     /// Set the checked state of CheckBox.
-    final void checked(bool value) {
+    final void checked(bool value)
+    {
         this.mChecked = value;
-        if (this.mIsCreated) {
+        if (this.mIsCreated)
+        {
             int bState = value ? BST_CHECKED : BST_UNCHECKED;
             this,sendMsg(BM_SETCHECK, bState, 0 );
         }
@@ -28,13 +31,8 @@ class CheckBox : Control {
 
     EventHandler onCheckedChanged;
 
-	this(Window parent, string txt, int x, int y, int w, int h) {
-        //mWidth = w;
-        //mHeight = h;
-        //mXpos = x;
-        //mYpos = y;
-        //mParent = parent;
-        //mFont = parent.font;
+	this(Window parent, string txt, int x, int y, int w, int h, bool autoc = false, EventHandler checkFn = null)
+    {
         mixin(repeatingCode);
         mAutoSize = true;
         mControlType = ControlType.checkBox;
@@ -48,24 +46,46 @@ class CheckBox : Control {
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++cbNumber;
+        if (checkFn) this.onMouseClick = checkFn;
+        if (autoc) this.createHandle();
     }
 
-    this(Window parent) {
+    this(Window parent, bool autoc = false, EventHandler checkFn = null) {
     	string txt = format("CheckBox_%s", cbNumber);
-    	this(parent, txt, 20, 20, 50, 20);
+    	this(parent, txt, 20, 20, 50, 20, autoc, checkFn);
     }
 
-    this(Window parent, string txt) { this(parent, txt, 20, 20, 50, 20);}
+    this(Window parent, string txt, bool autoc = false, EventHandler checkFn = null)
+    {
+        this(parent, txt, 20, 20, 50, 20, autoc, checkFn);
+    }
 
-    this (Window parent, string txt, int x, int y) { this(parent, txt, x, y, 50, 20); }
+    this (Window parent, string txt, int x, int y, bool autoc = false, EventHandler checkFn = null)
+    {
+        this(parent, txt, x, y, 50, 20, autoc, checkFn);
+    }
 
     // Create the handle of CheckBox
-    override void createHandle() {
+    override void createHandle()
+    {
     	this.setCbStyles();
         this.createHandleInternal(mClassName.ptr);
-        if (this.mHandle) {
+        if (this.mHandle)
+        {
             this.setSubClass(&cbWndProc);
             this.setCbSize();
+        }
+    }
+
+
+	final override string text() {return this.mText;}
+    final override void text(string value)
+    {
+        this.mText = value;
+        if (this.mIsCreated)
+        {
+            SetWindowTextW(this.mHandle, value.toUTF16z);
+            if (this.mAutoSize) this.setCbSize;
         }
     }
 
@@ -78,15 +98,18 @@ class CheckBox : Control {
         bool mRightAlign;
 
 
-		void setCbStyles() { // Private
+		void setCbStyles()
+        { // Private
             // We need to set some checkbox styles
-			if (this.mRightAlign) {
+			if (this.mRightAlign)
+            {
 				this.mStyle |= BS_RIGHTBUTTON;
 				this.mTxtStyle |= DT_RIGHT;
 			}
 		}
 
-        void setCbSize() { // Private
+        void setCbSize()
+        { // Private
             // We need to find the width & hight to provide the auto size feature.
             SIZE ss;
             this.sendMsg(BCM_GETIDEALSIZE, 0, &ss);
@@ -95,7 +118,8 @@ class CheckBox : Control {
             MoveWindow(this.mHandle, this.mXpos, this.mYpos, ss.cx, ss.cy, true);
         }
 
-        void finalize(UINT_PTR scID) { // Package
+        void finalize(UINT_PTR scID)
+        { // Package
             // This is our destructor. Clean all the dirty stuff
             DeleteObject(this.mBkBrush);
             RemoveWindowSubclass(this.mHandle, &cbWndProc, scID);
@@ -104,10 +128,14 @@ class CheckBox : Control {
 }
 
 extern(Windows)
-private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
-    try {
+private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                            UINT_PTR scID, DWORD_PTR refData)
+{
+    try
+    {
         CheckBox cb = getControl!CheckBox(refData);
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY : cb.finalize(scID); break;
             case WM_PAINT : cb.paintHandler(); break;
             case WM_SETFOCUS : cb.setFocusHandler(); break;
@@ -123,8 +151,10 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_MOUSELEAVE : cb.mouseLeaveHandler(); break;
 
             case CM_CTLCOMMAND :
+				// writefln("CM_CTLCOMMAND in cb %s", 1);
                 cb.mChecked = cast(bool) cb.sendMsg(BM_GETCHECK, 0, 0);
-                if (cb.onCheckedChanged) {
+                if (cb.onCheckedChanged)
+                {
                     auto ea = new EventArgs();
                     cb.onCheckedChanged(cb, ea);
                 }
@@ -145,7 +175,8 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
                 auto nmc = cast(NMCUSTOMDRAW *) lParam;
                 // writefln("dwDrawStage %s", BST_UNCHECKED);
-                switch (nmc.dwDrawStage) {
+                switch (nmc.dwDrawStage)
+                {
                     case CDDS_PREERASE :
                         return CDRF_NOTIFYPOSTERASE;
                         break;
@@ -161,14 +192,8 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     default:  break;
                 } break;
 
-
-
-
-
-
             default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
         }
-
     }
     catch (Exception e) {}
     return DefSubclassProc(hWnd, message, wParam, lParam);

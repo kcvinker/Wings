@@ -14,7 +14,8 @@ private wchar[] mClassName = ['L', 'I', 'S', 'T', 'B', 'O', 'X', 0];
 
 class ListBox : Control {
 
-    this(Window parent, int x, int y, int w, int h) {
+    this(Window parent, int x, int y, int w, int h, bool autoc = false)
+    {
         mixin(repeatingCode);
         mControlType = ControlType.listBox;
         mStyle = WS_VISIBLE | WS_CHILD | WS_BORDER  | LBS_NOTIFY | LBS_HASSTRINGS;
@@ -26,11 +27,11 @@ class ListBox : Control {
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++lbxNumber;
-       // mMultiSel = true;
+        if (autoc) this.createHandle();
     }
 
     this(Window parent) { this(parent, 20, 20, 180, 200); }
-    this(Window parent, int x, int y) { this(parent, x, y, 180, 200);}
+    this(Window parent, int x, int y, bool autoc = false) { this(parent, x, y, 180, 200, autoc);}
 
 
     mixin finalProperty!("hasHScroll", this.mUseHscroll);
@@ -40,19 +41,24 @@ class ListBox : Control {
     final int selectedIndex() { return this.mSelIndex; }
 
     /// Set the selected index of ListBox.(Only for single selection mode)
-    final void selectedIndex(int value) {
-        if (this.mIsCreated) {
+    final void selectedIndex(int value)
+    {
+        if (this.mIsCreated)
+        {
             auto res = this.sendMsg(LB_SETCURSEL, value, 0);
             if (res != LB_ERR) this.mSelIndex = value;
         } else this.mDummyIndex = value;
     }
 
     /// Get the selected indices from ListBox. (Only for multi selection mode)
-    final intArray selectedIndices() {
+    final intArray selectedIndices()
+    {
         intArray selItems;
-        if (this.mMultiSel && this.mIsCreated) {
+        if (this.mMultiSel && this.mIsCreated)
+        {
             auto selCount = this.sendMsg(LB_GETSELCOUNT, 0, 0);
-            if (selCount != LB_ERR) {
+            if (selCount != LB_ERR)
+            {
                 selItems.length = selCount;
                 this.sendMsg(LB_GETSELITEMS, selCount, selItems.ptr);
             }
@@ -61,17 +67,21 @@ class ListBox : Control {
     }
 
     /// Get the selected item from ListBox. (Only for single selection mode)
-    final string selectedItem() {
+    final string selectedItem()
+    {
         if (this.mIsCreated && this.mSelIndex > -1) return getItemInternal(this.mSelIndex);
         return "";
     }
 
     /// Get the selected items from ListBox. (Only for multi selection mode)
-    final string[] selectedItems() {
+    final string[] selectedItems()
+    {
         string[] result;
-        if (this.mIsCreated) {
+        if (this.mIsCreated)
+        {
             auto selCount = this.sendMsg(LB_GETSELCOUNT, 0, 0);
-            if (selCount != LB_ERR) {
+            if (selCount != LB_ERR)
+            {
                 intArray iBuffer;
                 iBuffer.length = selCount;
                 this.sendMsg(LB_GETSELITEMS, selCount, iBuffer.ptr);
@@ -82,21 +92,28 @@ class ListBox : Control {
     }
 
     /// Select all items of a multi selection list box
-    final void selectAll() {
+    final void selectAll()
+    {
         if (this.mIsCreated && this.mMultiSel) this.sendMsg(LB_SETSEL, true, -1 );
     }
 
     /// Clear selection from a list box
-    final void clearSelection() {
-        if (this.mIsCreated) {
-            if (this.mMultiSel) {
+    final void clearSelection()
+    {
+        if (this.mIsCreated)
+        {
+            if (this.mMultiSel)
+            {
                 this.sendMsg(LB_SETSEL, false, -1 );
-            } else this.sendMsg(LB_SETCURSEL, -1, 0 );
+            } else {
+                this.sendMsg(LB_SETCURSEL, -1, 0 );
+            }
         }
     }
 
     /// Insert item to ListBox at the given index
-    void insertItem(T)(T item, int index) {
+    void insertItem(T)(T item, int index)
+    {
         auto sItem = item.to!string();
         clearItemsInternal();
         this.mItems.insertInPlace(index, sItem);
@@ -104,13 +121,15 @@ class ListBox : Control {
     }
 
     /// Get the index of given item from ListBox
-    int getIndex(t)(t item) {
+    int getIndex(t)(t item)
+    {
         auto sItem = item.toString();
         return this.sendMsg(LB_FINDSTRINGEXACT, -1, sItem.ptr);
     }
 
     /// Get the index of item under mouse pointer
-    final int getHotIndex() {
+    final int getHotIndex()
+    {
         //long wp = 0;
         //long lp = 0;
         if (this.mMultiSel) return cast(int)this.sendMsg(LB_GETCARETINDEX, 0, 0);
@@ -118,8 +137,10 @@ class ListBox : Control {
     }
 
     /// Get the item under mouse pointer
-    final string getHotItem() {
-        if (this.mMultiSel) {
+    final string getHotItem()
+    {
+        if (this.mMultiSel)
+        {
             auto indx = this.sendMsg(LB_GETCARETINDEX, 0, 0);
             if (indx > -1) return getItemInternal(indx);
         }
@@ -127,14 +148,16 @@ class ListBox : Control {
     }
 
     /// Get the item of given index
-    final string getItem(int index) in (index >= 0) {
+    final string getItem(int index) in (index >= 0)
+    {
         auto tLen = this.sendMsg(LB_GETTEXTLEN, index, 0);
         if (tLen != LB_ERR) return getItemInternal(index);
         return NULL;
     }
 
     /// Remove an item from listbox.
-    final void removeItem(int index) {
+    final void removeItem(int index)
+    {
         // We faced a strange problem here. If we use LB_DELETESTRING msg,
         // one item will be drawned upon  another item. I can't find a
         // solution to this.  So I found a workwround.
@@ -144,8 +167,10 @@ class ListBox : Control {
     }
 
     /// Clear all items from list box.
-    final void removeAll() {
-        if (this.mIsCreated) {
+    final void removeAll()
+    {
+        if (this.mIsCreated)
+        {
             this.sendMsg(LB_RESETCONTENT, 0, 0);
             this.mItems.length = 0;
             assumeSafeAppend(this.mItems);
@@ -153,16 +178,20 @@ class ListBox : Control {
     }
 
     /// Add an item to ListBox.
-    void addItem(T)(T item) {
+    void addItem(T)(T item)
+    {
         string sItem = item.to!string;
         this.mItems ~= sItem;
         if (this.mIsCreated) this.sendMsg(LB_ADDSTRING, 0, sItem.toUTF16z());
     }
 
     /// Add a range of items to ListBox. (Items of different types)
-    void addRange(T...)(T items) {
-        if (this.mIsCreated) {
-            foreach (item; items) {
+    void addRange(T...)(T items)
+    {
+        if (this.mIsCreated)
+        {
+            foreach (item; items)
+            {
                 auto sitem = item.to!string;
                 this.mItems ~= sitem;
                 this.sendMsg(LB_ADDSTRING, 0, sitem.toUTF16z);
@@ -173,9 +202,12 @@ class ListBox : Control {
     }
 
     /// Add a range of items to ListBox. (Items of similar type)
-    void addRange(T)(T[] items) {
-        if (this.mIsCreated) {
-            foreach (item; items) {
+    void addRange(T)(T[] items)
+    {
+        if (this.mIsCreated)
+        {
+            foreach (item; items)
+            {
                 auto sitem = item.to!string;
                 this.mItems ~= sitem;
                 this.sendMsg(LB_ADDSTRING, 0, sitem.toUTF16z);
@@ -186,12 +218,15 @@ class ListBox : Control {
     }
 
      // Create the handle of CheckBox
-    override void createHandle() {
+    override void createHandle()
+    {
     	this.setLboxStyles();
         this.createHandleInternal(mClassName.ptr);
-        if (this.mHandle) {
+        if (this.mHandle)
+        {
             this.setSubClass(&lbxWndProc);
-            if (this.mItems.length > 0) { // We need to add those items to list box
+            if (this.mItems.length > 0)
+            { // We need to add those items to list box
                 foreach (item; this.mItems) this.sendMsg(LB_ADDSTRING, 0, item.toUTF16z);
                 if (this.mDummyIndex > -1) this.sendMsg(LB_SETCURSEL, this.mDummyIndex, 0);
             }
@@ -217,7 +252,8 @@ class ListBox : Control {
         HBRUSH mBkBrush;
 
         // Setting list box styles as per user's choice.
-        void setLboxStyles() { // Private
+        void setLboxStyles()
+        { // Private
             if (this.mHasSort) this.mStyle |= LBS_SORT;
             if (this.mMultiSel) this.mStyle |= LBS_EXTENDEDSEL | LBS_MULTIPLESEL;
             if (this.mMultiCol) this.mStyle |= LBS_MULTICOLUMN;
@@ -228,9 +264,11 @@ class ListBox : Control {
         }
 
         // Helper function to get the item from listbox.
-        string getItemInternal(long index) in (index >= 0) { // Private
+        string getItemInternal(long index) in (index >= 0)
+        { // Private
             auto tLen = this.sendMsg(LB_GETTEXTLEN, index, 0);
-            if (tLen != LB_ERR) {
+            if (tLen != LB_ERR)
+            {
                 wchar[] buffer = new wchar[](tLen);
                 this.sendMsg(LB_GETTEXT, index, buffer.ptr);
                 return buffer.to!string;
@@ -238,12 +276,14 @@ class ListBox : Control {
             return NULL;
         }
 
-        void clearItemsInternal() { // private
+        void clearItemsInternal()
+        { // private
             this.sendMsg(LB_RESETCONTENT, 0, 0);
             UpdateWindow(this.mHandle);
         }
 
-        void finalize(UINT_PTR scID) { // private
+        void finalize(UINT_PTR scID)
+        { // private
             DeleteObject(this.mBkBrush);
             RemoveWindowSubclass(this.mHandle, &lbxWndProc, scID);
             // this.remSubClass(scID);
@@ -252,11 +292,15 @@ class ListBox : Control {
 } // End of ListBox class
 
 extern(Windows)
-private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
-    try {
+private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                                UINT_PTR scID, DWORD_PTR refData)
+{
+    try
+    {
         ListBox lbx = getControl!ListBox(refData);
        // printWinMsg(message);
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY : lbx.finalize(scID); break;
             case WM_PAINT : lbx.paintHandler(); break;
             case WM_LBUTTONDOWN : lbx.mouseDownHandler(message, wParam, lParam); break;
@@ -270,20 +314,21 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_MOUSELEAVE : lbx.mouseLeaveHandler(); break;
 
             case CM_COLOR_EDIT :
-                if (lbx.mDrawFlag) {
+                if (lbx.mDrawFlag)
+                {
                     auto hdc = cast(HDC) wParam;
                     SetBkMode(hdc, TRANSPARENT);
                     if (lbx.mDrawFlag & 1) SetTextColor(hdc, lbx.mForeColor.cref);
                     lbx.mBkBrush = CreateSolidBrush(lbx.mBackColor.cref);
                     //print("cm ctl color on lbx");
                     return cast(LRESULT) lbx.mBkBrush;
-
                 }
             break;
 
             case CM_CTLCOMMAND :
                 auto nCode = HIWORD(wParam);
-                switch (nCode) {
+                switch (nCode)
+                {
                     case LBN_DBLCLK :
                         if (lbx.onDoubleClick) lbx.onDoubleClick(lbx, new EventArgs());
                     break;
@@ -293,11 +338,14 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     break;
 
                     case LBN_SELCHANGE :
-                        if (!lbx.mMultiSel) {
+                        if (!lbx.mMultiSel)
+                        {
                             auto selIndx = lbx.sendMsg(LB_GETCURSEL, 0, 0);
-                            if (selIndx != LB_ERR) {
+                            if (selIndx != LB_ERR)
+                            {
                                 lbx.mSelIndex = cast(int) selIndx;
-                                if (lbx.onSelectionChanged) {
+                                if (lbx.onSelectionChanged)
+                                {
                                     auto ea = new EventArgs();
                                     lbx.onSelectionChanged(lbx, ea);
                                 }

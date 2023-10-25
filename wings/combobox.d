@@ -15,9 +15,10 @@ private int editSubClsID = 4000;
 /**
  * ComboBox : Control
  */
-class ComboBox : Control {
-
-    this(Window parent, int x, int y, int w, int h) {
+class ComboBox : Control
+{
+    this(Window parent, int x, int y, int w, int h, bool autoc = false)
+    {
         mixin(repeatingCode);
         mControlType = ControlType.comboBox;
         mStyle = WS_CHILD | WS_VISIBLE;
@@ -30,23 +31,26 @@ class ComboBox : Control {
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++cmbNumber;
+        if (autoc) this.createHandle();
     }
 
-    this(Window parent) { this(parent, 20, 20, 150, 30); }
-    this (Window parent, int x, int y) { this(parent, x, y, 150, 30); }
+    this(Window parent, bool autoc = false) { this(parent, 20, 20, 150, 30, autoc); }
+    this (Window parent, int x, int y, bool autoc = false) { this(parent, x, y, 150, 30, autoc); }
 
     /// Returns the items collection of ComboBox
 	final string[] items() {return this.mItems;}
 
 
     /// Get the selected index of ComboBox.
-	final int selectedIndex() {
+	final int selectedIndex()
+    {
         if (this.mIsCreated) this.mSelIndex = cast(int) this.sendMsg(CB_GETCURSEL, 0, 0);
         return this.mSelIndex;
     }
 
     /// Set the selected index of ComboBox.
-	final void selectedIndex(int value) {
+	final void selectedIndex(int value)
+    {
         this.mSelIndex = value;
         if (this.mIsCreated) {
             this.sendMsg(CB_SETCURSEL, value, 0);
@@ -54,7 +58,8 @@ class ComboBox : Control {
 	}
 
     /// Get the selected item from ComboBox.
-    final string selectedItem() {
+    final string selectedItem()
+    {
         string result;
         if (this.mIsCreated) {
             this.mSelIndex = cast(int) this.sendMsg(CB_GETCURSEL, 0, 0);
@@ -64,11 +69,13 @@ class ComboBox : Control {
     }
 
     /// Set the drop down style of ComboBox.
-    final void dropDownStyle(DropDownStyle value) {
+    final void dropDownStyle(DropDownStyle value) // Two values - textCombo, labelCombo
+    {
         /* There is no other way to change the dropdown style of an existing combo box.
          * We need to delete the old combo and create a new one.
          * Then make it look like the old combo. So this function will do that */
-        if (this.mIsCreated) {
+        if (this.mIsCreated)
+        {
             if (this.mCmbStyle == value) return;
             this.mSelIndex = cast(int) this.sendMsg(CB_GETCURSEL, 0, 0);
             this.mCmbStyle = value;
@@ -82,11 +89,13 @@ class ComboBox : Control {
     }
 
     /// Get the drop down style of ComboBox.
-    final DropDownStyle dropDownStyle() {return this.mCmbStyle;}
+    final DropDownStyle dropDownStyle() {return this.mCmbStyle;} // Two values - textCombo, labelCombo
 
     /// Add an item into ComboBox's items collection.
-    void addItem(T)(T value) {
-        if (this.mIsCreated) {
+    void addItem(T)(T value)
+    {
+        if (this.mIsCreated)
+        {
             auto sitem = value.makeString();
             this.mItems ~= sitem;
             auto witem = sitem.toUTF16z;
@@ -97,9 +106,12 @@ class ComboBox : Control {
     }
 
     /// Add an array to ComboBox's items collection.
-    void addRange(T)( T[] newItems) {
-        if (this.mIsCreated) {
-            foreach (item; newItems) {
+    void addRange(T)( T[] newItems)
+    {
+        if (this.mIsCreated)
+        {
+            foreach (item; newItems)
+            {
                 auto sitem = item.makeString();
                 auto witem = toUTF16z(sitem);
                 this.mItems ~= sitem;
@@ -110,9 +122,12 @@ class ComboBox : Control {
         }
     }
 
-    void addRange(T...)( T newItems) {
-        if (this.mIsCreated) {
-            foreach (item; newItems) {
+    void addRange(T...)( T newItems)
+    {
+        if (this.mIsCreated)
+        {
+            foreach (item; newItems)
+            {
                 auto sitem = item.makeString();
                 auto witem = sitem.toUTF16z;
                 this.mItems ~= sitem;
@@ -124,12 +139,15 @@ class ComboBox : Control {
     }
 
     /// Remove the given item from ComboBox's items collection.
-    void removeItem(T)(T item) {
+    void removeItem(T)(T item)
+    {
         zstring cmbItem = item.toUTF16z;
         string myItem = item.makeString();
-        if (this.mItems.length > 0) {
+        if (this.mItems.length > 0)
+        {
             this.mItems = this.mItems.remove!(a => a == myItem);
-            if (this.mIsCreated) { // Remove item from combo also.
+            if (this.mIsCreated)
+            { // Remove item from combo also.
                 auto iIndex = cast(int) this.sendMsg(CB_FINDSTRING, -1, cmbItem);
                 if (iIndex > -1) this.sendMsg(CB_DELETESTRING, iIndex, 0);
             }
@@ -137,16 +155,20 @@ class ComboBox : Control {
     }
 
     /// Remove an item at given index from ComboBox's items collection.
-    final void removeItem(int index) {
-        if (this.mItems.length > 0) {
+    final void removeItem(int index)
+    {
+        if (this.mItems.length > 0)
+        {
             this.mItems = this.mItems.remove(index);
             if (this.mIsCreated) this.sendMsg(CB_DELETESTRING, index, 0);
         }
     }
 
     /// Delete all items from ComboBox's items collection.
-    final void clearItems() {
-        if (this.mItems.length > 0) {
+    final void clearItems()
+    {
+        if (this.mItems.length > 0)
+        {
             this.mItems.length = 0;
             assumeSafeAppend(this.mItems);
             if (this.mIsCreated) this.sendMsg(CB_DELETESTRING, 0, 0);
@@ -155,8 +177,6 @@ class ComboBox : Control {
 
     /// Get the count of items in ComboBox.
     final int itemCount() {return cast(int) this.mItems.length;}
-
-
 
 
     EventHandler onSelectionChanged;
@@ -171,9 +191,11 @@ class ComboBox : Control {
 
 
     /// Create the handle of ComboBox control.
-    override void createHandle() {
+    override void createHandle()
+    {
         if (!this.mRecreateEnabled) this.ctlId = Control.stCtlId;
-        if (this.mCmbStyle == DropDownStyle.labelCombo) {
+        if (this.mCmbStyle == DropDownStyle.labelCombo)
+        {
             this.mStyle |= CBS_DROPDOWNLIST;
         } else {
             this.mStyle |= CBS_DROPDOWN;
@@ -191,7 +213,8 @@ class ComboBox : Control {
                                         cast(HMENU) this.ctlId,
                                         appData.hInstance,
                                         null);
-        if (this.mHandle) {
+        if (this.mHandle)
+        {
             this.mIsCreated = true;
             this.mOldHwnd = this.mHandle;
             this.setSubClass(&cmbWndProc);
@@ -206,6 +229,7 @@ class ComboBox : Control {
 
 
 	private :
+    // Variables
 		DropDownStyle mCmbStyle;
 		string[] mItems;
 		int mVisItemCount;
@@ -217,10 +241,12 @@ class ComboBox : Control {
 		HWND mOldHwnd;
         static wchar[] mClassName = ['C', 'o', 'm', 'b', 'o', 'B', 'o', 'x', 0];
         //ComboInfo myInfo;
+    // End of private vars
 
 
         // Get and save the internal info of a ComboBox.
-		void getComboInfo() { // Private
+		void getComboInfo()
+        { // Private
 			COMBOBOXINFO cmbInfo;
 			cmbInfo.cbSize = cmbInfo.sizeof;
 			this.sendMsg(CB_GETCOMBOBOXINFO, 0, &cmbInfo);
@@ -233,7 +259,8 @@ class ComboBox : Control {
 		}
 
         // Internal function to insert items to ComboBox.
-        void insertItems() { // Private
+        void insertItems()
+        { // Private
             if (this.mItems.length > 0 ) {
                 foreach (item; this.mItems) {
                     auto witem = toUTF16z(item);
@@ -242,20 +269,19 @@ class ComboBox : Control {
             }
         }
 
-        int isInComboRect(HWND hw) { // Private
+        int isInComboRect(HWND hw)
+        { // Private
             RECT rc;
             GetWindowRect(hw, &rc);
             auto pts = getMousePoints();
             return PtInRect(&rc, pts);
         }
 
-
-        void finalize(UINT_PTR scID) { // Private
+        void finalize(UINT_PTR scID)
+        { // Private
     		DeleteObject(this.mBkBrush);
             // We need to remove the subclassing of the edit control.
            RemoveWindowSubclass(this.mHandle, &cmbWndProc, scID);
-
-            // this.remSubClass(scID);
     	}
 
         //void pCinfo(const ref ComboInfo c) {
@@ -278,11 +304,15 @@ class ComboBox : Control {
 
 
 extern(Windows)
-private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
-    try {
+private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                                UINT_PTR scID, DWORD_PTR refData)
+{
+    try
+    {
         ComboBox cmb = getControl!ComboBox(refData);
         //print("ComboBox Messages", message);
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY : cmb.finalize(scID); break;
             case WM_PAINT: cmb.paintHandler(); break;
             case WM_LBUTTONUP : cmb.mouseUpHandler(message, wParam, lParam); break;
@@ -301,8 +331,10 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 // combo and mouse move from textbox. So here we are checking the mouse is
                 // in combo's rect or not. If it is stil inside, we suppress the mouse leave
                 // and continue receiving the mouse move msgs from text are.
-                if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    if (cmb.isInComboRect(hWnd)) {
+                if (cmb.dropDownStyle == DropDownStyle.textCombo)
+                {
+                    if (cmb.isInComboRect(hWnd))
+                    {
                         return 1;
                     } else {
                         if (cmb.onMouseLeave) cmb.onMouseLeave(cmb, new EventArgs());
@@ -314,7 +346,8 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
             case WM_KEYDOWN :
                 // To get this message here, cmb's drop down style must be labelCombo.
-                if (cmb.onKeyDown) {
+                if (cmb.onKeyDown)
+                {
                     auto kea = new KeyEventArgs(wParam);
                     cmb.onKeyDown(cmb, kea);
                 }
@@ -322,7 +355,8 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
             case WM_KEYUP :
                 // To get this message here, cmb's drop down style must be labelCombo.
-                if (cmb.onKeyUp) {
+                if (cmb.onKeyUp)
+                {
                     auto kea = new KeyEventArgs(wParam);
                     cmb.onKeyUp(cmb, kea);
                 }
@@ -401,30 +435,38 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
     In textCombo mode, we need to check the mouse pointer is inside the combo's rect.
 */
 extern(Windows)
-private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  { // @suppress(dscanner.style.long_line)
-    try {
+private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                                    UINT_PTR scID, DWORD_PTR refData)
+{ // @suppress(dscanner.style.long_line)
+    try
+    {
         ComboBox cmb = getControl!ComboBox(refData);
         //print("ComboBox Messages", message);
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY: RemoveWindowSubclass(hWnd, &cmbEditWndProc, scID); break;
             case WM_KEYDOWN:
-                if (cmb.onTextKeyDown) {
+                if (cmb.onTextKeyDown)
+                {
                     auto kea = new KeyEventArgs(wParam);
                     cmb.onTextKeyDown(cmb, kea);
                 }
             break;
 
             case WM_KEYUP :
-                if (cmb.onTextKeyUp) {
+                if (cmb.onTextKeyUp)
+                {
                     auto kea = new KeyEventArgs(wParam);
                     cmb.onTextKeyUp(cmb, kea);
                 }
             break;
 
             case WM_LBUTTONDOWN :
-                if (cmb.dropDownStyle == DropDownStyle.textCombo) {
+                if (cmb.dropDownStyle == DropDownStyle.textCombo)
+                {
                     cmb.tbMLDownHappened = true;
-                    if (cmb.onTextMouseDown) {
+                    if (cmb.onTextMouseDown)
+                    {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
                        cmb.onTextMouseDown(cmb, mea);
                        return 0;
@@ -433,29 +475,35 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             break;
 
             case WM_LBUTTONUP :
-                if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    if (cmb.onTextMouseUp) {
+                if (cmb.dropDownStyle == DropDownStyle.textCombo)
+                {
+                    if (cmb.onTextMouseUp)
+                    {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
                        cmb.onTextMouseUp(cmb, mea);
                     }
                 }
-                if (cmb.tbMLDownHappened) {
+                if (cmb.tbMLDownHappened)
+                {
                     cmb.tbMLDownHappened = false;
                     sendMsg(cmb.mHandle, CM_LEFTCLICK, 0, 0);
                 }
             break;
 
             case CM_LEFTCLICK :
-                if (cmb.onTextMouseClick) {
+                if (cmb.onTextMouseClick)
+                {
                     auto ea = new EventArgs();
                     cmb.onMouseClick(cmb, ea);
                 }
             break;
 
             case WM_RBUTTONDOWN :
-                if (cmb.dropDownStyle == DropDownStyle.textCombo) {
+                if (cmb.dropDownStyle == DropDownStyle.textCombo)
+                {
                     cmb.tbMRDownHappened = true;
-                    if (cmb.onTextRightDown) {
+                    if (cmb.onTextRightDown)
+                    {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
                        cmb.onTextRightDown(cmb, mea);
                        return 0;
@@ -464,20 +512,24 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             break;
 
             case WM_RBUTTONUP :
-                if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    if (cmb.onTextRightUp) {
+                if (cmb.dropDownStyle == DropDownStyle.textCombo)
+                {
+                    if (cmb.onTextRightUp)
+                    {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
                        cmb.onTextRightUp(cmb, mea);
                     }
                 }
-                if (cmb.tbMRDownHappened) {
+                if (cmb.tbMRDownHappened)
+                {
                     cmb.tbMRDownHappened = false;
                     sendMsg(cmb.mHandle, CM_RIGHTCLICK, 0, 0);
                 }
             break;
 
             case CM_RIGHTCLICK :
-                if (cmb.onTextRightClick) {
+                if (cmb.onTextRightClick)
+                {
                     auto ea = new EventArgs();
                     cmb.onTextRightClick(cmb, ea);
                 }
@@ -486,7 +538,8 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
             case CM_COLOR_EDIT:
                 // Here, we receive color changing message for text box of combo.
                 // NOTE: this is only work for text typing combo box.
-                if (cmb.mDrawFlag) {
+                if (cmb.mDrawFlag)
+                {
                     auto hdc = cast(HDC) wParam;
                     // SetBkMode(hdc, TRANSPARENT);
                     if (cmb.mDrawFlag & 1) SetTextColor(hdc, cmb.mForeColor.cref);

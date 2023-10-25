@@ -22,13 +22,15 @@ private wchar[] mClassName = ['B','u','t','t','o','n', 0];
 
 
 /// Button class.
-class Button : Control {
+class Button : Control
+{
     import wings.gradient;
 
 // Properties
 
     /// Set the forecolor of the button.
-    final override void foreColor(uint value) {
+    final override void foreColor(uint value)
+    {
         this.mForeColor(value);
         if ((this.mDrawFlag & 1) != 1) this.mDrawFlag += 1;
         this.checkRedrawNeeded();
@@ -37,7 +39,8 @@ class Button : Control {
     /// Get the forecolor of the button.
     final override uint foreColor() const {return this.mForeColor.value;}
 
-    final override void backColor(uint value) {
+    final override void backColor(uint value)
+    {
         this.mBackColor(value);
         this.mFDraw.setData(this.mBackColor);
         if ((this.mDrawFlag & 2) != 2) this.mDrawFlag += 2;
@@ -46,14 +49,16 @@ class Button : Control {
 
     final override uint backColor() const {return this.mBackColor.value;}
 
-    final void setGradientColors(uint clr1, uint clr2) {
+    final void setGradientColors(uint clr1, uint clr2)
+    {
         this.mGDraw.setData(clr1, clr2);
         if ((this.mDrawFlag & 4) != 4) this.mDrawFlag += 4;
         this.checkRedrawNeeded();
     }
 
     /// Values between 0..1
-    final void focusFactor(float value) { // Deprecated ?
+    final void focusFactor(float value)
+    { // Deprecated ?
         if (this.mFDraw.isActive) {
             COLORREF crf = this.mBackColor.mouseFocusColor(value);
             this.mFDraw.hotBrush = CreateSolidBrush(crf);
@@ -61,7 +66,8 @@ class Button : Control {
         }
     }
 
-    final void frameFactor(float value) { // Depricated ?
+    final void frameFactor(float value)
+    { // Depricated ?
         if (this.mFDraw.isActive) {
             COLORREF crf = this.mBackColor.makeFrameColor(value);
             this.mFDraw.defPen = CreatePen(PS_SOLID, 1, crf);
@@ -71,7 +77,8 @@ class Button : Control {
 
     /// Set this property to control the color change when mouse is over the button.
     /// For flat color, default is 15 & for gradient, default is 20.
-    final void hotColorFactor(int value) {
+    final void hotColorFactor(int value)
+    {
         if ((this.mDrawFlag > 1) && (this.mDrawFlag < 4)) {
             // A flat color bkg
             this.mFDraw.iAdj = value;
@@ -94,7 +101,8 @@ class Button : Control {
 
 
 // Ctors
-    this(Window parent, string txt, int x, int y, int w, int h, EventHandler fnPtr = null) {
+    this(Window parent, string txt, int x, int y, int w, int h)
+    {
         this.mName = format("%s_%d", "Button", btnNumber);
         mixin(repeatingCode);
         mControlType = ControlType.button;
@@ -106,35 +114,46 @@ class Button : Control {
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++btnNumber;
-        if (fnPtr) this.onMouseClick = fnPtr;
+
     }
 
-    this(Window parent) {
+    this(Window parent, bool autoc = false)
+    {
         string btxt = format("%s_%d", "Button", btnNumber);
         this(parent, btxt, 20, 20, 120, 35);
+        if (autoc) this.createHandle();
     }
 
-    this(Window parent, string txt) {
+    this(Window parent, string txt, bool autoc = false)
+    {
         this(parent, txt, 20, 20, 120, 35);
+        if (autoc) this.createHandle();
     }
 
-    this(Window parent, string txt, int x, int y) {
+    this(Window parent, string txt, int x, int y, bool autoc = false, EventHandler clickFn = null)
+    {
         this(parent, txt, x, y, 120, 35);
+        if (clickFn) this.onMouseClick = clickFn;
+        if (autoc) this.createHandle();
     }
 
-    this(Window parent, int x, int y, int w, int h) {
+    this(Window parent, int x, int y, int w, int h, bool autoc = false, EventHandler clickFn = null)
+    {
         string btxt = format("%s_%d", "Button", btnNumber);
         this(parent, btxt, x, y, w, h);
-
+        if (clickFn) this.onMouseClick = clickFn;
+        if (autoc) this.createHandle();
     }
 // End of Ctors
 
 
     //------------------------------------------------------------------------
     /// Create the button handle
-    override void createHandle() {
+    override void createHandle()
+    {
         this.createHandleInternal(mClassName.ptr);
-        if (this.mHandle) {
+        if (this.mHandle)
+        {
             this.setSubClass(&btnWndProc);
         }
     }
@@ -153,7 +172,8 @@ class Button : Control {
 
 
          // Drawing a button's text at pre paint stage.
-        LRESULT drawTextColor(NMCUSTOMDRAW* ncd) { // Private
+        LRESULT drawTextColor(NMCUSTOMDRAW* ncd)
+        { // Private
             SetTextColor(ncd.hdc, this.mForeColor.cref);
             SetBkMode(ncd.hdc, 1);
             DrawText(ncd.hdc, this.mText.toUTF16z, -1, &ncd.rc, this.mTxtFlag );
@@ -161,12 +181,15 @@ class Button : Control {
         }
 
         // Drawing the flat color bkg
-        LRESULT drawBackColor(NMCUSTOMDRAW* ncd) {
-            switch (ncd.dwDrawStage) {
+        LRESULT drawBackColor(NMCUSTOMDRAW* ncd)
+        {
+            switch (ncd.dwDrawStage)
+            {
                 case CDDS_PREERASE : // This happens when the paint starts
                     return CDRF_NOTIFYPOSTERASE; break; // Telling the program to inform us after erase
                 case CDDS_PREPAINT: // We get the notification after erase happened.
-                    switch (ncd.uItemState) { // We check the control state and draw
+                    switch (ncd.uItemState)
+                    { // We check the control state and draw
                         case mMouseClickFlag:
                             this.paintFlatBtnRoundRect(ncd.hdc, ncd.rc, mFDraw.defBrush, mFDraw.hotPen);
                         break;
@@ -185,7 +208,8 @@ class Button : Control {
         }
 
         // Drawing the gradient color bkg
-        LRESULT drawGradientBackColor(NMCUSTOMDRAW * ncd) {
+        LRESULT drawGradientBackColor(NMCUSTOMDRAW * ncd)
+        {
             switch (ncd.dwDrawStage) {
                 case CDDS_PREERASE: // This happens when the paint starts
                     return CDRF_NOTIFYPOSTERASE; // Telling the program to inform us after erase
@@ -211,7 +235,8 @@ class Button : Control {
         }
 
         // Helper function for drawing flat color bkg
-        void paintFlatBtnRoundRect(HDC dc, RECT rc, HBRUSH hbr, HPEN pen ) {
+        void paintFlatBtnRoundRect(HDC dc, RECT rc, HBRUSH hbr, HPEN pen )
+        {
             SelectObject(dc, pen);
             SelectObject(dc, hbr);
             RoundRect(dc, rc.left, rc.top, rc.right, rc.bottom, roundCurve, roundCurve);
@@ -219,7 +244,8 @@ class Button : Control {
         }
 
 
-        void paintRoundGradient(HDC dc, RECT rc, GradColor gc, HPEN pen) {
+        void paintRoundGradient(HDC dc, RECT rc, GradColor gc, HPEN pen)
+        {
             auto gradBrush = createGradientBrush(dc, rc, gc.c1, gc.c2);
             scope(exit) DeleteObject(gradBrush);
             SelectObject(dc, pen);
@@ -228,11 +254,14 @@ class Button : Control {
             FillPath(dc);
         }
 
-        LRESULT wmNotifyHandler(LPARAM lpm) {
+        LRESULT wmNotifyHandler(LPARAM lpm)
+        {
             LRESULT ret = CDRF_DODEFAULT;
-            if (this.mDrawFlag) {
+            if (this.mDrawFlag)
+            {
                 NMCUSTOMDRAW* nmcd = cast(NMCUSTOMDRAW*)lpm;
-                switch (this.mDrawFlag) {
+                switch (this.mDrawFlag)
+                {
                         case 1: ret = this.drawTextColor(nmcd); break; // ForeColor only
                         case 2: ret = this.drawBackColor(nmcd); break; // BackColor only
                         case 3://-----------------------------------------Back & Fore colors
@@ -250,7 +279,8 @@ class Button : Control {
             return ret;
         }
 
-        void finalize(UINT_PTR scID) {
+        void finalize(UINT_PTR scID)
+        {
             // this.remSubClass(scID);
             // writeln("Button destro");
             RemoveWindowSubclass(this.mHandle, &btnWndProc, scID);
@@ -260,7 +290,8 @@ class Button : Control {
 
 }// End Button Class---------------------------------------------------------
 
-struct FlatDraw {
+struct FlatDraw
+{
     HBRUSH defBrush;
 	HBRUSH hotBrush;
     HBRUSH dFrmBrush;
@@ -270,17 +301,19 @@ struct FlatDraw {
     bool isActive;
     int iAdj = 15; // This value is to add/subtract to/from RGB values
 
-    ~this() {
+    ~this()
+    {
         if (this.defBrush) DeleteObject(this.defBrush);
 	    if (this.hotBrush) DeleteObject(this.hotBrush);
 	    if (this.defPen) DeleteObject(this.defPen);
 	    if (this.hotPen) DeleteObject(this.hotPen);
 	    if (this.dFrmBrush) DeleteObject(this.dFrmBrush);
 	    if (this.hFrmBrush) DeleteObject(this.hFrmBrush);
-        print("FlatDraw resources freed");
+        // print("FlatDraw resources freed");
     }
 
-    void setData(Color c) {
+    void setData(Color c)
+    {
         /* When a button's back color prop changes, this function will set the oens & colors.*/
         auto hotRc = c.changeShadeColorEx(this.iAdj);
         auto frmRc = c.changeShadeColorEx(10);
@@ -297,10 +330,12 @@ extern(Windows)
 private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try {
+    try
+    {
         Button btn = getControl!Button(refData);
         //btn.log(message, "Button message ");
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY : btn.finalize(scID); break;
             case WM_PAINT : btn.paintHandler(); break;
             case WM_SETFOCUS :

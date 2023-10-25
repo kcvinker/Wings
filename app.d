@@ -1,24 +1,24 @@
 #!rdmd
 import std.stdio;
-import wings ;
+import wings;
 //import core.sys.windows.windows;
 import std.stdio : log = writeln;
-import std.format ;
-import std.conv ;
-import std.string ;
+import std.format;
+import std.conv;
+import std.string;
 import wings.imagelist;
 
 //dmd -i -run app.d
 
-Window frm ;
-Button btn, btnor, b3 ;
-CheckBox cb ;
-ComboBox cmb ;
+Window frm;
+Button btn, btnor, b3;
+CheckBox cb;
+ComboBox cmb;
 DateTimePicker dtp;
 Calendar cal;
 Label lbl;
 //ListBox lbx;
-ListView lv ;
+ListView lv;
 NumberPicker np;
 RadioButton rb, rb2;
 TextBox tb;
@@ -32,12 +32,12 @@ MenuBar mb;
 void main() {
 	// auto sw = StopWatch(AutoStart.no);
     // sw.start();
-	frm = new Window("Wing window in D Lang", 850, 400) ;
-	frm.onMouseDown = (s, e) => frm.printPoint(e);
+	frm = new Window("Wing window in D Lang", 850, 400);
+	frm.enablePrintPoint;
 	// frm.onMouseClick = (c,e) => pb.stopMarquee();
 	// frm.backColor = 0xAABBCC;
 	//frm.style = WindowStyle.sizable;
-	frm.createHandle() ;
+	frm.createHandle();
 
 	mb = new MenuBar(frm);
 	mb.addMenus("File", "Edit", "Format");
@@ -50,18 +50,18 @@ void main() {
 	mnuExit.onClick = (c, e) => print(c.text);
 	mb.create();
 
-	//  cmb = new ComboBox(frm, 20, 65, 150, 30);
-	//  cmb.addRange("Window", "Button", "Calendar", "CheckBox", "DateTimePicker", "GroupBox", 4500);
+	cmb = new ComboBox(frm, 20, 65, 150, 30);
+	cmb.addRange("Window", "Button", "Calendar", "CheckBox", "DateTimePicker", "GroupBox", 4500);
 
-	//  //cmb.dropDownStyle = DropDownStyle.;
-	//  cmb.backColor = 0xff80bf;
-	 //cmb.onMouseMove = (c, e) => print("mouse moved");
-    //  cmb.create;
+	//cmb.dropDownStyle = DropDownStyle.;
+	cmb.backColor = 0xff80bf;
+	// cmb.onMouseMove = (c, e) => print("mouse moved");
+//  cmb.create;
 
 
 	tb = new TextBox(frm, 20, 195);
 	tb.foreColor = 0xff0000;
-	tb.createHandle();
+	// tb.createHandle();
 
 	btn = new Button(frm, "Gradient" );
 	btn.width = 120;
@@ -90,11 +90,12 @@ void main() {
     //tk.vertical = true;
 	// tk.backColor = 0xff80bf;
 	tk.customDraw = true;
-    tk.createHandle();
+    // tk.createHandle();
 
-    tv = new TreeView(frm, 185, 20, 150, 100);
+    tv = new TreeView(frm, 185, 20, 150, 100, true);
 	tv.backColor = 0xddddbb;
-    tv.createHandle();
+    // tv.createHandle();
+
 	auto n1 = new TreeNode("Root One");
 	auto n2 = new TreeNode("Root Two");
 	auto n3 = new TreeNode("Root Three");
@@ -137,20 +138,18 @@ void main() {
     np3.backColor = 0xf9c74f;
     // np3.create;
 
-	lv = new ListView(frm, 350, 135, 300, 180 );
-	lv.addColumns(["Name", "Age", "Salary"], [100, 50, 100]);
-	lv.headerHeight = 30;
-	lv.createHandle();
-	lv.addRow("Vinod", "40", "25000");
-	lv.addRow("Vinayak", "33", "10000");
-	lv.addRow("Murukan", "42", "40000");
-	// lv.setContextMenu("Add Work", "Give Work", "Finish Work");
+	lv = new ListView(frm, 350, 135, 300, 180, true,
+						 ["Windows", "Linux", "MacOS"], [80, 120, 100] );
+
+	lv.addRow("XP", "Mountain Lion", "RedHat");
+    lv.addRow("Vista", "Mavericks", "Mint");
+    lv.addRow("Win7", "Mavericks", "Ubuntu");
+    lv.addRow("Win8", "Catalina", "Debian");
+    lv.addRow("Win10", " Big Sur", "Kali");
+
 	auto cm = new ContextMenu();
 	cm.addMenus("Add Work", "Give Work", "Finish Work");
 	lv.contextMenu = cm;
-
-
-
 
 	frm.show();
 
@@ -162,19 +161,19 @@ void onb3Click(Control c, EventArgs e) {tk.backColor = 0xfb5607;}
 
 void onClick(Control s, EventArgs e) 	 // @suppress(dscanner.style.undocumented_declaration)
 {
-	//frm.setGradientBackColor( 0x551ccb, 0xffDD60) ;
-	//frm.backColor = 0xff0000 ;
+	//frm.setGradientBackColor( 0x551ccb, 0xffDD60);
+	//frm.backColor = 0xff0000;
 	// import std.digest: toHexString;
-	// RgbColor rr = RgbColor(0xff0000) ;
-	// // rr.printRgb() ;
-	// rr.lighter(0.65) ;
-	// rr.printRgb() ;
-	// frm.backColor = rr.getUint ;
+	// RgbColor rr = RgbColor(0xff0000);
+	// // rr.printRgb();
+	// rr.lighter(0.65);
+	// rr.printRgb();
+	// frm.backColor = rr.getUint;
 
 }
 
 void frmLoad(Control s, EventArgs e) 	{ // @suppress(dscanner.style.undocumented_declaration)
-	log("form loaded") ;
+	log("form loaded");
 }
 
 void frmKeyDown(Control s, KeyEventArgs e) {

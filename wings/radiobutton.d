@@ -12,7 +12,7 @@ private wchar[] mClassName = ['B','u','t','t','o','n', 0];
  */
 class RadioButton : Control
 {
-	this (Window parent, string txt, int x, int y, int w, int h)
+	this (Window parent, string txt, int x, int y, int w, int h, bool autoc = false, EventHandler checkFn = null)
     {
         mixin(repeatingCode);
         mAutoSize = true;
@@ -27,14 +27,21 @@ class RadioButton : Control
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++rbNumber;
+        if (checkFn) this.onMouseClick = checkFn;
+        if (autoc) this.createHandle();
     }
 
-    this (Window parent, string txt, int x, int y) {this(parent, txt, x, y, 0, 0);}
+    this (Window parent, string txt, int x, int y, bool autoc = false, EventHandler checkFn = null)
+    {
+        this(parent, txt, x, y, 0, 0, autoc, checkFn);
+    }
 
-    void create() {
+    void create()
+    {
     	this.setRbStyle();
     	this.createHandleInternal(mClassName.ptr);
-    	if (this.mHandle) {
+    	if (this.mHandle)
+        {
             this.setSubClass(&rbWndProc);
             this.setRbSize();
             if (this.mChecked) this.sendMsg(BM_SETCHECK, 0x0001, 0);
@@ -52,17 +59,18 @@ class RadioButton : Control
 	HBRUSH mBkBrush;
     bool mRightAlign;
 
-    void setRbStyle() {
-    	if (this.mRightAlign) {
+    void setRbStyle()
+    {
+    	if (this.mRightAlign)
+        {
 			this.mStyle |= BS_RIGHTBUTTON;
 			this.mTxtStyle |= DT_RIGHT;
 		}
 		if (this.mChkOnClk) this. mStyle ^= BS_AUTORADIOBUTTON;
-
-
     }
 
-    void setRbSize() { // Private
+    void setRbSize() // Private
+    {
         // We need to find the width & hight to provide the auto size feature.
         SIZE ss;
         this.sendMsg(BCM_GETIDEALSIZE, 0, &ss);
@@ -71,7 +79,8 @@ class RadioButton : Control
         MoveWindow(this.mHandle, this.mXpos, this.mYpos, ss.cx, ss.cy, true);
     }
 
-    void finalize(UINT_PTR subid) { // private
+    void finalize(UINT_PTR subid) // private
+    {
         DeleteObject(this.mBkBrush);
         RemoveWindowSubclass(this.mHandle, &rbWndProc, subid);
     }
@@ -80,11 +89,14 @@ class RadioButton : Control
 
 
 extern(Windows)
-private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
-
-    try {
+private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                                UINT_PTR scID, DWORD_PTR refData)
+{
+    try
+    {
         RadioButton rb = getControl!RadioButton(refData);
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY : rb.finalize(scID); break;
             case CM_COLOR_STATIC :
             	auto hdc = cast(HDC) wParam;
@@ -93,7 +105,8 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             break;
 
             case CM_CTLCOMMAND :
-            	if (HIWORD(wParam) == 0) {
+            	if (HIWORD(wParam) == 0)
+                {
             		rb.mChecked = cast(bool) rb.sendMsg(BM_GETCHECK, 0, 0);
             		if (rb.onStateChanged) rb.onStateChanged(rb, new EventArgs());
             	}
@@ -103,7 +116,8 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
             case CM_NOTIFY:
                 auto nmcd = getNmcdPtr(lParam);
-                switch (nmcd.dwDrawStage) {
+                switch (nmcd.dwDrawStage)
+                {
                     case CDDS_PREERASE:
                         return CDRF_NOTIFYPOSTERASE;
                     break;

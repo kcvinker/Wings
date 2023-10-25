@@ -85,6 +85,8 @@ class Control {
                 SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOSIZE);
             }
         }
+		
+		
 
         int width() {return this.mWidth;}
         int height() {return this.mHeight;}
@@ -119,6 +121,8 @@ class Control {
         // /// Set the control type of a control
         // final void controlType(ControlType value) {this.mControlType = value;}
          mixin finalProperty!("controlType", this.mControlType);
+		 
+		 final void focus() {SetFocus(this.mHandle);}
 
         /// Returns the font object
         Font font() {return this.mFont;}
@@ -367,6 +371,21 @@ class Control {
             GetClientRect(this.mHandle, &this.mRect);
             MapWindowPoints(this.mHandle, this.mParent.mHandle, cast(LPPOINT)&this.mRect, 2);
         }
+		
+		void calculateAutoSize() { // private
+            //auto wtxt = this.mText.toUTF16z;
+            auto hdc = GetDC(this.mHandle);
+            SIZE ss;
+            SelectObject(hdc, this.font.handle);
+            GetTextExtentPoint32(hdc, this.mText.toUTF16z, cast(int) this.mText.length, &ss );
+            ReleaseDC(this.mHandle, hdc);
+            this.mWidth = ss.cx + 3;
+            this.mHeight = ss.cy;
+            SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOMOVE);
+            InvalidateRect(this.mHandle, null, false);
+            this.getRightAndBottom();
+        }
+
 
         // Common WndProc Message Handlers.=================================
             LRESULT paintHandler() {

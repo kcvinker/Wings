@@ -15,8 +15,10 @@ DWORD npStyle = WS_VISIBLE | WS_CHILD | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUT
 DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
 DWORD swp_flag = SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER;
 
-class NumberPicker : Control {
-    this(Window parent, int x, int y, int w, int h) {
+class NumberPicker : Control
+{
+    this(Window parent, int x, int y, int w, int h, bool autoc = false, EventHandler evntFn = null)
+    {
         if (!isNpCreated) {
             isNpCreated = true;
             appData.iccEx.dwICC = ICC_UPDOWN_CLASS;
@@ -42,17 +44,23 @@ class NumberPicker : Control {
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++npNumber;
-
+        if (evntFn != null) this.onValueChanged = evntFn;
+        if (autoc) this.createHandle();
     }
 
     this(Window parent) {this(parent, 10, 10, 100, 27);}
-    this(Window parent, int x, int y) {this(parent, x, y, 70, 27);}
+    this(Window parent, int x, int y,bool autoc = false, EventHandler evntFn = null )
+    {
+        this(parent, x, y, 70, 27, autoc, evntFn);
+    }
 
-    override void createHandle() {
+    override void createHandle()
+    {
     	this.adjustNpStyles();
         this.createUpdown();
         this.createBuddy();
-        if (this.mHandle && this.mBuddyHandle) {
+        if (this.mHandle && this.mBuddyHandle)
+        {
 
             auto oldBuddy = cast(HWND)this.sendMsg(UDM_SETBUDDY, this.mBuddyHandle, 0); // set the edit as updown's buddy.
             this.sendMsg(UDM_SETRANGE32, cast(WPARAM) this.mMinRange, cast(LPARAM) this.mMaxRange);
@@ -78,7 +86,8 @@ class NumberPicker : Control {
         }
     }
 
-    void test_tb_rect() {
+    void test_tb_rect()
+    {
         RECT rc;
         SendMessage(this.mBuddyHandle, EM_GETRECT, 0, cast(LPARAM) &rc);
         rc.top = 6;
@@ -87,97 +96,119 @@ class NumberPicker : Control {
 
     //region properties
 
-        final void minRange(double value) {
+        final void minRange(double value)
+        {
             this.mMinRange = value;
             if (this.mValue < value) this.mValue = value;
-            if (this.mIsCreated) {
+            if (this.mIsCreated)
+            {
                 this.sendMsg(UDM_SETRANGE32, this.mMinRange, this.mMaxRange);
             }
         }
         final double minRange() {return this.mMinRange;}
 
-        final void maxRange(double value) {
+        final void maxRange(double value)
+        {
             this.mMaxRange = value;
-            if (this.mIsCreated) {
+            if (this.mIsCreated)
+            {
                 this.sendMsg(UDM_SETRANGE32, this.mMinRange, this.mMaxRange);
             }
         }
         final double maxRange() {return this.mMaxRange;}
 
         final bool hideSelection() {return this.mHideSel;}
-        final void hideSelection(bool value) {
+        final void hideSelection(bool value)
+        {
             this.mHideSel = value;
-            if (this.mIsCreated) {
+            if (this.mIsCreated)
+            {
                 SendMessage(this.mBuddyHandle, EM_SETSEL, cast(WPARAM) -1, 0 );
             }
         }
 
         final bool buttonOnLeft() {return this.mBtnLeft;}
-        final void buttonOnLeft(bool value) {
+        final void buttonOnLeft(bool value)
+        {
             this.mBtnLeft = value;
-            if (this.mIsCreated) {
+            if (this.mIsCreated)
+            {
                 // TODO - change window style using SetWindowLong function.
             }
 
         }
 
         final Alignment textAlign() {return this.mTxtPos;}
-        final void textAlign(Alignment value) {
+        final void textAlign(Alignment value)
+        {
             this.mTxtPos = value;
-            if (this.mIsCreated) {
+            if (this.mIsCreated)
+            {
                 // TODO - change window style using SetWindowLong function.
             }
 
         }
 
         final bool hasSeperator() {return this.mHasSep;}
-        final void hasSeperator(bool value) {
+        final void hasSeperator(bool value)
+        {
             this.mHasSep = value;
-            if (this.mIsCreated) {
+            if (this.mIsCreated)
+            {
                 // TODO - change window style using SetWindowLong function.
             }
         }
 
         final bool rotateValue() {return this.mAutoRotate;}
-        final void rotateValue(bool value) {
+        final void rotateValue(bool value)
+        {
             this.mAutoRotate = value;
-            if (this.mIsCreated) {
+            if (this.mIsCreated)
+            {
                 // TODO - change window style using SetWindowLong function.
             }
         }
 
         final double value() {return this.mValue;}
-        final void value(double value) {
+        final void value(double value)
+        {
             this.mValue = value;
             if (this.mIsCreated) this.displayValue();
         }
 
         final double step() {return this.mStep;}
-        final void step(double value) {
+        final void step(double value)
+        {
             this.mStep = value;
-            if (this.mIsCreated) {
+            if (this.mIsCreated)
+            {
                 // TODO - change window style using SetWindowLong function.
             }
         }
 
         final string formatString() {return this.mFmtStr;}
-        final void formatString(string value) {
+        final void formatString(string value)
+        {
             this.mFmtStr = value;
-            if (this.mIsCreated) {
+            if (this.mIsCreated)
+            {
                 // TODO - change window style using SetWindowLong function.
             }
         }
 
         final int decimalPrecision() {return this.mDeciPrec;}
-        final void decimalPrecision(int value) {
+        final void decimalPrecision(int value)
+        {
             this.mDeciPrec = value;
-            if (value == 0) {
+            if (value == 0)
+            {
                 this.mFmtStr = "%f";
             } else {
                 this.mFmtStr = format("%%0%df", value);
             }
 
-            if (this.mIsCreated) {
+            if (this.mIsCreated)
+            {
                 // TODO - change window style using SetWindowLong function.
             }
         }
@@ -187,17 +218,20 @@ class NumberPicker : Control {
         /+  Since, we are handling the mouse leave event specially,
             We need to use these three event handler props individually.
             We can't use parent's methods for these. +/
-        final void onMouseEnter(EventHandler value) {
+        final void onMouseEnter(EventHandler value)
+        {
             this.mOnMouseEnter = value;
             this.mTrackMouseLeave = true;
         }
 
-        final void onMouseLeave(EventHandler value) {
+        final void onMouseLeave(EventHandler value)
+        {
             this.mOnMouseLeave = value;
             this.mTrackMouseLeave = true;
         }
 
-        final void onMouseMove(MouseEventHandler value) {
+        final void onMouseMove(MouseEventHandler value)
+        {
             this.mOnMouseMove = value;
             this.mTrackMouseLeave = true;
         }
@@ -250,8 +284,10 @@ class NumberPicker : Control {
     // endregion private members
 
     // region private functions
-        void adjustNpStyles() { // Private
-            if (this.mBtnLeft) {
+        void adjustNpStyles() // Private
+        {
+            if (this.mBtnLeft)
+            {
                 this.mStyle ^= UDS_ALIGNRIGHT;
                 this.mStyle |= UDS_ALIGNLEFT;
                 this.mTopEdgeFlag = BF_TOP;
@@ -260,7 +296,8 @@ class NumberPicker : Control {
             }
             //if (!this.mHasSep) this.mStyle |= UDS_NOTHOUSANDS;
 
-            switch (this.mTxtPos) {
+            switch (this.mTxtPos)
+            {
                 case Alignment.left : this.mBuddyStyle |= ES_LEFT; break;
                 case Alignment.center : this.mBuddyStyle |= ES_CENTER; break;
                 case Alignment.right : this.mBuddyStyle |= ES_RIGHT; break;
@@ -268,7 +305,8 @@ class NumberPicker : Control {
             }
         }
 
-        void createUpdown() { // Private
+        void createUpdown()  // Private
+        {
             // Creating the updown control only.
             this.mCtlId = Control.stCtlId;
             this.mMyRect = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
@@ -281,7 +319,8 @@ class NumberPicker : Control {
                                             cast(HMENU) this.mCtlId,
                                             appData.hInstance,
                                             null);
-            if (this.mHandle) {
+            if (this.mHandle)
+            {
                 ++Control.stCtlId; // Increasing protected static member for next control iD
                 this.mIsCreated = true;
                 this.setSubClass(&npWndProc);
@@ -289,7 +328,8 @@ class NumberPicker : Control {
             }
         }
 
-        void createBuddy() { // Private
+        void createBuddy()  // Private
+        {
             // Creating buddy edit control
 
             this.mBuddyCid = Control.stCtlId;
@@ -306,7 +346,8 @@ class NumberPicker : Control {
                                                 cast(HMENU) this.mBuddyCid,
                                                 appData.hInstance,
                                                 null);
-            if (this.mBuddyHandle) {
+            if (this.mBuddyHandle)
+            {
                 this.mBuddySubClsID = Control.mSubClassId;
                 SetWindowSubclass(this.mBuddyHandle, &buddyWndProc, UINT_PTR(this.mBuddySubClsID), this.toDwPtr());
                 SendMessageW(this.mBuddyHandle, WM_SETFONT, cast(WPARAM) this.mFont.handle, cast(LPARAM) 1);
@@ -314,9 +355,11 @@ class NumberPicker : Control {
             }
         }
 
-        void resizeBuddy() { // Private
+        void resizeBuddy()  // Private
+        {
             // Place the edit control at proper coordinates
-            if (this.mBtnLeft) {
+            if (this.mBtnLeft)
+            {
                 this.mLineX = this.mTBRect.left;
                 SetWindowPos(this.mBuddyHandle, HWND_TOP,
                                 (this.mXpos + this.mUDRect.right), this.mYpos,
@@ -328,10 +371,12 @@ class NumberPicker : Control {
             }
         }
 
-        void setValueInternal(int delta) { // Private
+        void setValueInternal(int delta)  // Private
+        {
             double newValue = this.mValue + (delta * this.mStep);
             if (this.mAutoRotate) {
-                if (newValue > this.mMaxRange) {
+                if (newValue > this.mMaxRange)
+                {
                     this.mValue = this.mMinRange;
                 } else if (newValue < this.mMinRange) {
                     this.mValue = this.mMaxRange;
@@ -344,9 +389,11 @@ class NumberPicker : Control {
             this.displayValue;
         }
 
-        void displayValue() { // Private
+        void displayValue()  // Private
+        {
             string newStr;
-            if (this.mDeciPrec > 0) {
+            if (this.mDeciPrec > 0)
+            {
                 newStr = format(this.mFmtStr, this.mValue);
             } else {
                 newStr = format("%d", to!int(this.mValue));
@@ -354,7 +401,8 @@ class NumberPicker : Control {
             SetWindowTextW(this.mBuddyHandle, newStr.toUTF16z);
         }
 
-        bool isMouseOnMe() { // Private
+        bool isMouseOnMe()  // Private
+        {
             // If this returns False, mouse_leave event will triggered
             // Since, updown control is a combo of an edit and button controls...
             // we have no better options to control the mouse enter & leave mechanism.
@@ -367,9 +415,12 @@ class NumberPicker : Control {
             return cast(bool) res;
         }
 
-        void npMouseMoveHandler(UINT msg, WPARAM wp, LPARAM lp) { // Private
-            if (this.isMouseEntered) {
-                if (this.mOnMouseMove) {
+        void npMouseMoveHandler(UINT msg, WPARAM wp, LPARAM lp)  // Private
+        {
+            if (this.isMouseEntered)
+            {
+                if (this.mOnMouseMove)
+                {
                     auto mea = new MouseEventArgs(msg, wp, lp);
                     this.mOnMouseMove(this, mea);
                 }
@@ -379,9 +430,8 @@ class NumberPicker : Control {
             }
         }
 
-
-
-        void finalize(UINT_PTR subClsId) { // Private
+        void finalize(UINT_PTR subClsId) // Private
+        {
             if (this.mBkBrush) DeleteObject(this.mBkBrush);
             RemoveWindowSubclass(this.mHandle, &npWndProc, subClsId);
             // this.remSubClass(subClsId );
@@ -396,17 +446,21 @@ class NumberPicker : Control {
 
 
 extern(Windows)
-private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
-    try {
-
+private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                                UINT_PTR scID, DWORD_PTR refData)
+{
+    try
+    {
         NumberPicker np = getControl!NumberPicker(refData);
         //printWinMsg(message);
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY : np.finalize(scID); break;
 
             case CM_NOTIFY :
                 auto nm = cast(NMUPDOWN*) lParam;
-                if (nm.hdr.code == UDN_DELTAPOS) {
+                if (nm.hdr.code == UDN_DELTAPOS)
+                {
                     auto tbstr = np.getControlText(np.mBuddyHandle);
                     np.mValue = parse!double(tbstr);
                     np.setValueInternal(nm.iDelta);
@@ -415,8 +469,10 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             break;
 
             case WM_MOUSELEAVE :
-                if (np.mTrackMouseLeave) {
-                    if (!np.isMouseOnMe()) {
+                if (np.mTrackMouseLeave)
+                {
+                    if (!np.isMouseOnMe())
+                    {
                         np.isMouseEntered = false;
                         if (np.mOnMouseLeave) np.mOnMouseLeave(np, new EventArgs());
                     }
@@ -443,11 +499,15 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 }
 
 extern(Windows)
-private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
-    try {
+private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                                    UINT_PTR scID, DWORD_PTR refData)
+{
+    try
+    {
         NumberPicker np = getControl!NumberPicker(refData);
         //printWinMsg(message);
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &buddyWndProc, scID ); break;
             case WM_SETFOCUS : np.setFocusHandler(); break;
             case WM_KILLFOCUS : np.killFocusHandler(); break;
@@ -494,7 +554,8 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
             case EM_SETSEL : return 1; break; // To eliminate the text selection
             case CM_COLOR_EDIT :
-                if (np.mDrawFlag) {
+                if (np.mDrawFlag)
+                {
                     auto hdc = cast(HDC) wParam;
                     if (np.mDrawFlag & 1) SetTextColor(hdc, np.mForeColor.cref);
                     np.mBkBrush = CreateSolidBrush(np.mBackColor.cref);
@@ -519,8 +580,10 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             //break;
 
             case WM_MOUSELEAVE :
-                if (np.mTrackMouseLeave) {
-                    if (!np.isMouseOnMe()) {
+                if (np.mTrackMouseLeave)
+                {
+                    if (!np.isMouseOnMe())
+                    {
                         np.isMouseEntered = false;
                         if (np.mOnMouseLeave) np.mOnMouseLeave(np, new EventArgs());
                     }
@@ -529,7 +592,8 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
             case CM_CTLCOMMAND :
                 auto nCode = HIWORD(wParam);
-                if (nCode == EN_UPDATE) {
+                if (nCode == EN_UPDATE)
+                {
                     if (np.mHideCaret) HideCaret(hWnd);
                     //if (np.mEditStarted) np.mEditedText = np.getControlText(hWnd);
                 }

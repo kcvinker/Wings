@@ -17,7 +17,8 @@ enum MCS_SHORTDAYSOFWEEK = 0x80;
 enum MCM_SETCURRENTVIEW = MCM_FIRST + 32;
 enum MCN_VIEWCHANGE = MCN_FIRST - 4;
 
-struct NMVIEWCHANGE {
+struct NMVIEWCHANGE
+{
     NMHDR nmhdr;
     DWORD dwOldView;
     DWORD dwNewView;
@@ -25,14 +26,16 @@ struct NMVIEWCHANGE {
 
 private bool isCalanderInit = false;
 
-class Calendar : Control {
+class Calendar : Control
+{
 
 	//final DateTime value() {return this.mValue;}
 	//final void value(DateTime value) {this.mValue = value;}
     mixin finalProperty!("value", this.mValue);
 
     final ViewMode viewMode() {return this.mViewMode; }
-    final void viewMode(ViewMode value) {
+    final void viewMode(ViewMode value)
+    {
         this. mViewMode = value;
         if (this.mIsCreated) this.sendMsg!(int, int)(MCM_SETCURRENTVIEW, 0, this.mViewMode);
     }
@@ -63,7 +66,8 @@ class Calendar : Control {
 
     EventHandler valueChanged, selectionChanged, viewChanged;
 
-	 this(Window parent, int x, int y, int w, int h) {
+	 this(Window parent, int x, int y, int w, int h, bool autoc = false)
+     {
         if (!appData.isDtpInit) {
             appData.isDtpInit = true;
             appData.iccEx.dwICC = ICC_DATE_CLASSES;
@@ -79,16 +83,21 @@ class Calendar : Control {
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++calNumber;
-
-        writefln("mcn first %d, mcn sel changed %d, mcn vew changed %d", MCN_FIRST, MCN_SELCHANGE, MCN_VIEWCHANGE);
+        if (autoc) this.createHandle();
+        // writefln("mcn first %d, mcn sel changed %d, mcn vew changed %d", MCN_FIRST, MCN_SELCHANGE, MCN_VIEWCHANGE);
     }
 
-    this(Window p, int x, int y) { this(p, x, y, 0, 0); }
+    this(Window p, int x, int y, bool autoc = false)
+    {
+        this(p, x, y, 0, 0, autoc);
+    }
 
-    override void createHandle() {
+    override void createHandle()
+    {
     	this.setCalenderStyles();
         this.createHandleInternal(mClassName.ptr);        // Calling base function
-        if (this.mHandle) {
+        if (this.mHandle)
+        {
             this.setSubClass(&calWndProc);
             RECT rct;
             this.sendMsg(MCM_GETMINREQRECT, 0, &rct);
@@ -114,7 +123,8 @@ class Calendar : Control {
     	bool mShortDnames;
     	DWORD styles, exStyles;
 
-    	void setCalenderStyles() {
+    	void setCalenderStyles()
+        {
     		if (this.mShowWeekNum) this.styles |= MCS_WEEKNUMBERS;
     		if (this.mNotdCircle) this.styles |= MCS_NOTODAYCIRCLE;
     		if (this.mNoToday) this.styles  |= MCS_NOTODAY;
@@ -125,10 +135,14 @@ class Calendar : Control {
 
 
 extern(Windows)
-private LRESULT calWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
-    try {
+private LRESULT calWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                UINT_PTR scID, DWORD_PTR refData)
+{
+    try
+    {
         Calendar cal = getControl!Calendar(refData);
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &calWndProc, scID); break;
             case WM_PAINT : cal.paintHandler(); break;
             case WM_LBUTTONDOWN : cal.mouseDownHandler(message, wParam, lParam); break;
@@ -143,8 +157,8 @@ private LRESULT calWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case CM_NOTIFY :
                 auto nm = cast(NMHDR *) lParam;
 
-                switch (nm.code) {
-
+                switch (nm.code)
+                {
                     case MCN_SELECT :
                         auto nms = cast(NMSELCHANGE *) lParam;
                         cal.value = DateTime(nms.stSelStart);

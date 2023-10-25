@@ -11,9 +11,10 @@ private int tbNumber = 1;
 private wchar[] mClassName = ['E', 'd', 'i', 't', 0];
 private DWORD tbStyle = WS_TABSTOP|WS_CLIPCHILDREN|WS_CLIPSIBLINGS|WS_VISIBLE|WS_CHILD| ES_AUTOHSCROLL| ES_LEFT;
 private DWORD tbExStyle = WS_EX_LEFT|WS_EX_LTRREADING|WS_EX_CLIENTEDGE;
-class TextBox : Control {
 
-    this (Window parent, int x, int y, int w, int h)
+class TextBox : Control
+{
+    this (Window parent, int x, int y, int w, int h, bool autoc = false)
     {
         mixin(repeatingCode);
         this.mControlType = ControlType.textBox;
@@ -28,23 +29,29 @@ class TextBox : Control {
         ++Control.stCtlId;
         ++tbNumber;
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
+        if (autoc) this.createHandle();
     }
 
-    this (Window parent, int x, int y) {this(parent, x, y, 120, 25);}
+    this (Window parent, int x, int y, bool autoc = false)
+    {
+        this(parent, x, y, 120, 25, autoc);
+    }
     //this (Window parent, int x, int y, int w, int h) {this(parent, "", x, y, w, h);}
 
-    override void createHandle() {
+    override void createHandle()
+    {
     	this.setTbStyle();
         // printf("textbox style %X", this.mStyle);
     	this.createHandleInternal(mClassName.ptr);
-    	if (this.mHandle) {
+    	if (this.mHandle)
+        {
             this.setSubClass(&tbWndProc);
             this.createLogFontInternal();
             if (this.mCue.length > 0) this.sendMsg(EM_SETCUEBANNER, 0x0001, this.mCue.ptr);
             // if (this.mReadOnly) this.sendMsg(EM_SETREADONLY, 1, 0);
             // Without this line, textbox looks ugly style. It won't receive WM_NCPAINT message.
             // So we just redraw the non client area and it will receive WM_NCPAINT
-            // RedrawWindow(this.mHandle, null, null, RDW_FRAME| RDW_INVALIDATE);
+            RedrawWindow(this.mHandle, null, null, RDW_FRAME| RDW_INVALIDATE);
         }
     }
 
@@ -62,25 +69,44 @@ class TextBox : Control {
         wstring mCue;
 
 
-        void setTbStyle() { // Private
+        void setTbStyle() // Private
+        {
             if (this.mMultiLine) this.mStyle |= ES_MULTILINE | ES_WANTRETURN;
             if (this.mHideSel) this.mStyle |= ES_NOHIDESEL;
             if (this.mReadOnly) this.mStyle |= ES_READONLY;
             if (this.mDisabled) this.mStyle |= WS_DISABLED;
 
+            if (this.mTxtCase == TextCase.lowerCase)
+            {
+                this.mStyle |= ES_LOWERCASE;
+            }
+            else if (this.mTxtCase == TextCase.upperCase)
+            {
+                this.mStyle |= ES_UPPERCASE;
+            }
 
-            if (this.mTxtCase == TextCase.lowerCase) {this.mStyle |= ES_LOWERCASE;}
-            else if (this.mTxtCase == TextCase.upperCase) {this.mStyle |= ES_UPPERCASE;}
+            if (this.mTxtType == TextType.numberOnly)
+            {
+                this.mStyle |= ES_NUMBER;
+            }
+            else if (this.mTxtType == TextType.passwordChar)
+            {
+                this.mStyle |= ES_PASSWORD;
+            }
 
-            if (this.mTxtType == TextType.numberOnly) {this.mStyle |= ES_NUMBER;}
-            else if (this.mTxtType == TextType.passwordChar) {this.mStyle |= ES_PASSWORD;}
-
-            if (this.mTxtPos == Alignment.center) {this.mStyle |= ES_CENTER;}
-            else if (this.mTxtPos == Alignment.right) {this.mStyle |= ES_RIGHT;}
+            if (this.mTxtPos == Alignment.center)
+            {
+                this.mStyle |= ES_CENTER;
+            }
+            else if (this.mTxtPos == Alignment.right)
+            {
+                this.mStyle |= ES_RIGHT;
+            }
             this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         }
 
-        void finalize(UINT_PTR subid) {
+        void finalize(UINT_PTR subid)
+        {
             RemoveWindowSubclass(this.mHandle, &tbWndProc, subid );
         }
 
@@ -89,10 +115,14 @@ class TextBox : Control {
 
 
 extern(Windows)
-private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
-    try {
+private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                                UINT_PTR scID, DWORD_PTR refData)
+{
+    try
+    {
         TextBox tb = getControl!TextBox(refData);
-        switch (message) {
+        switch (message)
+        {
             case WM_NCDESTROY : tb.finalize(scID); break;
             // case WM_PAINT:
             //     //if (tb.mDrawFocus) {
@@ -116,7 +146,8 @@ private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
             case CM_COLOR_EDIT:
                 // writefln("tb hwnd in subclass %s", hWnd);
-                if (tb.mDrawFlag) {
+                if (tb.mDrawFlag)
+                {
                     auto hdc = cast(HDC) wParam;
                     if (tb.mDrawFlag & 1) SetTextColor(hdc, tb.mForeColor.cref);
                     if (tb.mDrawFlag & 2) SetBkColor(hdc, tb.mBackColor.cref);

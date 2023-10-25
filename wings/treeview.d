@@ -10,9 +10,10 @@ private DWORD tvStyle = WS_BORDER | WS_CHILD | WS_VISIBLE | TVS_HASLINES | TVS_H
 alias TreeNodeNotifyHandler = void delegate(TreeNode node, string prop, void* data);
 private wchar[] mClassName = ['S','y','s','T','r','e','e','V','i','e','w','3','2', 0];
 
-class TreeView : Control {
+class TreeView : Control
+{
 
-    this (Window parent, int x, int y, int w, int h)
+    this (Window parent, int x, int y, int w, int h, bool autoc = false)
     {
         mixin(repeatingCode);
         mControlType = ControlType.treeView;
@@ -26,15 +27,18 @@ class TreeView : Control {
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++tvNumber;
+        if (autoc) this.createHandle();
     }
 
-    this (Window parent, int x, int y) {this(parent, x, y, 250, 200);}
+    this (Window parent, int x, int y, bool autoc = false) {this(parent, x, y, 250, 200, autoc);}
    // this (Window parent, int x, int y) {this(parent, x, y, 250, 200);}
 
-    override void createHandle() {
+    override void createHandle()
+    {
     	this.setTvStyle();
     	this.createHandleInternal(mClassName.ptr);
-    	if (this.mHandle) {
+    	if (this.mHandle)
+        {
             this.setSubClass(&tvWndProc);
             if (this.mBackColor.value != 0xFFFFFF) this.sendMsg(TVM_SETBKCOLOR, 0, this.mBackColor.cref);
             if (this.mForeColor.value != defForeColor) this.sendMsg(TVM_SETTEXTCOLOR, 0, this.mForeColor.cref);
@@ -44,7 +48,8 @@ class TreeView : Control {
 
     final void addNode(TreeNode node) { this.addNodeInternal(NodeOps.addNode, node); }
 
-    final void addNodes(TreeNode[] nodes...) {
+    final void addNodes(TreeNode[] nodes...)
+    {
         foreach (node; nodes) {this.addNodeInternal(NodeOps.addNode, node); }
     }
 
@@ -52,11 +57,13 @@ class TreeView : Control {
 
     final void addChildNode(TreeNode parent, TreeNode node) { this.addNodeInternal(NodeOps.addChild, node, parent); }
 
-    final void addChildNodes(TreeNode parent, TreeNode[] nodes...) {
+    final void addChildNodes(TreeNode parent, TreeNode[] nodes...)
+    {
         foreach (node; nodes) { this.addNodeInternal(NodeOps.addChild, node, parent);}
     }
 
-    final void insertChildNode(TreeNode parent, TreeNode node, int index) {
+    final void insertChildNode(TreeNode parent, TreeNode node, int index)
+    {
         // foreach (nod; parent.mNodes) {print("child ", nod.text);}
         this.addNodeInternal(NodeOps.insertChild, node, parent, index);
     }
@@ -77,7 +84,8 @@ class TreeView : Control {
         int mNodeCount;
         int mUniqNodeID;
 
-        void setTvStyle() {
+        void setTvStyle()
+        {
             if (this.mNoLine) this.mStyle ^= TVS_HASLINES;
             if (this.mNoButton) this.mStyle ^= TVS_HASBUTTONS;
             if (this.mHasCheckBox) this.mStyle |= TVS_CHECKBOXES;
@@ -90,7 +98,8 @@ class TreeView : Control {
             // this.log(LONG.sizeof, "  Size of ULONG");
         }
 
-        TVITEMEXW makeTVitem(TreeNode node) {
+        TVITEMEXW makeTVitem(TreeNode node)
+        {
             auto tvi = TVITEMEXW();
             tvi.mask = TVIF_TEXT | TVIF_PARAM;
             tvi.pszText = cast(LPWSTR) node.text.toUTF16z();
@@ -104,7 +113,8 @@ class TreeView : Control {
             return tvi;
         }
 
-        void addNodeInternal(NodeOps nop, TreeNode node, TreeNode pnode = null, int pos = -1) {
+        void addNodeInternal(NodeOps nop, TreeNode node, TreeNode pnode = null, int pos = -1)
+        {
             if (!this.mIsCreated) new Exception("TreeView's handle is not created");
             node.mIsCreated = true;
             node.mNotifyHandler = &(this.nodeNotifyHandler);
@@ -119,39 +129,42 @@ class TreeView : Control {
             bool isRootNode = false;
             string errMsg = "Can't Add";
 
-            switch(nop) {
-            case NodeOps.addNode:
-                tis.hParent = TVI_ROOT;
-                tis.hInsertAfter = this.mNodeCount > 0 ? this.mNodes[this.mNodeCount - 1].mHandle : TVI_FIRST;
-                isRootNode = true;
-            break;
+            switch(nop)
+            {
+                case NodeOps.addNode:
+                    tis.hParent = TVI_ROOT;
+                    tis.hInsertAfter = this.mNodeCount > 0 ? this.mNodes[this.mNodeCount - 1].mHandle : TVI_FIRST;
+                    isRootNode = true;
+                break;
 
-            case NodeOps.insertNode:
-                tis.hParent = TVI_ROOT;
-                tis.hInsertAfter = pos == 0 ? TVI_FIRST : this.mNodes[pos - 1].mHandle;
-                isRootNode = true;
-                errMsg = "Can't Insert";
-            break;
-            case NodeOps.addChild:
-                tis.hInsertAfter = TVI_LAST;
-                tis.hParent = pnode.mHandle;
-                node.mParentNode = &pnode;
-                errMsg = "Can't Add Child";
-            break;
-            case NodeOps.insertChild:
-                tis.hParent = pnode.mHandle;
-                tis.hInsertAfter = pos == 0 ? TVI_FIRST : pnode.mNodes[pos - 1].mHandle;
-                node.mParentNode = &pnode;
-                errMsg = "Can't Insert Child";
-            break;
-            default: break;
+                case NodeOps.insertNode:
+                    tis.hParent = TVI_ROOT;
+                    tis.hInsertAfter = pos == 0 ? TVI_FIRST : this.mNodes[pos - 1].mHandle;
+                    isRootNode = true;
+                    errMsg = "Can't Insert";
+                break;
+                case NodeOps.addChild:
+                    tis.hInsertAfter = TVI_LAST;
+                    tis.hParent = pnode.mHandle;
+                    node.mParentNode = &pnode;
+                    errMsg = "Can't Add Child";
+                break;
+                case NodeOps.insertChild:
+                    tis.hParent = pnode.mHandle;
+                    tis.hInsertAfter = pos == 0 ? TVI_FIRST : pnode.mNodes[pos - 1].mHandle;
+                    node.mParentNode = &pnode;
+                    errMsg = "Can't Insert Child";
+                break;
+                default: break;
             }
 
             auto hItem =  cast(HTREEITEM) this.sendMsg(TVM_INSERTITEMW, 0, &tis);
-            if (hItem) {
+            if (hItem)
+            {
                 node.mHandle = hItem;
                 this.mUniqNodeID += 1;
-                if (isRootNode) {
+                if (isRootNode)
+                {
                     this.mNodes ~= node;
                     this.mNodeCount += 1;
                 } else {
@@ -161,19 +174,20 @@ class TreeView : Control {
             } else {
                 new Exception(format("%s node!, Error - %d", errMsg, GetLastError()));
             }
-
-
         }
 
-        void nodeNotifyHandler(TreeNode node, string prop, void* data ) {
+        void nodeNotifyHandler(TreeNode node, string prop, void* data )
+        {
             print("Not implemented");
         }
 
 } // End of TreeView class
 
-class TreeNode {
+class TreeNode
+{
 
-    this (string txt) {
+    this (string txt)
+    {
         mImgIndx = -1;
         mSelImgIndx = -1;
         mForClr = Color(0x000000);
@@ -189,7 +203,8 @@ class TreeNode {
     final Color foreColor() {return this.mForClr;}
     // final Color is() {return this.mForClr;}
 
-    private {
+    private
+    {
         HTREEITEM mHandle;
         HWND mTreeHwnd;
         TreeNode* mParentNode;
@@ -211,7 +226,8 @@ class TreeNode {
 
 } // End of TreeNode Class
 
-mixin template msdown(alias ctl) {
+mixin template msdown(alias ctl)
+{
     mixin(ctl, `.lDownHappened = true;`);
     mixin(`if (`, ctl, `.onMouseDown) {`);
         mixin(`auto mea = new MouseEventArgs(message, wParam, lParam);`);
@@ -223,11 +239,14 @@ mixin template msdown(alias ctl) {
 
 
 extern(Windows)
-private LRESULT tvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData) {
-
-    try {
+private LRESULT tvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+                                                UINT_PTR scID, DWORD_PTR refData)
+{
+    try
+    {
         TreeView tv = getControl!TreeView(refData);
-        switch (message) {
+        switch (message)
+        {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &tvWndProc, scID); break;
 
             case WM_PAINT : tv.paintHandler(); break;

@@ -42,7 +42,8 @@ DWORD newStyle = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
 //Window[HWND] myDic; to be deleted
 
 ///This class is a form class
-class Window : Control {
+class Window : Control
+{
 
     // properties
     mixin finalProperty!("startPos", this.mStartPos);
@@ -66,8 +67,10 @@ class Window : Control {
 
 
     ///the constructor of form class
-    private this(string txt, int x, int y, int w, int h) {
-        if (!isWindowInit) { // It's the first window.
+    private this(string txt, int x, int y, int w, int h)
+    {
+        if (!isWindowInit)  // It's the first window.
+        {
             isWindowInit = true;
             appData = new ApplicationData( defWinFontName, defWinFontSize, defWinFontWeight);
             regWindowClass(appData.className, appData.hInstance);
@@ -97,16 +100,19 @@ class Window : Control {
         this(title, 0, 0, 500, 450);
     }
 
-    this(string title) {
+    this(string title)
+    {
         this(title, 0, 0, 500, 450);
     }
 
-    this(string title, int w, int h) {
+    this(string title, int w, int h)
+    {
         this(title, 0, 0, w, h);
     }
 
     /// Creates the window
-    override void createHandle() {
+    override void createHandle()
+    {
         import std.stdio;
         setStartPos();
         setWindowStyles();
@@ -128,7 +134,8 @@ class Window : Control {
 
         //sw.stop();
         //print("window create speed in milli sec : ", sw.peek.total!"msecs");
-        if (this.mHandle ) {
+        if (this.mHandle )
+        {
 
             //myDic[this.mHandle] = this;   To be deleted
 
@@ -146,18 +153,19 @@ class Window : Control {
 
         }
         else {
-
             throw new Exception("Window is not created..."); // Do we need this ?
         }
     }
 
     /// This will show the form on the screen
-    final void show(DWORD swParam = SW_SHOW) {
+    final void show(DWORD swParam = SW_SHOW)
+    {
         ShowWindow(this.mHandle, swParam);
         UpdateWindow(this.mHandle);
 
         if (this.mWinState == WindowState.minimized) {CloseWindow(this.mHandle); }
-        if(!mMainLoopStarted) {
+        if(!mMainLoopStarted)
+        {
             this.createControlHandles();
             mMainLoopStarted = true;
             mainLoop();
@@ -165,7 +173,8 @@ class Window : Control {
     }
 
     /// This will set the gradient background color for this window.
-    final void setGradientColors(uint c1, uint c2, bool r2l = false) {
+    final void setGradientColors(uint c1, uint c2, bool r2l = false)
+    {
         this.mBkDrawMode = WindowBkMode.gradient;
         this.mGdraw.c1 = Color(c1);
         this.mGdraw.c2 = Color(c2);
@@ -176,19 +185,24 @@ class Window : Control {
     /// closes the window
     final void close() { DestroyWindow(this.mHandle);}
 
-    final void enablePrintPoint() {
+    /// An handy feature for design time.
+    final void enablePrintPoint()
+    {
         this.onMouseUp = &printFormPoints;
     }
 
-    final void printPoint(MouseEventArgs e) {
-        import std.stdio;
-        static int x = 1;
-        writefln("[%s] X : %s, Y : %s", x, e.xPos, e.yPos);
-        ++x;
-    }
+    // final void printPoint(MouseEventArgs e)
+    // {
+    //     import std.stdio;
+    //     static int x = 1;
+    //     writefln("[%s] X : %s, Y : %s", x, e.xPos, e.yPos);
+    //     ++x;
+    // }
 
-    final void registerHotKey(HotKeyStruct* hks) {
-        if (this.mIsCreated) {
+    final void registerHotKey(HotKeyStruct* hks)
+    {
+        if (this.mIsCreated)
+        {
             uint fsMod;
             if (hks.altKey) fsMod |= 0x0001;
             if (hks.ctrlKey) fsMod |= 0x0002;
@@ -198,7 +212,8 @@ class Window : Control {
             if (!hks.altKey && !hks.ctrlKey && !hks.shiftKey && !hks.winKey ) return;
             uint vKey = cast(uint) hks.hotKey;
             ++mGlobalHotKeyID; // A static variable of Window class.
-            if (RegisterHotKey(this.mHandle, mGlobalHotKeyID, fsMod, vKey)) {
+            if (RegisterHotKey(this.mHandle, mGlobalHotKeyID, fsMod, vKey))
+            {
                 this.mHotKeyIDList ~= mGlobalHotKeyID;
                 hks.hotKeyID = mGlobalHotKeyID;
                 hks.result = true;
@@ -206,11 +221,14 @@ class Window : Control {
         }
     }
 
-    final bool unRegisterHotKey(int hkeyID) {
+    final bool unRegisterHotKey(int hkeyID)
+    {
         auto res = UnregisterHotKey(this.mHandle, hkeyID);
         if (res != 0) remove!(a => a == hkeyID)(this.mHotKeyIDList);
         return cast(bool) res;
     }
+
+
 
     // final void hideWindow() {
     //     this.sendMsg(WM_SHOWWINDOW, false, )
@@ -432,7 +450,8 @@ class Window : Control {
 }
 //==========================END of Window CLASS=====================
 
-void printFormPoints(Control sender, MouseEventArgs e) {
+void printFormPoints(Control sender, MouseEventArgs e)
+{
     import std.stdio;
     static int x = 1;
     writefln("[%s] X : %s, Y : %s", x, e.xPos, e.yPos);
@@ -440,7 +459,8 @@ void printFormPoints(Control sender, MouseEventArgs e) {
     stdout.flush();
 }
 
-struct HotKeyStruct {
+struct HotKeyStruct
+{
     bool altKey;
     bool ctrlKey;
     bool shiftKey;
@@ -452,7 +472,8 @@ struct HotKeyStruct {
 
 }
 
-void regWindowClass(wstring clsN,  HMODULE hInst) {
+void regWindowClass(wstring clsN,  HMODULE hInst)
+{
     WNDCLASSEXW wcEx;
     wcEx.style         = CS_HREDRAW | CS_VREDRAW  | CS_OWNDC;
     wcEx.lpfnWndProc   = &mainWndProc;
@@ -470,7 +491,8 @@ void regWindowClass(wstring clsN,  HMODULE hInst) {
 
 // Some good back colors - 0xE8E9EB, 0xF5F5F5, 0xF2F3F5
 
-void mainLoop() {
+void mainLoop()
+{
     MSG uMsg;
     while (GetMessage(&uMsg, null, 0, 0) != 0) {
         TranslateMessage(&uMsg);
@@ -478,7 +500,8 @@ void mainLoop() {
     }
 }
 
-void trackMouseMove(HWND hw) {
+void trackMouseMove(HWND hw)
+{
     TRACKMOUSEEVENT tme;
     tme.cbSize = tme.sizeof;
     tme.dwFlags = TME_HOVER | TME_LEAVE;
@@ -558,17 +581,20 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
             break;
 
             case WM_COMMAND :
-                switch (HIWORD(wParam)) {
+				// writefln("WM_COMMAND 1 - wpm hiw %d", HIWORD(wParam));
+                switch (lParam){
                     case 0: // It's from menu
-                        auto mid = cast(uint)(LOWORD(wParam));
-                        auto menu = win.mMenuItemDict.get(mid, null);
-                        if (menu) {
-                            if (menu.onClick) menu.onClick(menu, new EventArgs());
+                        if (HIWORD(wParam) == 0) {
+                            auto mid = cast(uint)(LOWORD(wParam));
+                            auto menu = win.mMenuItemDict.get(mid, null);
+                            if (menu && menu.onClick) menu.onClick(menu, new EventArgs());
+                            return 0;
+                        } else { // It's from accelerator key
+                            break;
                         }
-                        return 0;
                     break;
-                    case 1: break; // It's from accelerator key
                     default: // It's from a control
+						// writeln("WM_COMMAND 2");
                         auto ctlHwnd = cast(HWND) lParam;
                         return SendMessageW(ctlHwnd, CM_CTLCOMMAND, wParam, lParam);
                     break;
