@@ -53,16 +53,11 @@ void main()
 	frm.enablePrintPoint; // A handy feature. It will print the mouse points.
 	frm.createHandle();
 
-	mb = new MenuBar(frm);
-	mb.addMenus("File", "Edit", "Format");
-	mb.menus["File"].addMenus("New Work", "Exit");
-	auto mnuEdit = mb.menus["Edit"];
-	mnuEdit.addMenu("Copy");
-	mnuEdit.addSeperator();
-	mnuEdit.addMenu("Paste");
-	auto mnuExit = mb.menus["File"].menus["Exit"];
-	mnuExit.onClick = (c, e) => print(c.text);
-	mb.create();
+	// Let's add a menu bar and some menu items
+	mb = frm.addMenuBar("Windows", "Linux", "MacOS");
+	mb.menus["Windows"].addItems("Windows 8", "Windows 10", "Windows 11");
+	mb.menus["Linux"].addItems("Ubuntu", "Debian", "Kali");
+	mb.menus["MacOS"].addItems("Mavericks", "Catalina", "Big Sur");
 
 	cmb = new ComboBox(frm, 20, 65, 150, 30);
 	cmb.addRange("Window", "Button", "Calendar", "CheckBox", "DateTimePicker", "GroupBox");
@@ -135,7 +130,7 @@ void main()
     lv.addRow("Vista", "Mavericks", "Mint");
     lv.addRow("Win7", "Mavericks", "Ubuntu");
     lv.addRow("Win8", "Catalina", "Debian");
-    lv.addRow("Win10", " Big Sur", "Kali");
+    lv.addRow("Win10", "Big Sur", "Kali");
 
 	// A simple context menu for list view
 	lv.addContextMenu("Windows", "Linux", "MacOS");

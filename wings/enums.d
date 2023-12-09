@@ -109,7 +109,7 @@ enum HeaderColorStatus { bcOnly, fcOnly, bothColors } // for list view header co
 enum HotKeyId { hotSnapWindow = -2, hotSnapDeskTop = -1} // For using in wm_hotkey message handler
 enum ModifierKeys { altKey = 1, ctrlKey = 2, shiftKey = 4, winKey = 8 } // ,,
 
-enum MenuType { baseMenu, menuItem, popumMenu, contextMenu, contextPopup, separator, menuBar }
+enum MenuType { baseMenu, normalMenu, popumMenu, separator }
 
 
 

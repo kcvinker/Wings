@@ -227,7 +227,7 @@ class Window : Control
     final MenuBar addMenuBar(string[] menuNames...)
     {
         auto mbar = new MenuBar(this);
-        if (menuNames.length > 0) mbar.addItems(true, menuNames);
+        if (menuNames.length > 0) mbar.addItems(menuNames);
         this.mMenubarCreated = true;
         return mbar;
     }

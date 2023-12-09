@@ -12,6 +12,8 @@ class MenuBase {
 	uint mMenuCount;
 }
 
+enum ParentKind {mainMenu, contextMenu}
+
 class MenuBar : MenuBase
 {
     this (Window parent)
@@ -28,7 +30,7 @@ class MenuBar : MenuBase
     this(Window parent, string[] menuNames ...)
     {
         this(parent);
-        this.addItems(true, menuNames);
+        this.addItems(menuNames);
     }
 
     // this (Window parent) {
@@ -37,21 +39,25 @@ class MenuBar : MenuBase
     //     this.mMenuHandle = CreateMenu();
     // }
 
-    final void addItem(bool iswinmenu, string txt)
+    final void addItem(string txt)
     {
         MenuType mtyp = txt == "|" ? MenuType.separator : MenuType.baseMenu;
-        auto mi = new MenuItem(txt, mtyp, this.mHandle, this.mMenuCount, iswinmenu);
+        auto mi = new MenuItem(txt, mtyp, this.mHandle, this.mMenuCount);
+        mi.mParentKind = ParentKind.mainMenu;
+        mi.mBar = this;
         this.mMenuCount += 1;
         this.mMenus[txt] = mi;
         this.mWindow.mMenuItemDict[mi.mId] = mi;
+
     }
 
-    final void addItems(bool iswinmenu, string[] menuNames...)
+    final void addItems(string[] menuNames...)
     {
         foreach (name; menuNames) {
             MenuType mtyp = name == "|" ? MenuType.separator : MenuType.baseMenu;
-            auto mi = new MenuItem(name, mtyp, this.mHandle, this.mMenuCount, iswinmenu);
-            mi.mWinHwnd = this.mWindow.mHandle;
+            auto mi = new MenuItem(name, mtyp, this.mHandle, this.mMenuCount);
+            mi.mParentKind = ParentKind.mainMenu;
+            mi.mBar = this;
             this.mMenuCount += 1;
             this.mMenus[name] = mi;
             this.mWindow.mMenuItemDict[mi.mId] = mi;
@@ -112,9 +118,9 @@ class MenuBar : MenuBase
 
 // bool isPopupMenu(MenuType mtp) { return mtp == MenuType.baseMenu || mtp == MenuType.popumMenu;}
 
-class MenuItem : MenuBase {
-
-    this (string txt, MenuType mtyp, HMENU parentmenuHandle, int indexNum, bool iswinmenu)
+class MenuItem : MenuBase
+{
+    this (string txt, MenuType mtyp, HMENU parentmenuHandle, int indexNum)
     {
         this.mPopup = mtyp == MenuType.baseMenu || mtyp == MenuType.popumMenu;
         this.mHandle = this.mPopup ? CreatePopupMenu() : CreateMenu();
@@ -124,7 +130,6 @@ class MenuItem : MenuBase {
         this.mText = txt;
         this.mWideText = this.mText.toUTF16z();
         this.mType = mtyp;
-        this.mIsWinmenu = iswinmenu;
         this.mParentHandle = parentmenuHandle;
         this.mBgColor = Color(0xe9ecef);
         this.mFgColor = Color(0x000000);
@@ -132,36 +137,44 @@ class MenuItem : MenuBase {
         staticIdNum += 1;
     }
 
-    final MenuItem addItem(string txt, bool iswinmenu, uint txtColor = 0x000000)
+    final MenuItem addItem(string txt, uint txtColor = 0x000000)
     {
         MenuType mtyp = txt == "|" ? MenuType.separator : MenuType.baseMenu;
-        if (this.mType == MenuType.menuItem) {
+        if (this.mType == MenuType.normalMenu) {
             this.mHandle = CreatePopupMenu();
             this.mPopup = true;
         }
-        auto mi = new MenuItem(txt, mtyp, this.mHandle, this.mMenuCount, iswinmenu);
+        auto mi = new MenuItem(txt, mtyp, this.mHandle, this.mMenuCount);
         mi.mFgColor = Color(txtColor);
-        mi.mWinHwnd = this.mWinHwnd;
+        mi.mParentKind = this.mParentKind;
         if (this.mType != MenuType.baseMenu) this.mType = MenuType.popumMenu;
         this.mMenuCount += 1;
         this.mMenus[txt] = mi;
-        if (iswinmenu) this.mBar.mWindow.mMenuItemDict[mi.mId] = mi;
+        if (this.mParentKind == ParentKind.mainMenu) {
+            mi.mBar = this.mBar;
+            this.mBar.mWindow.mMenuItemDict[mi.mId] = mi;
+        }
         return mi;
     }
 
-    final void addItems(bool iswinmenu, string[] mnuNames ...) {
-        if (this.mType == MenuType.menuItem) {
+    final void addItems(string[] menuNames ...) {
+
+        if (this.mType == MenuType.normalMenu) {
             this.mHandle = CreatePopupMenu();
             this.mPopup = true;
         }
         if (this.mType != MenuType.baseMenu) this.mType = MenuType.popumMenu;
-        foreach (name; mnuNames) {
-            MenuType mtyp = name == "|" ? MenuType.separator : MenuType.baseMenu;
-            auto mi = new MenuItem(name, mtyp, this.mHandle, this.mMenuCount, iswinmenu);
-            mi.mWinHwnd = this.mWinHwnd;
+
+        foreach (name; menuNames) {
+            MenuType mtyp = name == "|" ? MenuType.separator : MenuType.normalMenu;
+            auto mi = new MenuItem(name, mtyp, this.mHandle, this.mMenuCount);
+            mi.mParentKind = this.mParentKind;
             this.mMenuCount += 1;
             this.mMenus[name] = mi;
-            if (iswinmenu) this.mBar.mWindow.mMenuItemDict[mi.mId] = mi;
+            if (this.mParentKind == ParentKind.mainMenu) {
+                mi.mBar = this.mBar;
+                this.mBar.mWindow.mMenuItemDict[mi.mId] = mi;
+            }
         }
     }
 
@@ -181,7 +194,7 @@ class MenuItem : MenuBase {
                 }
                 this.insertMenuInternal(this.mParentHandle);
             break;
-            case MenuType.menuItem: this.insertMenuInternal(this.mParentHandle); break;
+            case MenuType.normalMenu: this.insertMenuInternal(this.mParentHandle); break;
             case MenuType.separator: AppendMenuW(this.mParentHandle, MF_SEPARATOR, 0, null); break;
             default: break;
         }
@@ -224,7 +237,7 @@ class MenuItem : MenuBase {
         Color mFgColor;
         bool mEnabled;
         uint mId;
-        bool mIsWinmenu;
+        ParentKind mParentKind;
 
 
         void insertMenuInternal(HMENU parentHmenu)
@@ -249,11 +262,10 @@ class MenuItem : MenuBase {
 
         void insertCmenuInternal()
         {
-            writeln("251");
             if (this.mMenus.length > 0) {
                 foreach (string key; this.mMenus.byKey()) this.mMenus[key].insertCmenuInternal();
             }
-            if (this.mType == MenuType.contextMenu) {
+            if (this.mType == MenuType.normalMenu) {
                 this.insertMenuInternal(this.mParentHandle);
             } else if (this.mType == MenuType.separator) {
                 AppendMenuW(this.mHandle, MF_SEPARATOR, 0, null);
@@ -269,7 +281,6 @@ class MenuItem : MenuBase {
         bool mPopup;
         Color mBgColor;
         uint mFlag;
-        HWND mWinHwnd;
         static uint staticIdNum = 100;
 
 }

@@ -16,12 +16,14 @@ pragma(lib, "Ole32.lib");
 
 enum OFN_FORCESHOWHIDDEN = 0x10000000;
 enum BIF_NONEWFOLDERBUTTON = 0x00000200;
+enum MAX_PATH_NEW = 32768 + 256 * 100 + 1;
 enum defFilter = "All Files" ~ '\0' ~ "*.*" ~ '\0';
 
 
 class DialogBase {
 
-    this(string title, string initDir) {
+    this(string title, string initDir)
+    {
         this.mTitle = title;
         this.mInitDir = initDir;
     }
@@ -33,7 +35,8 @@ class DialogBase {
     mixin finalProperty!("fileNameStartPos", this.mNameStart);
     mixin finalProperty!("extensionStartPos", this.mExtStart);
 
-    void setFilter(string filterName, string ext) {
+    void setFilter(string filterName, string ext)
+    {
         if (this.mFilter.length > 0) {
             this.mFilter = format("%s%s\0*%s\0", this.mFilter, filterName, ext);
         } else {
@@ -41,7 +44,8 @@ class DialogBase {
         }
     }
 
-    void setMultiFilters(string description, string[] filterList) {
+    void setFilters(string description, string[] filterList)
+    {
         this.mFilter = description ~ "\0";
         auto filCount = filterList.length - 1;
         foreach(i, filter; filterList) {
@@ -72,7 +76,8 @@ class DialogBase {
 }
 
 class FileOpenDialog : DialogBase {
-    this(string title = "Open File", string initDir = "") {
+    this(string title = "Open File", string initDir = "")
+    {
         super(title, initDir);
     }
 
@@ -80,10 +85,51 @@ class FileOpenDialog : DialogBase {
     mixin finalProperty!("showHiddenFiles", this.mShowHidden);
     final string[] fileNames() {return this.mSelFiles;}
 
-    final bool showDialog(HWND hwnd = null) {
-        // writeln("in dialog ");
-        // this.mInitDir = "C:\\Users\\kcvin\\OneDrive\\Programming\\C3\\CForms\\cforms";
-        return showDialogHelper(this, true, hwnd);
+    final bool showDialog(HWND hwnd = null)
+    {
+        if (this.mFilter.length == 0) {
+            this.mFilter = "All files\0*.*\0";
+        } else {
+            if (this.mAllowAllFiles) this.mFilter = "All files\0*.*\0\0";
+        }
+        wchar[] buffer = new wchar[](MAX_PATH_NEW);
+        wchar[] ttlBuff = new wchar[](MAX_PATH);
+        ttlBuff[0] = '\u0000';
+        buffer[0] = '\u0000';
+        OPENFILENAMEW ofn;
+        ofn.hwndOwner = hwnd;
+        ofn.lpstrFile = cast(wchar*) buffer.ptr;
+        ofn.lpstrInitialDir = this.mInitDir != "" ? this.mInitDir.toUTF16z : null;
+        ofn.lpstrTitle = this.mTitle.toUTF16z;
+        ofn.lpstrFilter =  this.mFilter.toUTF16z;
+        ofn.lpstrFileTitle = cast(wchar*) ttlBuff;
+        ofn.nMaxFile = MAX_PATH_NEW;
+        ofn.nMaxFileTitle = MAX_PATH;
+        ofn.lpstrDefExt = toUTF16z("\0"); // Without this, we won't get any extension.
+
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+        if (this.multiSelection) ofn.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
+        if (this.showHiddenFiles) ofn.Flags |= OFN_FORCESHOWHIDDEN;
+        auto ret = GetOpenFileNameW(&ofn);
+        if (ret) {
+            if (this.mMultiSel) {
+                this.extractFileNames(buffer, ofn.nFileOffset);
+                return true;
+            } else {
+                this.mSelPath = to!string(buffer[0..$ - 1]);
+                this.mNameStart = ofn.nFileOffset;
+                this.mExtStart = ofn.nFileExtension;
+                return true;
+            }
+        }
+        // if (ret) {
+        //     obj.mNameStart = ofn.nFileOffset;
+        //     obj.mExtStart = ofn.nFileExtension;
+        //     obj.mSelPath = fromStringz(buffer.ptr).to!string;
+        //     return true;
+        // }
+        return false;
+
     }
 
     private:
@@ -117,8 +163,34 @@ class FileSaveDialog : DialogBase {
     mixin finalProperty!("defaultExtension", this.mDefExt);
 
     final bool showDialog(HWND hwnd = null) {
-        this.mInitDir = "C:\\Users\\kcvin\\OneDrive\\Programming\\C3\\CForms\\cforms";
-        return showDialogHelper(this, false, hwnd);
+        if (this.mFilter.length == 0) {
+            this.mFilter = "All files\0*.*\0";
+        } else {
+            if (this.mAllowAllFiles) this.mFilter = format("%sAll files\0*.*\0", this.mFilter);
+        }
+        wchar[] buffer = new wchar[](MAX_PATH);
+        wchar[] ttlBuff = new wchar[](MAX_PATH);
+        ttlBuff[0] = '\u0000';
+        buffer[0] = '\u0000';
+        OPENFILENAMEW ofn;
+        ofn.hwndOwner = hwnd;
+        ofn.lpstrFile = cast(wchar*) buffer.ptr;
+        ofn.lpstrInitialDir = this.mInitDir != "" ? this.mInitDir.toUTF16z : null;
+        ofn.lpstrTitle = this.mTitle.toUTF16z;
+        ofn.lpstrFilter =  this.mFilter.toUTF16z;
+        ofn.lpstrFileTitle = cast(wchar*) ttlBuff;
+        ofn.nMaxFile = MAX_PATH;
+        ofn.nMaxFileTitle = MAX_PATH;
+        ofn.lpstrDefExt = toUTF16z("\0"); // Without this, we won't get any extension.
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+        auto ret = GetSaveFileNameW(&ofn);
+        if (ret) {
+            this.mNameStart = ofn.nFileOffset;
+            this.mExtStart = ofn.nFileExtension;
+            this.mSelPath = fromStringz(buffer.ptr).to!string;
+            return true;
+        }
+        return false;
     }
 
     private:
@@ -159,45 +231,6 @@ class FolderBrowserDialog : DialogBase {
 
 }
 
-bool showDialogHelper(T)(T obj, bool isOpen, HWND hwnd) {
-    if (obj.mFilter.length == 0) {
-        obj.mFilter = "All files\0*.*\0";
-    } else {
-        if (obj.mAllowAllFiles) obj.mFilter = format("%sAll files\0*.*\0", obj.mFilter);
-    }
-    wchar[] buffer = new wchar[](MAX_PATH);
-    wchar[] ttlBuff = new wchar[](MAX_PATH);
-    ttlBuff[0] = '\u0000';
-    buffer[0] = '\u0000';
-    OPENFILENAMEW ofn;
-    ofn.hwndOwner = hwnd;
-    ofn.lpstrFile = cast(wchar*) buffer.ptr;
-    ofn.lpstrInitialDir = obj.mInitDir != "" ? obj.mInitDir.toUTF16z : null;
-    ofn.lpstrTitle = obj.mTitle.toUTF16z;
-    ofn.lpstrFilter =  obj.mFilter.toUTF16z;
-    ofn.lpstrFileTitle = cast(wchar*) ttlBuff;
-    ofn.nMaxFile = MAX_PATH;
-    ofn.nMaxFileTitle = MAX_PATH;
-    ofn.lpstrDefExt = toUTF16z("\0"); // Without this, we won't get any extension.
-    BOOL ret = -1;
-    if (isOpen) {
-        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-        auto me = cast(FileOpenDialog) obj;
-        if (me.multiSelection) ofn.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
-        if (me.showHiddenFiles) ofn.Flags |= OFN_FORCESHOWHIDDEN;
-        ret = GetOpenFileNameW(&ofn);
-        if (ret && me.mMultiSel) me.extractFileNames(buffer, ofn.nFileOffset);
-    } else {
-        ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
-        ret = GetSaveFileNameW(&ofn);
-    }
-    if (ret) {
-        obj.mNameStart = ofn.nFileOffset;
-        obj.mExtStart = ofn.nFileExtension;
-        obj.mSelPath = fromStringz(buffer.ptr).to!string;
-        return true;
-    }
-    return false;
-}
+
 
 

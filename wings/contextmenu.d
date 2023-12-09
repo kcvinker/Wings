@@ -8,7 +8,7 @@ import wings.window: Window;
 import wings.controls: Control;
 import wings.fonts: Font;
 import wings.enums: MenuType, ControlType;
-import wings.menubar: MenuBase, MenuItem, getMenuItem;
+import wings.menubar: MenuBase, MenuItem, getMenuItem, ParentKind;
 import wings.events: EventHandler, EventArgs;
 import wings.colors: makeHBRUSH, getClrRef;
 import wings.commons: appData, getControl, getMousePoints, getMousePos;
@@ -42,8 +42,9 @@ class ContextMenu : MenuBase {
 
     MenuItem addItem(string item)
     {
-        MenuType mtyp = item == "|" ? MenuType.separator : MenuType.contextMenu;
-        MenuItem mi = new MenuItem(item, mtyp, this.mHandle, this.mMenuCount, false);
+        MenuType mtyp = item == "|" ? MenuType.separator : MenuType.normalMenu;
+        MenuItem mi = new MenuItem(item, mtyp, this.mHandle, this.mMenuCount);
+        mi.mParentKind = ParentKind.contextMenu;
         this.mMenuCount += 1;
         this.mMenus[item] = mi;
         return mi;
@@ -115,8 +116,9 @@ class ContextMenu : MenuBase {
         {
             if (menuNames.length > 0) {
                 foreach (name; menuNames) {
-                    auto mtyp = name == "|" ? MenuType.separator : MenuType.contextMenu;
-                    auto mi = new MenuItem(name, mtyp, this.mHandle, this.mMenuCount, false);
+                    auto mtyp = name == "|" ? MenuType.separator : MenuType.normalMenu;
+                    auto mi = new MenuItem(name, mtyp, this.mHandle, this.mMenuCount);
+                    mi.mParentKind = ParentKind.contextMenu;
                     this.mMenuCount += 1;
                     this.mMenus[name] = mi;
                 }
@@ -134,10 +136,21 @@ class ContextMenu : MenuBase {
 } // End of ContextMenu class
 
 enum MenuStyle {
-    leftToRight = 0x400, rightToLeft = 0x800, topToBottom = 0x1000, bottomToTop = 0x2000, none = 0x4000
+    leftToRight = 0x400,
+    rightToLeft = 0x800,
+    topToBottom = 0x1000,
+    bottomToTop = 0x2000,
+    none = 0x4000
 }
 
-enum MenuPosition {leftAlign, topAlign = 0, centerAlign = 4, rightAlign = 8, vCenterAlign = 10, bottomAlign = 20}
+enum MenuPosition {
+    leftAlign,
+    topAlign = 0,
+    centerAlign = 4,
+    rightAlign = 8,
+    vCenterAlign = 10,
+    bottomAlign = 20
+}
 
 extern(Windows)
 private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
