@@ -2,17 +2,33 @@ module wings.menubar; // Created on 30-July-2022 06:56 PM
 
 import wings.d_essentials;
 import wings.wings_essentials;
+import std.stdio;
 
-class MenuBar {
+class MenuBase {
+    HMENU mHandle;
+	MenuItem[string] mMenus;
+	Font mFont;
+	HWND mWinHwnd;
+	uint mMenuCount;
+}
 
-    this (Window parent, Font menuFont = null) {
-        this.mHmenubar = CreateMenu();
-        this.mParent = parent;
-        this.mFont = menuFont is null ? parent.mFont : menuFont;
-        this.mType = MenuType.baseMenu;
+class MenuBar : MenuBase
+{
+    this (Window parent)
+    {
+        this.mHandle = CreateMenu();
+        this.mWindow = parent;
+        this.mFont = new Font("Tahoma", 11);
         this.mMenuCount = 0;
-        parent.mMenuGrayBrush = makeHBRUSH(0xced4da);
-        parent.mMenuGrayCref = getClrRef(0x979dac);
+        this.mMenuGrayBrush = makeHBRUSH(0xced4da);
+        this.mMenuGrayCref = getClrRef(0x979dac);
+        parent.mMenubar = this;
+    }
+
+    this(Window parent, string[] menuNames ...)
+    {
+        this(parent);
+        this.addItems(true, menuNames);
     }
 
     // this (Window parent) {
@@ -21,19 +37,24 @@ class MenuBar {
     //     this.mMenuHandle = CreateMenu();
     // }
 
-    // final void addMenu(string txt) {
-    //     auto mi = new MenuItem(&this.mParent, txt, null, MenuType.baseMenu);
-    //     this.mMenus ~= mi;
-    // }
+    final void addItem(bool iswinmenu, string txt)
+    {
+        MenuType mtyp = txt == "|" ? MenuType.separator : MenuType.baseMenu;
+        auto mi = new MenuItem(txt, mtyp, this.mHandle, this.mMenuCount, iswinmenu);
+        this.mMenuCount += 1;
+        this.mMenus[txt] = mi;
+        this.mWindow.mMenuItemDict[mi.mId] = mi;
+    }
 
-    final void addMenus(string[] menuNames ...) {
+    final void addItems(bool iswinmenu, string[] menuNames...)
+    {
         foreach (name; menuNames) {
-            auto mi = new MenuItem(name, this.mHmenubar, MenuType.baseMenu, this.mMenuCount);
-            mi.mWinHwnd = this.mParent.mHandle;
-            mi.mBarmenu = true;
+            MenuType mtyp = name == "|" ? MenuType.separator : MenuType.baseMenu;
+            auto mi = new MenuItem(name, mtyp, this.mHandle, this.mMenuCount, iswinmenu);
+            mi.mWinHwnd = this.mWindow.mHandle;
             this.mMenuCount += 1;
             this.mMenus[name] = mi;
-            this.mParent.mMenuItemDict[mi.mId] = mi;
+            this.mWindow.mMenuItemDict[mi.mId] = mi;
         }
     }
 
@@ -45,121 +66,123 @@ class MenuBar {
 
     // final void addMenu(MenuItem mi) { this.mMenus ~= mi;}
 
-    final MenuItem addMenu(string txt, uint txtColor = 0x000000) {
-        auto result = new MenuItem(txt, this.mHmenubar, MenuType.baseMenu, this.mMenuCount);
-        result.mWinHwnd = this.mParent.mHandle;
-        result.mFgColor = Color(txtColor);
-        result.mBarmenu = true;
-        this.mMenuCount += 1;
-        this.mMenus[txt] = result;
-        this.mParent.mMenuItemDict[result.mId] = result;
-        return result;
-    }
-
-    final void create() {
-        this.mParent.mMenuDefBgBrush = makeHBRUSH(0xe9ecef);
-        this.mParent.mMenuHotBgBrush = makeHBRUSH(0x90e0ef);
-        this.mParent.mMenuFrameBrush = makeHBRUSH(0x0077b6);
-        this.mParent.mMenuFont = this.mFont;
-        if (this.mMenus.length > 0) {
-            foreach (string key; this.mMenus.byKey) this.mMenus[key].create();
-        }
-        SetMenu(this.mParent.mHandle, this.mHmenubar);
-    }
-
-    // final MenuItem[] menuItems() {return this.mMenus;}
-    // final ref MenuItem item(string value) {
-    //     foreach (ref menu; this.mMenus) {if (menu.text == value) return menu;}
-    //     throw new Exception("Can't find menu item");
+    // final MenuItem addMenu(string txt, uint txtColor = 0x000000) {
+    //     auto result = new MenuItem(txt, this.mHmenubar, MenuType.baseMenu, this.mMenuCount);
+    //     result.mWinHwnd = this.mParent.mHandle;
+    //     result.mFgColor = Color(txtColor);
+    //     result.mBarmenu = true;
+    //     this.mMenuCount += 1;
+    //     this.mMenus[txt] = result;
+    //     this.mParent.mMenuItemDict[result.mId] = result;
+    //     return result;
     // }
+
+    final void createHandle() {
+        this.mMenuDefBgBrush = makeHBRUSH(0xe9ecef);
+        this.mMenuHotBgBrush = makeHBRUSH(0x90e0ef);
+        this.mMenuFrameBrush = makeHBRUSH(0x0077b6);
+        if (this.mFont.mHandle == null) this.mFont.createFontHandle(this.mWindow.mHandle);
+        if (this.mMenus.length > 0) {
+            foreach (string key; this.mMenus.byKey) this.mMenus[key].createHandle();
+        }
+        SetMenu(this.mWindow.mHandle, this.mHandle);
+        this.mWindow.mMenubarCreated = true;
+        this.mIsCreated = true;
+    }
 
     final MenuItem[string] menus() {return this.mMenus;}
 
+    package:
+        bool mIsCreated;
+        HBRUSH mMenuDefBgBrush;
+        HBRUSH mMenuHotBgBrush;
+        HBRUSH mMenuFrameBrush;
+        HBRUSH mMenuGrayBrush;
+        COLORREF mMenuGrayCref;
+
 
     private:
-        HMENU mHmenubar;
-        Window mParent;
-        Font mFont;
-        MenuType mType;
-        int mMenuCount;
-        MenuItem[string] mMenus;
+        Window mWindow;
+        HWND mWinHwnd;
+
+
+        // MenuItemList _menuList;
 
 } // End of MenuBar class
 
 // bool isPopupMenu(MenuType mtp) { return mtp == MenuType.baseMenu || mtp == MenuType.popumMenu;}
 
-class MenuItem {
+class MenuItem : MenuBase {
 
-    this (string txt, HMENU parentmenuHandle, MenuType mtyp, int indexNum) {
+    this (string txt, MenuType mtyp, HMENU parentmenuHandle, int indexNum, bool iswinmenu)
+    {
         this.mPopup = mtyp == MenuType.baseMenu || mtyp == MenuType.popumMenu;
-        this.mHmenu = this.mPopup ? CreatePopupMenu() : CreateMenu();
+        this.mHandle = this.mPopup ? CreatePopupMenu() : CreateMenu();
         this.mIndex = indexNum;
         if (txt == "_") txt = format("sep_%d", this.mIndex);
         this.mId = staticIdNum;
         this.mText = txt;
         this.mWideText = this.mText.toUTF16z();
         this.mType = mtyp;
-        this.mParentHmenu = parentmenuHandle;
+        this.mIsWinmenu = iswinmenu;
+        this.mParentHandle = parentmenuHandle;
         this.mBgColor = Color(0xe9ecef);
         this.mFgColor = Color(0x000000);
         this.mEnabled = true;
         staticIdNum += 1;
     }
 
-    final MenuItem addMenu(string txt, uint txtColor = 0x000000) {
+    final MenuItem addItem(string txt, bool iswinmenu, uint txtColor = 0x000000)
+    {
+        MenuType mtyp = txt == "|" ? MenuType.separator : MenuType.baseMenu;
         if (this.mType == MenuType.menuItem) {
-            this.mHmenu = CreatePopupMenu();
+            this.mHandle = CreatePopupMenu();
             this.mPopup = true;
         }
-        auto result = new MenuItem(txt, this.mHmenu, MenuType.menuItem, this.mChildCount);
-        result.mFgColor = Color(txtColor);
-        result.mWinHwnd = this.mWinHwnd;
-        result.mBarmenu = this.mBarmenu;
+        auto mi = new MenuItem(txt, mtyp, this.mHandle, this.mMenuCount, iswinmenu);
+        mi.mFgColor = Color(txtColor);
+        mi.mWinHwnd = this.mWinHwnd;
         if (this.mType != MenuType.baseMenu) this.mType = MenuType.popumMenu;
-        this.mChildCount += 1;
-        this.mMenus[txt] = result;
-        if (result.mWinHwnd) SendMessageW(result.mWinHwnd, CM_MENU_ADDED, cast(WPARAM)result.mId, cast(LPARAM) &result);
-        return result;
+        this.mMenuCount += 1;
+        this.mMenus[txt] = mi;
+        if (iswinmenu) this.mBar.mWindow.mMenuItemDict[mi.mId] = mi;
+        return mi;
     }
 
-    final void addMenus(string[] mnuNames ...) {
+    final void addItems(bool iswinmenu, string[] mnuNames ...) {
         if (this.mType == MenuType.menuItem) {
-            this.mHmenu = CreatePopupMenu();
+            this.mHandle = CreatePopupMenu();
             this.mPopup = true;
         }
         if (this.mType != MenuType.baseMenu) this.mType = MenuType.popumMenu;
         foreach (name; mnuNames) {
-            if (name == "_") {
-                this.addSeperator();
-            } else {
-                auto mi = new MenuItem(name, this.mHmenu, MenuType.menuItem, this.mChildCount);
-                mi.mWinHwnd = this.mWinHwnd;
-                mi.mBarmenu = this.mBarmenu;
-
-                this.mChildCount += 1;
-                this.mMenus[name] = mi;
-                if (mi.mWinHwnd) SendMessageW(mi.mWinHwnd, CM_MENU_ADDED, cast(WPARAM) mi.mId, cast(LPARAM) &mi);
-            }
+            MenuType mtyp = name == "|" ? MenuType.separator : MenuType.baseMenu;
+            auto mi = new MenuItem(name, mtyp, this.mHandle, this.mMenuCount, iswinmenu);
+            mi.mWinHwnd = this.mWinHwnd;
+            this.mMenuCount += 1;
+            this.mMenus[name] = mi;
+            if (iswinmenu) this.mBar.mWindow.mMenuItemDict[mi.mId] = mi;
         }
     }
 
 
-    final void addSeperator() {
-        auto mi = new MenuItem("_", this.mHmenu, MenuType.separator, this.mChildCount);
-        this.mChildCount += 1;
-        this.mMenus[mi.mText] = mi;
-    }
+    // final void addSeperator() {
+    //     auto mi = new MenuItem("_", this.mHmenu, MenuType.separator, this.mChildCount);
+    //     this.mChildCount += 1;
+    //     this.mMenus[mi.mText] = mi;
+    // }
 
-    final void create() {
+    final void createHandle()
+    {
         switch (this.mType) {
             case MenuType.baseMenu, MenuType.popumMenu:
                 if (this.mMenus.length > 0) {
-                    foreach (string key; this.mMenus.byKey) this.mMenus[key].create();
+                    foreach (string key; this.mMenus.byKey) this.mMenus[key].createHandle();
                 }
-                this.insertMenuInternal(this.mParentHmenu);
+                this.insertMenuInternal(this.mParentHandle);
             break;
-            case MenuType.menuItem: this.insertMenuInternal(this.mParentHmenu); break;
-            case MenuType.separator: AppendMenuW(this.mParentHmenu, MF_SEPARATOR, 0, null); break;
+            case MenuType.menuItem: this.insertMenuInternal(this.mParentHandle); break;
+            case MenuType.separator: AppendMenuW(this.mParentHandle, MF_SEPARATOR, 0, null); break;
             default: break;
         }
     }
@@ -194,25 +217,28 @@ class MenuItem {
 
     // package final void clickHandler(EventArgs e) {this.mClickHandler(this, e);}
     package:
+        MenuBar mBar;
         string mText;
         LPCWSTR mWideText;
         MenuType mType;
         Color mFgColor;
         bool mEnabled;
         uint mId;
-        HMENU mHmenu;
+        bool mIsWinmenu;
 
-        void insertMenuInternal(HMENU parenthmenu) {
+
+        void insertMenuInternal(HMENU parentHmenu)
+        {
             MENUITEMINFOW mii;
             mii.cbSize = cast(UINT)MENUITEMINFOW.sizeof;
             mii.fMask = MIIM_ID | MIIM_TYPE | MIIM_DATA | MIIM_SUBMENU | MIIM_STATE;
             mii.fType = MF_OWNERDRAW;
-            mii.dwTypeData = cast(wchar*) this.mText.toUTF16z;
-            mii.cch = cast(UINT)this.mText.length;
+            mii.dwTypeData = cast(wchar*) this.mWideText;
+            mii.cch = cast(UINT) this.mText.length;
             mii.dwItemData = cast(ULONG_PTR)(cast(void*)this);
             mii.wID = this.mId;
-            mii.hSubMenu = this.mPopup ? this.mHmenu : null;
-            InsertMenuItemW(parenthmenu, this.mIndex, 1, &mii);
+            mii.hSubMenu = this.mPopup ? this.mHandle : null;
+            InsertMenuItemW(parentHmenu, this.mIndex, 1, &mii);
             this.mCreated = true;
         }
 
@@ -221,23 +247,30 @@ class MenuItem {
             return null;
         }
 
-    private:
+        void insertCmenuInternal()
+        {
+            writeln("251");
+            if (this.mMenus.length > 0) {
+                foreach (string key; this.mMenus.byKey()) this.mMenus[key].insertCmenuInternal();
+            }
+            if (this.mType == MenuType.contextMenu) {
+                this.insertMenuInternal(this.mParentHandle);
+            } else if (this.mType == MenuType.separator) {
+                AppendMenuW(this.mHandle, MF_SEPARATOR, 0, null);
+            }
+        }
 
-        HMENU mParentHmenu;
-        uint mChildCount;
+    private:
+        HMENU mParentHandle;
         uint mIndex;
         bool mByPos;
         bool mChecked;
         bool mCreated;
         bool mPopup;
-        bool mBarmenu;
-        Font mFont;
         Color mBgColor;
-        MenuItem[string] mMenus;
         uint mFlag;
         HWND mWinHwnd;
         static uint staticIdNum = 100;
-
 
 }
 

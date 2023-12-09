@@ -76,6 +76,9 @@ class Font {
         this.mIsCreated = value;
     }
 
+    package:
+        HFONT mHandle;
+
     private :
         string mName;
         int mSize;
@@ -84,7 +87,7 @@ class Font {
         bool mUnderLine;
         bool mItalis;
         bool mIsCreated;
-        HFONT mHandle;
+
 
 }
 

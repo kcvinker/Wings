@@ -14,6 +14,7 @@ private DWORD tbExStyle = WS_EX_LEFT|WS_EX_LTRREADING|WS_EX_CLIENTEDGE;
 
 class TextBox : Control
 {
+    EventHandler onTextChanged;
     this (Window parent, int x, int y, int w, int h, bool autoc = false)
     {
         mixin(repeatingCode);
@@ -157,15 +158,12 @@ private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
 
 
-            // case CM_CTLCOMMAND :
-            // 	if (HIWORD(wParam) == 0) {
-            // 		tb.mChecked = cast(bool) tb.sendMsg(BM_GETCHECK, 0, 0);
-            // 		if (tb.onStateChanged) {
-            // 			auto ea = new EventArgs();
-            // 			tb.onStateChanged(tb, ea);
-            // 		}
-            // 	}
-            // 	break;
+            case CM_CTLCOMMAND :
+            	if (HIWORD(wParam) == EN_CHANGE) 
+                {
+            		if (tb.onTextChanged) tb.onTextChanged(tb, new EventArgs());
+            	}
+            	break;
             //case WM_SETFONT :
             //    print("WM_SETFONT rcvd"); break;
 

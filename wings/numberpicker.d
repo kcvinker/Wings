@@ -403,11 +403,11 @@ class NumberPicker : Control
 
         bool isMouseOnMe()  // Private
         {
-            // If this returns False, mouse_leave event will triggered
-            // Since, updown control is a combo of an edit and button controls...
-            // we have no better options to control the mouse enter & leave mechanism.
-            // Now, we create an imaginary rect over the bondaries of these two controls.
-            // If mouse is inside that rect, there is no mouse leave. Perfect hack.
+            /* If this returns False, mouse_leave event will triggered
+             * Since, updown control is a combo of an edit and button controls...
+             * we have no better options to control the mouse enter & leave mechanism.
+             * Now, we create an imaginary rect over the bondaries of these two controls.
+             * If mouse is inside that rect, there is no mouse leave. Perfect hack. */
             POINT pt;
             GetCursorPos(&pt);
             ScreenToClient(this.mParent.handle, &pt);
@@ -460,7 +460,7 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case CM_NOTIFY :
                 auto nm = cast(NMUPDOWN*) lParam;
                 if (nm.hdr.code == UDN_DELTAPOS)
-                writeln("delta pos");
+                //writeln("delta pos");
                 {
                     auto tbstr = np.getControlText(np.mBuddyHandle);
                     np.mValue = parse!double(tbstr);

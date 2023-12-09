@@ -8,16 +8,16 @@ import wings.window: Window;
 import wings.controls: Control;
 import wings.fonts: Font;
 import wings.enums: MenuType, ControlType;
-import wings.menubar: MenuItem, getMenuItem;
+import wings.menubar: MenuBase, MenuItem, getMenuItem;
 import wings.events: EventHandler, EventArgs;
 import wings.colors: makeHBRUSH, getClrRef;
 import wings.commons: appData, getControl, getMousePoints, getMousePos;
 
 
-class ContextMenu {
+class ContextMenu : MenuBase {
 
     this () {
-        this.mHmenu = CreatePopupMenu();
+        this.mHandle = CreatePopupMenu();
         this.mWidth = 120;
         this.mHeight = 25;
         this.mRightClick = true;
@@ -40,7 +40,16 @@ class ContextMenu {
         this.mParent = parent;
     }
 
-    void addMenus(string[] menuNames ...) {
+    MenuItem addItem(string item)
+    {
+        MenuType mtyp = item == "|" ? MenuType.separator : MenuType.contextMenu;
+        MenuItem mi = new MenuItem(item, mtyp, this.mHandle, this.mMenuCount, false);
+        this.mMenuCount += 1;
+        this.mMenus[item] = mi;
+        return mi;
+    }
+
+    void addItems(string[] menuNames ...) {
         this.setMenuInternal(menuNames);
     }
 
@@ -50,9 +59,10 @@ class ContextMenu {
     package:
         Control mParent;
 
-        /* This function executed at the 'contextMenu' property if each control.
-           'contextMenu' property will set the parent if it is null */
-        void setDummyControl() {
+        // This function executed at the 'contextMenu' property if each control.
+        // 'contextMenu' property will set the parent if it is null.
+        void setDummyControl()
+        {
             auto pHwnd = isWindow() ? this.mParent.mHandle : this.mParent.mParent.mHandle;
             auto hinst = appData.hInstance;
             this.mDummyHwnd = CreateWindowExW(0, "Button".toUTF16z, null, WS_CHILD, 0, 0, 0, 0, pHwnd, null, hinst, null);
@@ -61,7 +71,9 @@ class ContextMenu {
             if (!this.mFont.handle) this.mFont.createFontHandle(this.mDummyHwnd);
         }
 
-        void showMenu(LPARAM lpm) {
+        void showMenu(LPARAM lpm)
+        {
+            if (!this.mCmenuCreated) this.createCmenuHandle();
             if (this.mParent && this.mMenus.length) {
                 POINT pt = getMousePos(lpm);
                 if (pt.x == -1 && pt.y == -1) {
@@ -70,14 +82,15 @@ class ContextMenu {
                     pt = getMousePoints();
                 }
                 immutable UINT mBtn = this.mRightClick ? TPM_RIGHTBUTTON : TPM_LEFTBUTTON;
-                TrackPopupMenu(this.mHmenu, mBtn, pt.x, pt.y, 0, this.mDummyHwnd, null);
+                TrackPopupMenu(this.mHandle, mBtn, pt.x, pt.y, 0, this.mDummyHwnd, null);
             } else {
                 throw new Exception("Either parent is null or no menu items added");
             }
         }
 
 
-        MenuItem getMenuItem(int idNum) {
+        MenuItem getMenuItem(int idNum)
+        {
             foreach (key; this.mMenus.byKey()) {
                 auto menu = this.mMenus[key];
                 if (menu.mId == idNum) return menu;
@@ -88,33 +101,34 @@ class ContextMenu {
 
     EventHandler onMenuShown, onMenuClose;
     private:
-        HMENU mHmenu;
-        Font mFont;
         int mWidth, mHeight, mMenuCount;
-        bool mRightClick;
+        bool mRightClick, mCmenuCreated;
         COLORREF mGrayCref;
         HWND mDummyHwnd;
 
         HBRUSH mDefBgBrush, mHotBgBrush, mBorderBrush, mGrayBrush;
-        MenuItem[string] mMenus;
 
         bool isWindow() {return this.mParent.mControlType == ControlType.window;}
         DWORD_PTR toDwordPtr() {return cast(DWORD_PTR) (cast(void*) this);}
 
-        void setMenuInternal(string[] menuNames) {
+        void setMenuInternal(string[] menuNames)
+        {
             if (menuNames.length > 0) {
                 foreach (name; menuNames) {
-                    auto mtyp = name == "_" ? MenuType.separator : MenuType.contextMenu;
-                    auto mi = new MenuItem(name, this.mHmenu, mtyp, this.mMenuCount);
+                    auto mtyp = name == "|" ? MenuType.separator : MenuType.contextMenu;
+                    auto mi = new MenuItem(name, mtyp, this.mHandle, this.mMenuCount, false);
                     this.mMenuCount += 1;
-                    if (mtyp == MenuType.contextMenu) {
-                        mi.insertMenuInternal(this.mHmenu);
-                        this.mMenus[mi.mText] =  mi;
-                    } else if (mtyp == MenuType.separator) {
-                        AppendMenuW(this.mHmenu, MF_SEPARATOR, 0, null);
-                    }
+                    this.mMenus[name] = mi;
                 }
             }
+        }
+
+        void createCmenuHandle()
+        {
+            if (this.mMenus.length > 0) {
+                foreach (string key; this.mMenus.byKey()) this.mMenus[key].insertCmenuInternal();
+            }
+            this.mCmenuCreated = true;
         }
 
 } // End of ContextMenu class
@@ -131,7 +145,7 @@ private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
         ContextMenu cm = getControl!ContextMenu(refData);
         switch (message) {
             case WM_DESTROY :
-                DestroyMenu(cm.mHmenu);
+                DestroyMenu(cm.mHandle);
                 RemoveWindowSubclass(hWnd, &cmenuWndProc, scID);
             break;
             case WM_MEASUREITEM:

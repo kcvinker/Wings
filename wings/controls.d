@@ -85,8 +85,8 @@ class Control {
                 SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOSIZE);
             }
         }
-		
-		
+
+
 
         int width() {return this.mWidth;}
         int height() {return this.mHeight;}
@@ -121,7 +121,7 @@ class Control {
         // /// Set the control type of a control
         // final void controlType(ControlType value) {this.mControlType = value;}
          mixin finalProperty!("controlType", this.mControlType);
-		 
+
 		 final void focus() {SetFocus(this.mHandle);}
 
         /// Returns the font object
@@ -171,6 +171,18 @@ class Control {
         final int downY() {return this.mYpos + this.mHeight + 10;}
         final int controlID() {return this.mCtlId;}
 
+        int right(int p)()
+        {
+            auto rc = this.getMappedRect();
+            return rc.right + p;
+        }
+
+        int bottom(int p)()
+        {
+            auto rc = this.getMappedRect();
+            return rc.bottom + p;
+        }
+
         void backColor(uint value) {
             this.mBackColor(value);
             if ((this.mDrawFlag & 2) != 2 ) this.mDrawFlag += 2;
@@ -214,9 +226,9 @@ class Control {
         if (!this.mCmenu.mParent) this.mCmenu.mParent = this;
         this.mCmenu.setDummyControl();
     }
-    final void setContextMenu(string[] menuNames ...) {
-        auto cmenu = new ContextMenu(this, menuNames);
-        this.mCmenu = cmenu;
+    final void addContextMenu(string[] menuNames ...) {
+        this.mCmenu = new ContextMenu(this, menuNames);
+        this.mCmenu.setDummyControl();
     }
 
 
@@ -371,7 +383,26 @@ class Control {
             GetClientRect(this.mHandle, &this.mRect);
             MapWindowPoints(this.mHandle, this.mParent.mHandle, cast(LPPOINT)&this.mRect, 2);
         }
-		
+
+        RECT getMappedRect()
+        {
+            RECT rct;
+            HWND fhw;
+            if (this.mIsCreated)
+            {
+                fhw = this.mHandle;
+                GetClientRect(this.mHandle, &rct);
+            }
+            else
+            {
+                fhw = this.mParent.mHandle;
+                rct = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
+
+            }
+            MapWindowPoints(fhw, this.mParent.mHandle, cast(LPPOINT)&rct, 2);
+            return rct;
+        }
+
 		void calculateAutoSize() { // private
             //auto wtxt = this.mText.toUTF16z;
             auto hdc = GetDC(this.mHandle);

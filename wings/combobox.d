@@ -117,7 +117,9 @@ class ComboBox : Control
                 this.mItems ~= sitem;
                 this.sendMsg(CB_ADDSTRING, 0, witem);
             }
-        } else {
+        }
+        else
+        {
             foreach (item; newItems) this.mItems ~= item.makeString();
         }
     }

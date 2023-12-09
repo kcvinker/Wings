@@ -10,7 +10,6 @@ public import wings.contextmenu;
 public import wings.enums;
 public import wings.buttons;
 public import wings.fonts;
-public import wings.wingdi;
 public import wings.colors;
 public import wings.calendar;
 public import wings.checkbox;

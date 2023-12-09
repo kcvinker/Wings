@@ -14,7 +14,6 @@ import std.array;
 import std.algorithm.mutation; // We have a function called 'remove'. So this must be renamed.
 import std.string;
 
-
 import wings.controls;
 import wings.commons;
 import wings.events;
@@ -23,11 +22,8 @@ import wings.enums;
 import wings.winstyle_contsants;
 import wings.colors;
 import wings.gradient;
-//import wings.combobox : ComboInfo;
-import wings.menubar : MenuItem, getMenuItem;
-
+import wings.menubar : MenuBar, MenuItem, getMenuItem;
 import std.datetime.stopwatch;
-//public bool isReleaseVersion;
 package HWND mainHwnd; // A handle for main window
 
 // Compile time values to use later
@@ -228,6 +224,14 @@ class Window : Control
         return cast(bool) res;
     }
 
+    final MenuBar addMenuBar(string[] menuNames...)
+    {
+        auto mbar = new MenuBar(this);
+        if (menuNames.length > 0) mbar.addItems(true, menuNames);
+        this.mMenubarCreated = true;
+        return mbar;
+    }
+
 
 
     // final void hideWindow() {
@@ -240,17 +244,19 @@ class Window : Control
         bool mIsMouseTracking;
         bool mIsMouseEntered;
         bool mSizingStarted;
+        bool mMenubarCreated;
         WindowBkMode mBkDrawMode;
         HWND[HWND] cmb_dict;
-        COLORREF mMenuGrayCref;
-        HBRUSH mMenuGrayBrush;
-        HBRUSH mMenuDefBgBrush;
-        HBRUSH mMenuHotBgBrush;
-        HBRUSH mMenuFrameBrush;
+        // COLORREF mMenuGrayCref;
+        // HBRUSH mMenuGrayBrush;
+        // HBRUSH mMenuDefBgBrush;
+        // HBRUSH mMenuHotBgBrush;
+        // HBRUSH mMenuFrameBrush;
         Font mMenuFont;
         MenuItem[uint] mMenuItemDict;
         Control[] mControls;
         HBRUSH tbBrush;
+        MenuBar mMenubar;
 
 
         // This function is responsible for changing back color of window..
@@ -274,7 +280,7 @@ class Window : Control
         final void setMenuClickHandler( MenuItem mi) { this.mMenuItems ~= mi;}
 
         final MenuItem getMenuFromHmenu(HMENU menuHandle) {
-            foreach (key, menu; this.mMenuItemDict) {if (menu.mHmenu == menuHandle) return menu;}
+            foreach (key, menu; this.mMenuItemDict) {if (menu.mHandle == menuHandle) return menu;}
             return null;
         }
 
@@ -439,6 +445,7 @@ class Window : Control
         }
 
         void createControlHandles() {
+            if (this.mMenubarCreated && !this.mMenubar.mIsCreated) this.mMenubar.createHandle();
             if (this.mControls.length) {
                 foreach (ctl; this.mControls) {
                     if (!ctl.mIsCreated) ctl.createHandle();
@@ -472,15 +479,27 @@ struct HotKeyStruct
 
 }
 
+HICON getWingsIcon()
+{
+    /* We need to make sure that the compiler get the icon path
+     * regardless of the working directory. */
+    import std.path;
+    auto modulebase = dirName(__FILE_FULL_PATH__);
+    auto icopath = format("%s\\wings_icon.ico", modulebase);
+    return LoadImageW(null, icopath.toUTF16z(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
+}
+
 void regWindowClass(wstring clsN,  HMODULE hInst)
 {
+    // auto x = getIconName();
+    // auto icon = "wings\\np-wings.ico".toUTF16z();
     WNDCLASSEXW wcEx;
     wcEx.style         = CS_HREDRAW | CS_VREDRAW  | CS_OWNDC;
     wcEx.lpfnWndProc   = &mainWndProc;
     wcEx.cbClsExtra    = 0;
     wcEx.cbWndExtra    = 0;
     wcEx.hInstance     = hInst;
-    wcEx.hIcon         = LoadIconW(null, IDI_APPLICATION);
+    wcEx.hIcon         = getWingsIcon();//LoadIconW(null, IDI_APPLICATION);
     wcEx.hCursor       = LoadCursorW(null, IDC_ARROW);
     wcEx.hbrBackground = CreateSolidBrush(appData.appColor.cref);//COLOR_WINDOW;
     wcEx.lpszMenuName  = null;
@@ -509,6 +528,7 @@ void trackMouseMove(HWND hw)
     tme.hwndTrack = hw;
     TrackMouseEvent(&tme);
 }
+
 
 
 /// WndProc function for Window class
@@ -844,18 +864,20 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 COLORREF txtClrRef = mi.mFgColor.cref;
                 if (dis.itemState == 320 || dis.itemState == 257) {
                     if (mi.mEnabled) {
-                        immutable RECT rc = RECT(dis.rcItem.left + 5, dis.rcItem.top + 1,
-                                    dis.rcItem.right, dis.rcItem.bottom);
-                        FillRect(dis.hDC, &rc, win.mMenuHotBgBrush);
-                        FrameRect(dis.hDC, &rc, win.mMenuFrameBrush);
+                        immutable RECT rc = RECT(   dis.rcItem.left + 5,
+                                                    dis.rcItem.top + 1,
+                                                    dis.rcItem.right,
+                                                    dis.rcItem.bottom);
+                        FillRect(dis.hDC, &rc, win.mMenubar.mMenuHotBgBrush);
+                        FrameRect(dis.hDC, &rc, win.mMenubar.mMenuFrameBrush);
                         txtClrRef = 0x00000000;
                     } else {
-                        FillRect(dis.hDC, &dis.rcItem, win.mMenuGrayBrush);
-                        txtClrRef = win.mMenuGrayCref;
+                        FillRect(dis.hDC, &dis.rcItem, win.mMenubar.mMenuGrayBrush);
+                        txtClrRef = win.mMenubar.mMenuGrayCref;
                     }
                 } else {
-                    FillRect(dis.hDC, &dis.rcItem, win.mMenuDefBgBrush);
-                    if (!mi.mEnabled) txtClrRef = win.mMenuGrayCref;
+                    FillRect(dis.hDC, &dis.rcItem, win.mMenubar.mMenuDefBgBrush);
+                    if (!mi.mEnabled) txtClrRef = win.mMenubar.mMenuGrayCref;
                 }
 
                 SetBkMode(dis.hDC, 1);
@@ -864,7 +886,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 } else {
                     dis.rcItem.left += 25;
                 }
-                SelectObject(dis.hDC, win.mMenuFont.handle);
+                SelectObject(dis.hDC, win.mMenubar.mFont.mHandle);
                 SetTextColor(dis.hDC, txtClrRef);
                 DrawTextW(dis.hDC, mi.mWideText, -1, &dis.rcItem, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
                 return 0;
