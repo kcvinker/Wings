@@ -137,9 +137,8 @@ void main()
     lv.addRow("Win8", "Catalina", "Debian");
     lv.addRow("Win10", " Big Sur", "Kali");
 
-	auto cm = new ContextMenu(); // A simple context menu for list view
-	cm.addMenus("Add Work", "Give Work", "Finish Work");
-	lv.contextMenu = cm;
+	// A simple context menu for list view
+	lv.addContextMenu("Windows", "Linux", "MacOS");
 
 	frm.show();
 }
