@@ -10,23 +10,23 @@ import wings.imagelist;
 
 //dmd -i -run app.d
 
-Window frm;
-Button btn, btnor, b3;
-CheckBox cb;
-ComboBox cmb;
-DateTimePicker dtp;
-Calendar cal;
-Label lbl;
-//ListBox lbx;
-ListView lv;
-NumberPicker np;
-RadioButton rb, rb2;
-TextBox tb;
-TrackBar tk;
-TreeView tv;
-GroupBox gb;
-ProgressBar pb;
-MenuBar mb;
+	Window frm;
+	Button btn, btnor, b3;
+	CheckBox cb;
+	ComboBox cmb;
+	DateTimePicker dtp;
+	Calendar cal;
+	Label lbl;
+	//ListBox lbx;
+	ListView lv;
+	NumberPicker np;
+	RadioButton rb, rb2;
+	TextBox tb;
+	TrackBar tk;
+	TreeView tv;
+	GroupBox gb;
+	ProgressBar pb;
+	MenuBar mb;
 
 
 void main() {
@@ -39,22 +39,14 @@ void main() {
 	//frm.style = WindowStyle.sizable;
 	frm.createHandle();
 
-	mb = new MenuBar(frm);
-	mb.addMenus("File", "Edit", "Format");
-	mb.menus["File"].addMenus("New Work", "Exit");
-	auto mnuEdit = mb.menus["Edit"];
-	mnuEdit.addMenu("Copy");
-	mnuEdit.addSeperator();
-	mnuEdit.addMenu("Paste");
-	auto mnuExit = mb.menus["File"].menus["Exit"];
-	mnuExit.onClick = (c, e) => print(c.text);
-	mb.create();
+	// Let's add a menu bar and some menu items
+	mb = frm.addMenuBar("Windows", "Linux", "MacOS");
+	mb.menus["Windows"].addItems("Windows 8", "Windows 10", "Windows 11");
+	mb.menus["Linux"].addItems("Ubuntu", "Debian", "Kali");
+	mb.menus["MacOS"].addItems("Mavericks", "Catalina", "Big Sur");
 
-	cmb = new ComboBox(frm, 20, 65, 150, 30);
-	cmb.addRange("Window", "Button", "Calendar", "CheckBox", "DateTimePicker", "GroupBox", 4500);
 
-	//cmb.dropDownStyle = DropDownStyle.;
-	cmb.backColor = 0xff80bf;
+
 	// cmb.onMouseMove = (c, e) => print("mouse moved");
 //  cmb.create;
 
@@ -69,6 +61,15 @@ void main() {
 	// btn.foreColor = 0xf94144;
 	//btn.onMouseLeave = (c,e) => log(cal.value);
 	btn.onMouseClick = &btnClick;
+
+	cmb = new ComboBox(frm, 20, btn.bottom!10, 150, 30);
+	cmb.addRange("Window", "Button", "Calendar", "CheckBox", "DateTimePicker", "GroupBox", 4500);
+
+	//cmb.dropDownStyle = DropDownStyle.;
+	cmb.backColor = 0xff80bf;
+
+
+
 	// btn.create();
 	//---------------
 	b3 = new Button(frm, "Sample", 185, 175 );
@@ -89,7 +90,7 @@ void main() {
     tk = new TrackBar(frm, 20, 145, 150, 40, true, true, &onTrackValueChanged);
     //tk.vertical = true;
 
-    tv = new TreeView(frm, 185, 20, 150, 100, true);
+    tv = new TreeView(frm, cmb.right!10, 20, 150, 100, true);
 	tv.backColor = 0xddddbb;
     // tv.createHandle();
 
@@ -147,11 +148,10 @@ void main() {
     lv.addRow("Vista", "Mavericks", "Mint");
     lv.addRow("Win7", "Mavericks", "Ubuntu");
     lv.addRow("Win8", "Catalina", "Debian");
-    lv.addRow("Win10", " Big Sur", "Kali");
+    lv.addRow("Win10", "Big Sur", "Kali");
 
-	auto cm = new ContextMenu();
-	cm.addMenus("Add Work", "Give Work", "Finish Work");
-	lv.contextMenu = cm;
+	lv.addContextMenu("Windows", "Linux", "MacOS");
+
 
 	frm.show();
 

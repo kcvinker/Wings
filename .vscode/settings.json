@@ -2,5 +2,6 @@
     "dscanner.ignoredKeys": [
         "dscanner.style.undocumented_declaration",
         "dscanner.style.phobos_naming_convention"
-    ]
+    ],
+    "cmake.configureOnOpen": false
 }
