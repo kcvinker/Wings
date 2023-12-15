@@ -13,6 +13,7 @@ import std.format;
 import std.array;
 import std.algorithm.mutation; // We have a function called 'remove'. So this must be renamed.
 import std.string;
+import std.functional;
 
 import wings.controls;
 import wings.commons;
@@ -184,7 +185,7 @@ class Window : Control
     /// An handy feature for design time.
     final void enablePrintPoint()
     {
-        this.onMouseUp = &printFormPoints;
+        this.onMouseUp = toDelegate(&printFormPoints);
     }
 
     // final void printPoint(MouseEventArgs e)

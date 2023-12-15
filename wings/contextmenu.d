@@ -16,7 +16,8 @@ import wings.commons: appData, getControl, getMousePoints, getMousePos;
 
 class ContextMenu : MenuBase {
 
-    this () {
+    this ()
+    {
         this.mHandle = CreatePopupMenu();
         this.mWidth = 120;
         this.mHeight = 25;
@@ -29,13 +30,15 @@ class ContextMenu : MenuBase {
         this.mGrayCref = getClrRef(0x979dac);
     }
 
-    this(Control parent, string[] menuNames ...) {
+    this(Control parent, string[] menuNames ...)
+    {
         this();
         this.mParent = parent;
         this.setMenuInternal(menuNames);
     }
 
-    this(Control parent) {
+    this(Control parent)
+    {
         this();
         this.mParent = parent;
     }
@@ -50,12 +53,7 @@ class ContextMenu : MenuBase {
         return mi;
     }
 
-    void addItems(string[] menuNames ...) {
-        this.setMenuInternal(menuNames);
-    }
-
-
-
+    void addItems(string[] menuNames ...) { this.setMenuInternal(menuNames);}
 
     package:
         Control mParent;
@@ -128,7 +126,9 @@ class ContextMenu : MenuBase {
         void createCmenuHandle()
         {
             if (this.mMenus.length > 0) {
-                foreach (string key; this.mMenus.byKey()) this.mMenus[key].insertCmenuInternal();
+                foreach (string key; this.mMenus.byKey()) {
+                    this.mMenus[key].insertCmenuInternal();
+                }
             }
             this.mCmenuCreated = true;
         }

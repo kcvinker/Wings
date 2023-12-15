@@ -24,6 +24,7 @@ import std.stdio : log = writeln;
 import std.format;
 import std.conv;
 import std.string;
+import std.functional;
 import wings.imagelist;
 
 //dmd -i -run app.d
@@ -71,16 +72,16 @@ void main()
 	btn = new Button(frm, "Gradient" );
 	btn.width = 120;
 	btn.setGradientColors(0xeeef20, 0x70e000);
-	btn.onMouseClick = &btnClick;
+	btn.onMouseClick = toDelegate(&btnClick);
 
 	b3 = new Button(frm, "Sample", 185, 175 );
 	b3.backColor = 0xdddf00;
-	b3.onMouseClick = &onb3Click;
+	b3.onMouseClick = toDelegate(&onb3Click);
 
 	lbl = new Label(frm, "My Label", 20, 105);
 	lbl.foreColor = 0xff0000;
 
-    tk = new TrackBar(frm, 20, 145, 150, 40, true, true, &onTrackValueChanged);
+    tk = new TrackBar(frm, 20, 145, 150, 40, true, true, toDelegate(&onTrackValueChanged));
 
     tv = new TreeView(frm, 185, 20, 150, 100, true);
 	tv.backColor = 0xddddbb;

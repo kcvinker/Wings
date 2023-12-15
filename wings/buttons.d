@@ -25,7 +25,7 @@ private wchar[] mClassName = ['B','u','t','t','o','n', 0];
 class Button : Control
 {
     import wings.gradient;
-
+    SampleHandler sampleClick;
 // Properties
 
     /// Set the forecolor of the button.
@@ -348,6 +348,7 @@ private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             break;
             case WM_LBUTTONDOWN : btn.mouseDownHandler(message, wParam, lParam); break;
             case WM_LBUTTONUP : btn.mouseUpHandler(message, wParam, lParam); break;
+
             case CM_LEFTCLICK : btn.mouseClickHandler(); break;
             case WM_RBUTTONDOWN : btn.mouseRDownHandler(message, wParam, lParam); break;
             case WM_RBUTTONUP : btn.mouseRUpHandler(message, wParam, lParam); break;

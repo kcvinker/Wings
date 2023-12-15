@@ -646,7 +646,7 @@ class ListView : Control
             LineTo(nmcd.hdc, nmcd.rc.right, nmcd.rc.bottom);
             SelectObject(nmcd.hdc, this.mHdrFont.handle);
             SetTextColor(nmcd.hdc, this.mHdrForeColor.cref);
-            DrawText(nmcd.hdc, col.text.toUTF16z, -1, &nmcd.rc, col.mHdrTxtFlag );
+            DrawText(nmcd.hdc, col.mWideText, -1, &nmcd.rc, col.mHdrTxtFlag );
             return CDRF_SKIPDEFAULT;
         }
 
@@ -661,6 +661,7 @@ class ListViewColumn
         this.mText  = colTxt;
         this.mWidth = width;
         this.mColAlign = Alignment.left;
+        this.mWideText = colTxt.toUTF16z;
         //this.mIndex = mIndexNum;
         this.mImgIndex = img;
         this.mImgOnRight = imgRight;
@@ -716,7 +717,7 @@ class ListViewColumn
         Color mBackColor;
         Color mForeColor;
         bool mImgOnRight;
-
+        LPCWSTR mWideText;
         Alignment mColAlign;
         Alignment mHdrTxtAlign;
         DWORD mHdrTxtFlag;

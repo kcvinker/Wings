@@ -15,16 +15,18 @@ import std.stdio;
 
 immutable uint um_single_Click = WM_USER + 1;
 
-alias EventHandler = void function(Control sender, EventArgs e);
-alias KeyEventHandler = void function(Control sender, KeyEventArgs e);
-alias KeyPressEventHandler = void function(Control sender, KeyPressEventArgs e);
-alias MouseEventHandler = void function(Control sender, MouseEventArgs e);
-alias SizeEventHandler = void function(Control sender, SizeEventArgs e);
-alias PaintEventHandler = void function(Control sender, PaintEventArgs e);
-alias DateTimeEventHandler = void function(Control sender, DateTimeEventArgs e);
-alias HotKeyEventHandler = void function(Control sender, HotKeyEventArgs e);
-alias MenuEventHandler = void function(MenuItem sender, EventArgs e);
-alias ThreadMsgHandler = void function(WPARAM wpm, LPARAM lpm);
+alias EventHandler = void delegate(Control sender, EventArgs e);
+alias KeyEventHandler = void delegate(Control sender, KeyEventArgs e);
+alias KeyPressEventHandler = void delegate(Control sender, KeyPressEventArgs e);
+alias MouseEventHandler = void delegate(Control sender, MouseEventArgs e);
+alias SizeEventHandler = void delegate(Control sender, SizeEventArgs e);
+alias PaintEventHandler = void delegate(Control sender, PaintEventArgs e);
+alias DateTimeEventHandler = void delegate(Control sender, DateTimeEventArgs e);
+alias HotKeyEventHandler = void delegate(Control sender, HotKeyEventArgs e);
+alias MenuEventHandler = void delegate(MenuItem sender, EventArgs e);
+alias ThreadMsgHandler = void delegate(WPARAM wpm, LPARAM lpm);
+alias SampleHandler = void delegate(Control sender, EventArgs e);
+
 
 
 
