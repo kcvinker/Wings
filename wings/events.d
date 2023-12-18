@@ -10,6 +10,7 @@ import wings.enums;
 import wings.date_and_time;
 import wings.commons;
 import wings.menubar : MenuItem;
+import wings.window : Window;
 
 import std.stdio;
 
@@ -25,6 +26,7 @@ alias DateTimeEventHandler = void delegate(Control sender, DateTimeEventArgs e);
 alias HotKeyEventHandler = void delegate(Control sender, HotKeyEventArgs e);
 alias MenuEventHandler = void delegate(MenuItem sender, EventArgs e);
 alias ThreadMsgHandler = void delegate(WPARAM wpm, LPARAM lpm);
+alias TimerTickHandler = void delegate(Window win, EventArgs e);
 alias SampleHandler = void delegate(Control sender, EventArgs e);
 
 

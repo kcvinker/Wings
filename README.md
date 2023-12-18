@@ -15,7 +15,7 @@
 
 ## Sample code
 This is the code that created the window in above screenshot
-```d
+```C#
 
 import std.stdio;
 import wings;
@@ -60,6 +60,13 @@ void main()
 	mb.menus["Linux"].addItems("Ubuntu", "Debian", "Kali");
 	mb.menus["MacOS"].addItems("Mavericks", "Catalina", "Big Sur");
 
+	// Lets add a timer which ticks at 800 ms interval.
+	void timer_handler(Window w, EventArgs e) {writeln("Timer ticked...");}
+	auto timer = frm.addTimer(800, &timer_handler);
+
+	// This function will start the timer when we click the button.
+	void b3_handler(Control c, EventArgs e) {timer.start();}
+
 	cmb = new ComboBox(frm, 20, 65, 150, 30);
 	cmb.addRange("Window", "Button", "Calendar", "CheckBox", "DateTimePicker", "GroupBox");
 
@@ -76,7 +83,7 @@ void main()
 
 	b3 = new Button(frm, "Sample", 185, 175 );
 	b3.backColor = 0xdddf00;
-	b3.onMouseClick = toDelegate(&onb3Click);
+	b3.onMouseClick = toDelegate(&b3_handler);
 
 	lbl = new Label(frm, "My Label", 20, 105);
 	lbl.foreColor = 0xff0000;

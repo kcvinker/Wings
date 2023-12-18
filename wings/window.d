@@ -73,7 +73,7 @@ class Window : Control
             regWindowClass(appData.className, appData.hInstance);
             // this.checkWinVwesion();
         }
-
+        this.mWindowID = mWinCount;
         this.mText = txt;
         this.mWidth = w;
         this.mHeight = h;
@@ -233,6 +233,13 @@ class Window : Control
         return mbar;
     }
 
+    final Timer addTimer(UINT interval = 100, TimerTickHandler tickHandler = null)
+    {
+        auto timer = new Timer(this, interval, tickHandler);
+        this.mTimerDic[timer.mIdNum] = timer;
+        return timer;
+    }
+
 
 
     // final void hideWindow() {
@@ -248,11 +255,6 @@ class Window : Control
         bool mMenubarCreated;
         WindowBkMode mBkDrawMode;
         HWND[HWND] cmb_dict;
-        // COLORREF mMenuGrayCref;
-        // HBRUSH mMenuGrayBrush;
-        // HBRUSH mMenuDefBgBrush;
-        // HBRUSH mMenuHotBgBrush;
-        // HBRUSH mMenuFrameBrush;
         Font mMenuFont;
         MenuItem[uint] mMenuItemDict;
         Control[] mControls;
@@ -290,6 +292,7 @@ class Window : Control
 
     private : //-------------------------------
         static int mWinCount;
+        int mWindowID;
         static bool mMainLoopStarted;
         static int screenWidth;
         static int screenHeight;
@@ -301,7 +304,8 @@ class Window : Control
         bool mMaxBox;
         bool mMinBox;
         bool mGDR2L; // Gradient draw right to left
-
+        Timer[UINT_PTR] mTimerDic;
+        UINT_PTR mStaticTimerID;
         HMENU menuHwnd;
         DWORD winStyle = WS_OVERLAPPEDWINDOW;
         WindowPos mStartPos;
@@ -458,6 +462,43 @@ class Window : Control
 }
 //==========================END of Window CLASS=====================
 
+class Timer {
+    UINT interval;
+    TimerTickHandler onTick;
+
+    this(Window parent, UINT interval, TimerTickHandler handler)
+    {
+        this.mParent = parent;
+        this.interval = interval;
+        this.onTick = handler;
+        if (parent.mStaticTimerID > 0) {
+            parent.mStaticTimerID += 1;
+        } else {
+            parent.mStaticTimerID = cast(UINT_PTR)(parent.mWindowID * 1000);
+        }
+        this.mIdNum = parent.mStaticTimerID;
+    }
+
+    ~this() {
+        if (this.mIsEnabled) KillTimer(this.mParent.mHandle, this.mIdNum);
+    }
+
+    void start() {
+        this.mIsEnabled = true;
+        SetTimer(this.mParent.mHandle, this.mIdNum, this.interval, null);
+    }
+
+    void stop() {
+        KillTimer(this.mParent.mHandle, this.mIdNum);
+        this.mIsEnabled = false;
+    }
+
+    private:
+    UINT_PTR mIdNum;
+    Window mParent;
+    bool mIsEnabled;
+}
+
 void printFormPoints(Control sender, MouseEventArgs e)
 {
     import std.stdio;
@@ -539,10 +580,14 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
         auto win = cast(Window) (cast(void *) GetWindowLongPtrW(hWnd, GWLP_USERDATA));
         switch (message) {
             case CM_WIN_THREAD_MSG: // Users can send this msg from different threads.
-                if (win.onThreadMsg) {
-                    win.onThreadMsg(wParam, lParam);
+                if (win.onThreadMsg) win.onThreadMsg(wParam, lParam); break;
+
+            case WM_TIMER:
+                Timer timer = win.mTimerDic.get(cast(UINT_PTR) wParam, null);
+                if (timer && timer.onTick) {
+                    timer.onTick(win, new EventArgs());
                 }
-            break;
+                break;
 
             case WM_SHOWWINDOW :
                 if (!win.mIsLoaded) {
