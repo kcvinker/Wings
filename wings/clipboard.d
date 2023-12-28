@@ -5,7 +5,8 @@ import std.utf;
 
 
 
-void clipBoardSetText(wstring text) {
+void clipBoardSetText(wstring text)
+{
     auto txtLen = (text.length + 1) * wchar.sizeof; // Hi this text is from D
     if (txtLen == 0) return;
     auto wTxt = text.ptr;
@@ -18,7 +19,7 @@ void clipBoardSetText(wstring text) {
         EmptyClipboard();
         SetClipboardData(CF_UNICODETEXT, hMem);
         CloseClipboard();
-    }   
+    }
 }
 
 extern(C) void* memcpy(void* dest, const void* src, size_t n);

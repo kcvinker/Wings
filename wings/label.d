@@ -48,8 +48,7 @@ class Label : Control
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         this.checkForAutoSize();
         this.createHandleInternal(mClassName.ptr);
-        if (this.mHandle)
-        {
+        if (this.mHandle) {
             if (this.mAutoSize) this.calculateAutoSize();
             this.setSubClass(&lblWndProc);
         }
@@ -62,8 +61,7 @@ class Label : Control
     final override void text(string value)
     {
         this.mText = value;
-        if (this.mIsCreated)
-        {
+        if (this.mIsCreated) {
             SetWindowTextW(this.mHandle, value.toUTF16z);
             if (this.mAutoSize) calculateAutoSize;
         }
@@ -97,8 +95,7 @@ class Label : Control
                 case TextAlignment.bottomRight : this.dwTxtAlign = DT_BOTTOM | DT_RIGHT; break;
             }
 
-            if (this.mMultiLine)
-            {
+            if (this.mMultiLine) {
                 this.dwTxtAlign |= DT_WORDBREAK;
             } else {
                 this.dwTxtAlign |= DT_SINGLELINE;
@@ -107,8 +104,7 @@ class Label : Control
 
         void adjustBorder()
         { // Private
-            if (this.mBorder == LabelBorder.sunkenBorder)
-            {
+            if (this.mBorder == LabelBorder.sunkenBorder) {
                 this.mStyle |= SS_SUNKEN;
             } else {
                 this.mStyle |= WS_BORDER;
@@ -118,8 +114,7 @@ class Label : Control
         void checkForAutoSize()
         { // Private
             if (any([this.mMultiLine, this.width != 0, this.mHeight != 0 ])) this.mAutoSize = false;
-            if (!this.mAutoSize)
-            {
+            if (!this.mAutoSize) {
                 if (this.mWidth == 0) this.mWidth = 100;
                 if (this.mHeight == 0) this.mHeight = 30;
             }
@@ -154,12 +149,10 @@ extern(Windows)
 private LRESULT lblWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try
-    {
+    try {
         Label lbl = getControl!Label(refData);
         //print("message", message);
-        switch (message)
-        {
+        switch (message) {
             case WM_DESTROY : lbl.finalize(scID); break;
             case WM_PAINT : lbl.paintHandler(); break;
             case WM_SETFOCUS : lbl.setFocusHandler(); break;

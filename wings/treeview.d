@@ -37,8 +37,7 @@ class TreeView : Control
     {
     	this.setTvStyle();
     	this.createHandleInternal(mClassName.ptr);
-    	if (this.mHandle)
-        {
+    	if (this.mHandle) {
             this.setSubClass(&tvWndProc);
             if (this.mBackColor.value != 0xFFFFFF) this.sendMsg(TVM_SETBKCOLOR, 0, this.mBackColor.cref);
             if (this.mForeColor.value != defForeColor) this.sendMsg(TVM_SETTEXTCOLOR, 0, this.mForeColor.cref);
@@ -129,8 +128,7 @@ class TreeView : Control
             bool isRootNode = false;
             string errMsg = "Can't Add";
 
-            switch(nop)
-            {
+            switch(nop) {
                 case NodeOps.addNode:
                     tis.hParent = TVI_ROOT;
                     tis.hInsertAfter = this.mNodeCount > 0 ? this.mNodes[this.mNodeCount - 1].mHandle : TVI_FIRST;
@@ -159,12 +157,10 @@ class TreeView : Control
             }
 
             auto hItem =  cast(HTREEITEM) this.sendMsg(TVM_INSERTITEMW, 0, &tis);
-            if (hItem)
-            {
+            if (hItem) {
                 node.mHandle = hItem;
                 this.mUniqNodeID += 1;
-                if (isRootNode)
-                {
+                if (isRootNode) {
                     this.mNodes ~= node;
                     this.mNodeCount += 1;
                 } else {
@@ -242,11 +238,9 @@ extern(Windows)
 private LRESULT tvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try
-    {
+    try {
         TreeView tv = getControl!TreeView(refData);
-        switch (message)
-        {
+        switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &tvWndProc, scID); break;
 
             case WM_PAINT : tv.paintHandler(); break;

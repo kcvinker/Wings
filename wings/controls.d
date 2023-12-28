@@ -33,7 +33,8 @@ mixin template finalProperty(string pName, alias obj) {
 class Control {
 
     /// Set the text of control
-        void text(string value) {
+        void text(string value)
+        {
             this.mText = value;
             if (this.mIsCreated) {
                 SetWindowTextW(this.mHandle, this.mText.toUTF16z);
@@ -41,7 +42,8 @@ class Control {
         }
 
         /// Returns the control text
-        string text() {
+        string text()
+        {
             if (this.mIsCreated) {
                 return getControlText(this.mHandle);
             } else {
@@ -49,7 +51,8 @@ class Control {
             }
         }
 
-        void visible(bool value) {
+        void visible(bool value)
+        {
             this.mVisible = value;
             if (this.mIsCreated) {
                 DWORD flag = value ? SW_SHOW : SW_HIDE;
@@ -58,28 +61,32 @@ class Control {
         }
         bool visible() {return this.mVisible;}
 
-        void width(int value) {
+        void width(int value)
+        {
             this.mWidth = value;
             if (this.mIsCreated) {
                 SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOMOVE);
             }
         }
 
-        void height(int value) {
+        void height(int value)
+        {
             this.mHeight = value;
             if (this.mIsCreated) {
                 SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOMOVE);
             }
         }
 
-        void xpos(int value) {
+        void xpos(int value)
+        {
             this.mXpos = value;
             if (this.mIsCreated) {
                 SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOSIZE);
             }
         }
 
-        void ypos(int value) {
+        void ypos(int value)
+        {
             this.mYpos = value;
             if (this.mIsCreated) {
                 SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOSIZE);
@@ -128,7 +135,8 @@ class Control {
         Font font() {return this.mFont;}
 
         /// Set the font for a control
-        void font(Font value) {
+        void font(Font value)
+        {
             this.mBaseFontChanged = true;
             this.mFont = value;
             if (this.mIsCreated) this.setFontInternal(); // Setting font if the control is created already.
@@ -151,7 +159,8 @@ class Control {
         int bottom() {return this.mRect.bottom;}
 
 
-        void printNotifs() {
+        void printNotifs()
+        {
             enum TRBN_FIRST = -1501U;
             enum TRBN_THUMBPOSCHANGING = TRBN_FIRST-1;
             writefln("NM_CUSTOMDRAW %d", TRBN_THUMBPOSCHANGING);
@@ -183,7 +192,8 @@ class Control {
             return rc.bottom + p;
         }
 
-        void backColor(uint value) {
+        void backColor(uint value)
+        {
             this.mBackColor(value);
             if ((this.mDrawFlag & 2) != 2 ) this.mDrawFlag += 2;
             if (this.mIsCreated) this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
@@ -192,14 +202,16 @@ class Control {
 
         uint backColor() {return this.mBackColor.value;}
 
-        void foreColor(uint value) {
+        void foreColor(uint value)
+        {
             this.mForeColor(value);
             if ((this.mDrawFlag & 1) != 1) this.mDrawFlag += 1;
             this.checkRedrawNeeded();
         }
         uint foreColor() {return this.mForeColor.value;}
 
-        void disabled(bool value) {
+        void disabled(bool value)
+        {
             this.mDisabled = value;
             if (this.mIsCreated) EnableWindow(this.mHandle, !value);
         }
@@ -221,12 +233,14 @@ class Control {
 
 
     final ContextMenu contextMenu() {return this.mCmenu;}
-    final void contextMenu(ContextMenu value) {
+    final void contextMenu(ContextMenu value)
+    {
         this.mCmenu = value;
         if (!this.mCmenu.mParent) this.mCmenu.mParent = this;
         this.mCmenu.setDummyControl();
     }
-    final void addContextMenu(string[] menuNames ...) {
+    final void addContextMenu(string[] menuNames ...)
+    {
         this.mCmenu = new ContextMenu(this, menuNames);
         this.mCmenu.setDummyControl();
     }
@@ -280,7 +294,8 @@ class Control {
         static int mSubClassId = 1000;
         int mRight, mBottom;
 
-        void createHandleInternal(wchar* clsname) {  // protected
+        void createHandleInternal(wchar* clsname)
+        {  // protected
             // This function works for almost all controls except combo box.
             // This will save us 150+ lines of code.
             // this.mCtlId = Control.stCtlId;
@@ -307,13 +322,15 @@ class Control {
             }
         }
 
-        final void setFontInternal() {   // Package
+        final void setFontInternal()
+        {   // Package
             // This function is used for setting font for a control right after it created
             if (!this.mFont.isCreated) {this.mFont.createFontHandle(this.mHandle); }
             this.sendMsg(WM_SETFONT, this.mFont.handle, 1);
         }
 
-        final void setSubClass(SUBCLASSPROC ctlWndProc) {    // Protected
+        final void setSubClass(SUBCLASSPROC ctlWndProc)
+        {    // Protected
             /*  We need to implement a special WndProc function for each control.
             In order to do that, we need to subclass a control. Here, subclassing means...
             just replacing the parent's own WndProc with our function. */
@@ -327,17 +344,20 @@ class Control {
         //     writefln("Removing subclass of %s and result - %d ", this.mName, res);
         // }
 
-        final auto sendMsg(wpt, lpt)(uint uMsg, wpt wp, lpt lp) { // Package
+        final auto sendMsg(wpt, lpt)(uint uMsg, wpt wp, lpt lp)
+        { // Package
             // A helper function for sending messages to controls & window.
             return SendMessage(this.mHandle, uMsg, cast(WPARAM) wp, cast(LPARAM) lp);
         }
 
-        void createLogFontInternal() { // Package
+        void createLogFontInternal()
+        { // Package
             if (!this.mFont.isCreated) this.mFont.createFontHandle(this.mHandle);
             this.sendMsg(WM_SETFONT, this.mFont.handle, 1);
         }
 
-        final string getControlText(HWND hw) {
+        final string getControlText(HWND hw)
+        {
             auto txtLen = GetWindowTextLengthW(hw) + 1;
             wchar[] buffer = new wchar[](txtLen);
             GetWindowTextW(hw, buffer.ptr, txtLen );
@@ -345,41 +365,48 @@ class Control {
             return slice.to!string;
         }
 
-        final string getControlTextANSI(HWND hw) {
+        final string getControlTextANSI(HWND hw)
+        {
             auto txtLen = GetWindowTextLengthW(hw) + 1;
             char[] buffer = new char[](txtLen);
             GetWindowTextA(hw, buffer.ptr, txtLen );
             return buffer.to!string;
         }
 
-        final RECT clientRect() {
+        final RECT clientRect()
+        {
             RECT rc;
             GetClientRect(this.mHandle, &rc);
             return rc;
         }
-        final RECT clientRect(HWND hw) {
+        final RECT clientRect(HWND hw)
+        {
             RECT rc;
             GetClientRect(hw, &rc);
             return rc;
         }
 
-        final RECT windowRect(HWND hw) {
+        final RECT windowRect(HWND hw)
+        {
             RECT rc;
             GetWindowRect(hw, &rc);
             return rc;
         }
 
-        final log(T)(T obj, string msg = "") {
+        final log(T)(T obj, string msg = "")
+        {
             writefln("%s log [%d]  %s - %s", this.mName, this.mLogNum, msg, obj);
             ++this.mLogNum;
         }
 
-        final log(T)(string msg = "") {
+        final log(T)(string msg = "")
+        {
             writefln("%s log [%d]  %s", this.mName, this.mLogNum);
             ++this.mLogNum;
         }
 
-        void getRightAndBottom() {
+        void getRightAndBottom()
+        {
             GetClientRect(this.mHandle, &this.mRect);
             MapWindowPoints(this.mHandle, this.mParent.mHandle, cast(LPPOINT)&this.mRect, 2);
         }
@@ -388,13 +415,10 @@ class Control {
         {
             RECT rct;
             HWND fhw;
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 fhw = this.mHandle;
                 GetClientRect(this.mHandle, &rct);
-            }
-            else
-            {
+            } else {
                 fhw = this.mParent.mHandle;
                 rct = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
 
@@ -403,7 +427,8 @@ class Control {
             return rct;
         }
 
-		void calculateAutoSize() { // private
+		void calculateAutoSize()
+        { // private
             //auto wtxt = this.mText.toUTF16z;
             auto hdc = GetDC(this.mHandle);
             SIZE ss;
@@ -419,7 +444,8 @@ class Control {
 
 
         // Common WndProc Message Handlers.=================================
-            LRESULT paintHandler() {
+            LRESULT paintHandler()
+            {
                 if (this.onPaint) {
                     PAINTSTRUCT  ps;
                     BeginPaint(this.mHandle, &ps);
@@ -431,15 +457,18 @@ class Control {
                 return 0;
             }
 
-            void setFocusHandler() {
+            void setFocusHandler()
+            {
                 if (this.onGotFocus) this.onGotFocus(this, new EventArgs());
             }
 
-            void killFocusHandler() {
+            void killFocusHandler()
+            {
                  if (this.onLostFocus) this.onLostFocus(this, new EventArgs());
             }
 
-            void mouseDownHandler(UINT msg, WPARAM wp, LPARAM lp) {
+            void mouseDownHandler(UINT msg, WPARAM wp, LPARAM lp)
+            {
                 this.lDownHappened = true;
                 if (this.onMouseDown) {
                     auto mea = new MouseEventArgs(msg, wp, lp);
@@ -447,7 +476,8 @@ class Control {
                 }
             }
 
-            void mouseUpHandler(UINT msg, WPARAM wp, LPARAM lp) {
+            void mouseUpHandler(UINT msg, WPARAM wp, LPARAM lp)
+            {
                 if (this.onMouseUp) {
                     auto mea = new MouseEventArgs(msg, wp, lp);
                     this.onMouseUp(this, mea);
@@ -458,11 +488,13 @@ class Control {
                 }
             }
 
-            void mouseClickHandler() {
+            void mouseClickHandler()
+            {
                 if (this.onMouseClick) this.onMouseClick(this, new EventArgs());
             }
 
-            void mouseRDownHandler(UINT msg, WPARAM wp, LPARAM lp) {
+            void mouseRDownHandler(UINT msg, WPARAM wp, LPARAM lp)
+            {
                 this.rDownHappened = true;
                 if (this.onRightMouseDown) {
                     auto mea = new MouseEventArgs(msg, wp, lp);
@@ -470,7 +502,8 @@ class Control {
                 }
             }
 
-            void mouseRUpHandler(UINT msg, WPARAM wp, LPARAM lp) {
+            void mouseRUpHandler(UINT msg, WPARAM wp, LPARAM lp)
+            {
                 if (this.onRightMouseUp) {
                     auto mea = new MouseEventArgs(msg, wp, lp);
                     this.onRightMouseUp(this, mea);
@@ -481,18 +514,21 @@ class Control {
                 }
             }
 
-            void mouseRClickHandler() {
+            void mouseRClickHandler()
+            {
                 if (this.onRightClick) this.onRightClick(this, new EventArgs());
             }
 
-            void mouseWheelHandler(UINT msg, WPARAM wp, LPARAM lp) {
+            void mouseWheelHandler(UINT msg, WPARAM wp, LPARAM lp)
+            {
                 if (this.onMouseWheel) {
                     auto mea = new MouseEventArgs(msg, wp, lp);
                     this.onMouseWheel(this, mea);
                 }
             }
 
-            void mouseMoveHandler(UINT msg, WPARAM wp, LPARAM lp) {
+            void mouseMoveHandler(UINT msg, WPARAM wp, LPARAM lp)
+            {
                 if (this.isMouseEntered) {
                     if (this.onMouseMove) {
                         auto mea = new MouseEventArgs(msg, wp, lp);
@@ -504,20 +540,24 @@ class Control {
                 }
             }
 
-            void mouseLeaveHandler() {
+            void mouseLeaveHandler()
+            {
                 this.isMouseEntered = false;
                 if (this.onMouseLeave) this.onMouseLeave(this, new EventArgs());
             }
 
-            void keyDownHandler(WPARAM wpm) {
+            void keyDownHandler(WPARAM wpm)
+            {
                 if (this.onKeyDown) this.onKeyDown(this, new KeyEventArgs(wpm));
             }
 
-            void keyUpHandler(WPARAM wpm) {
+            void keyUpHandler(WPARAM wpm)
+            {
                 if (this.onKeyUp) this.onKeyUp(this, new KeyEventArgs(wpm));
             }
 
-            void keyPressHandler(WPARAM wpm) {
+            void keyPressHandler(WPARAM wpm)
+            {
                 if (this.onKeyPress) this.onKeyPress(this, new KeyEventArgs(wpm));
             }
 

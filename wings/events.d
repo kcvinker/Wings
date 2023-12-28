@@ -41,7 +41,8 @@ WORD getKeyStateWparam(WPARAM wp) {return cast(WORD) LOWORD(wp);}
 class EventArgs { bool handled; }
 
 /// Special events for mouse related messages
-class MouseEventArgs : EventArgs {
+class MouseEventArgs : EventArgs
+{
     final MouseButton mouseButton() {return this.mButton;}
     final MouseButtonState shiftKeyState() {return this.mShiftKey;}
     final MouseButtonState ctrlKeyState() {return this.mCtrlKey;}
@@ -101,7 +102,8 @@ class MouseEventArgs : EventArgs {
 }
 
 
-class KeyEventArgs : EventArgs {
+class KeyEventArgs : EventArgs
+{
     final bool altPressed() {return this.mAltPressed;}
     final bool ctrlPressed() {return this.mCtrlPressed;}
     final bool shiftPressed() {return this.mShiftPressed;}
@@ -141,13 +143,15 @@ class KeyEventArgs : EventArgs {
     }
 
 
-class KeyPressEventArgs : EventArgs {
+class KeyPressEventArgs : EventArgs
+{
 	char keyChar;
 	this(WPARAM wp) {this.keyChar = cast(char) wp;}
 }
 
 
-class SizeEventArgs : EventArgs {
+class SizeEventArgs : EventArgs
+{
     final RECT windowRect() {return this.mWindowRect;}
     final SizedPosition sizedOn() {return this.mSizedOn;}
     final Area clientArea() {return this.mClientArea;}
@@ -169,7 +173,8 @@ class SizeEventArgs : EventArgs {
 
 }
 
-class PaintEventArgs : EventArgs {
+class PaintEventArgs : EventArgs
+{
     final PAINTSTRUCT* paintStruct() {return this.mPaintInfo;}
     this(PAINTSTRUCT* ps) {
         this.mPaintInfo = ps;
@@ -178,7 +183,8 @@ class PaintEventArgs : EventArgs {
         PAINTSTRUCT* mPaintInfo;
 }
 
-class DateTimeEventArgs : EventArgs {
+class DateTimeEventArgs : EventArgs
+{
     import std.conv;
     final string dateString() {return this.mDateString;}
     final SYSTEMTIME* dateStruct() {return this.mDateStruct;}
@@ -190,7 +196,8 @@ class DateTimeEventArgs : EventArgs {
 }
 
 
-class HotKeyEventArgs : EventArgs {
+class HotKeyEventArgs : EventArgs
+{
     this(WPARAM wp, LPARAM lp) {
         this.mHotKeyID = cast(HotKeyId) wp;
         if ((lp & 1) == 1) this.mIsAlt = true;

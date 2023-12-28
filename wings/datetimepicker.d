@@ -84,8 +84,7 @@ class DateTimePicker : Control
     {
     	this.setDtpStyles();
         this.createHandleInternal(mClassName.ptr);
-        if (this.mHandle)
-        {
+        if (this.mHandle) {
             this.setSubClass(&dtpWndProc);
             this.afterCreationStyling();
         }
@@ -112,8 +111,7 @@ class DateTimePicker : Control
 
         void setDtpStyles()
         { // Private
-            switch (this.mFormat)
-            {
+            switch (this.mFormat) {
                 case DtpFormat.custom :
                     this.mStyle = WS_TABSTOP | WS_CHILD| WS_VISIBLE | DTS_LONGDATEFORMAT | DTS_APPCANPARSE;
                     break;
@@ -121,8 +119,7 @@ class DateTimePicker : Control
                     this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_LONGDATEFORMAT;
                     break;
                 case DtpFormat.shortDate :
-                    if (this.mFourDigitYear)
-                    {
+                    if (this.mFourDigitYear) {
                         this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATECENTURYFORMAT;
                     } else {
                         this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT;
@@ -146,8 +143,7 @@ class DateTimePicker : Control
 
         void afterCreationStyling()
         { // Private
-            if (this.mFormat == DtpFormat.custom)
-            {
+            if (this.mFormat == DtpFormat.custom) {
                 /*  Here, we have a strange situation. Since, we are working with unicode string, we need...
                     to use the W version functions & messages. So, here DTM_SETFORMATW is the candidate.
                     But it won't work. For some unknown reason, only DTM_SETFORMATA is working here. So we need...
@@ -178,11 +174,9 @@ extern(Windows)
 private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try
-    {
+    try {
         DateTimePicker dtp = getControl!DateTimePicker(refData);
-        switch (message)
-        {
+        switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &dtpWndProc, scID); break;
             case WM_PAINT : dtp.paintHandler(); break;
             case WM_SETFOCUS : dtp.setFocusHandler(); break;
@@ -200,24 +194,20 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case CM_NOTIFY :
                 auto nm = cast(NMHDR *) lParam;
                 //print("nm.code", nm.code);
-                switch (nm.code)
-                {
+                switch (nm.code) {
                     case DTN_USERSTRING :
-                        if (dtp.onTextChanged)
-                        {
+                        if (dtp.onTextChanged) {
                             auto dts = cast(NMDATETIMESTRINGW *) lParam;
                             auto dea = new DateTimeEventArgs(dts.pszUserString);
                             dtp.onTextChanged(dtp, dea);
-                            if (dea.handled)
-                            {
+                            if (dea.handled) {
                                 sendMsg(hWnd, DTM_SETSYSTEMTIME, 0, dea.dateStruct);
                             }
                         }
                     break;
 
                     case DTN_DROPDOWN :
-                        if (dtp.onCalendarOpened)
-                        {
+                        if (dtp.onCalendarOpened) {
                             auto ea = new EventArgs();
                             dtp.onCalendarOpened(dtp, ea);
                             return 0;
@@ -226,13 +216,11 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
                     case DTN_DATETIMECHANGE :
                         //print("time change arrived");
-                        if (dtp.dropDownCount == 0)
-                        {
+                        if (dtp.dropDownCount == 0) {
                             dtp.dropDownCount = 1;
                             auto nmd = cast(NMDATETIMECHANGE *) lParam;
                             dtp.mValue = DateTime(nmd.st);
-                            if (dtp.onValueChanged)
-                            {
+                            if (dtp.onValueChanged) {
                                 auto ea = new EventArgs();
                                 dtp.onValueChanged(dtp, ea);
                                 return 0;
@@ -246,8 +234,7 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     case DTN_FORMATQUERY :
 
                     case DTN_CLOSEUP :
-                        if (dtp.onCalendarClosed)
-                        {
+                        if (dtp.onCalendarClosed) {
                             auto ea = new EventArgs();
                             dtp.onCalendarClosed(dtp, ea);
                         }

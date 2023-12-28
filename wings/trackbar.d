@@ -133,17 +133,12 @@ class TrackBar : Control
         // import std.stdio;
     	this.setTkbStyle();
     	this.createHandleInternal(mClassName.ptr);
-    	if (this.mHandle)
-        {
+    	if (this.mHandle) {
             this.setSubClass(&tkbWndProc);
             if (this.mCustDraw) this.prepareForCustDraw();
             this.sendInitialMessages();
             if (this.mCustDraw) this.calculateTics();
             if (this.mSelRange) this.mSelBrush = CreateSolidBrush(this.mSelColor.cref);
-            // RedrawWindow(this.mHandle, null, null, RDW_ALLCHILDREN| RDW_INVALIDATE | RDW_ERASENOW);
-            //auto x = this.sendMsg(TBM_GETPTICS, 0, 0);
-            //DWORD* y = cast(DWORD*) x;
-            // this.log(y[2], " track");
         }
     }
 
@@ -151,8 +146,7 @@ class TrackBar : Control
     {
         import std.string;
         string p = pos.toUpper();
-        final switch(p)
-        {
+        final switch(p) {
             case "BOTH": this.mTicPos = TicPosition.bothSide; break;
             case "UP": this.mTicPos = TicPosition.upSide; break;
             case "DOWN": this.mTicPos = TicPosition.downSide; break;
@@ -195,11 +189,9 @@ class TrackBar : Control
 
         void setTkbStyle()
         {
-            if (this.mVertical)
-            {
+            if (this.mVertical) {
                 this.mStyle |= TBS_VERT;
-                switch (this.mTicPos)
-                {
+                switch (this.mTicPos) {
                     case TicPosition.rightSide: this.mStyle |= TBS_RIGHT; break;
                     case TicPosition.leftSide: this.mStyle |= TBS_LEFT; break;
                     case TicPosition.bothSide: this.mStyle |= TBS_BOTH; break;
@@ -207,8 +199,7 @@ class TrackBar : Control
                 }
             } else {
                 // this.mStyle |= TBS_;
-                switch (this.mTicPos)
-                {
+                switch (this.mTicPos) {
                     case TicPosition.downSide: this.mStyle |= TBS_BOTTOM; break;
                     case TicPosition.upSide: this.mStyle |= TBS_TOP; break;
                     case TicPosition.bothSide: this.mStyle |= TBS_BOTH; break;
@@ -233,8 +224,7 @@ class TrackBar : Control
 
         void sendInitialMessages()
         {
-            if (this.mReversed)
-            {
+            if (this.mReversed) {
                 this.sendMsg(TBM_SETRANGEMIN, 1, (this.mMaxRange * -1));
                 this.sendMsg(TBM_SETRANGEMAX, 1, this.mMinRange);
             } else {
@@ -258,8 +248,7 @@ class TrackBar : Control
             this.sendMsg(TBM_GETCHANNELRECT, 0, &this.mChannelRc); // Get the channel rect
 
             //2. Calculate thumb offset
-            if (this.mVertical)
-            {
+            if (this.mVertical) {
                 twidth = this.mThumbRc.bottom - this.mThumbRc.top;
             } else {
                 twidth = this.mThumbRc.right - this.mThumbRc.left;
@@ -277,18 +266,15 @@ class TrackBar : Control
 
             tic = this.mMinRange + this.mFrequency;
             this.mTics ~= new TicData(stPos, 0); // Very first tic
-            for (int i = 0; i < numTics; i++)
-            {
+            for (int i = 0; i < numTics; i++) {
                 this.mTics ~= new TicData(cast(int) (tic * pFactor) + stPos, tic); // Middle tics
                 tic += this.mFrequency;
             }
             this.mTics ~= new TicData(enPos, cast(int) this.mRange); // Last tic
 
             // Now, set up single point (x/y) for tics.
-            if (this.mVertical)
-            {
-                switch (this.mTicPos)
-                {
+            if (this.mVertical) {
+                switch (this.mTicPos) {
                     case TicPosition.leftSide: this.mPoint1 = this.mThumbRc.left - 5; break;
                     case TicPosition.rightSide: this.mPoint1 = this.mThumbRc.right + 2; break;
                     case TicPosition.bothSide:
@@ -298,8 +284,7 @@ class TrackBar : Control
                     default: break;
                 }
             } else {
-                switch (this.mTicPos)
-                {
+                switch (this.mTicPos) {
                     case TicPosition.downSide: this.mPoint1 = this.mThumbRc.bottom + 1; break;
                     case TicPosition.upSide: this.mPoint1 = this.mThumbRc.top - 4; break;
                     case TicPosition.bothSide:
@@ -339,15 +324,12 @@ class TrackBar : Control
         void drawTics(HDC hdc)
         {
             SelectObject(hdc, this.mTicPen);
-            if (this.mVertical)
-            {
-                switch (this.mTicPos)
-                {
+            if (this.mVertical) {
+                switch (this.mTicPos) {
                     case TicPosition.rightSide, TicPosition.leftSide:
                         foreach (p; this.mTics) this.drawVerticalTics(hdc, this.mPoint1, p.phyPoint); break;
                     case TicPosition.bothSide:
-                        foreach (p; this.mTics)
-                        {
+                        foreach (p; this.mTics) {
                             this.drawVerticalTics(hdc, this.mPoint1, p.phyPoint);
                             this.drawVerticalTics(hdc, this.mPoint2, p.phyPoint);
                         }
@@ -356,13 +338,11 @@ class TrackBar : Control
                 }
 
             } else {
-                switch (this.mTicPos)
-                {
+                switch (this.mTicPos) {
                     case TicPosition.upSide, TicPosition.downSide:
                         foreach (p; this.mTics) this.drawHorizontalTicsDown(hdc, p.phyPoint, this.mPoint1);break;
                     case TicPosition.bothSide:
-                        foreach (p; this.mTics)
-                        {
+                        foreach (p; this.mTics) {
                             this.drawHorizontalTicsDown(hdc, p.phyPoint, this.mPoint1);
                             this.drawHorizontalTicsUpper(hdc, p.phyPoint, this.mPoint2);
                         }
@@ -383,12 +363,10 @@ class TrackBar : Control
             bool result = false;
             RECT rct;
 
-            if (this.mVertical)
-            {
+            if (this.mVertical) {
                 rct.left = nm.rc.left;
                 rct.right = nm.rc.right;
-                if (this.mReversed)
-                {
+                if (this.mReversed) {
                     rct.top = trc.bottom;
                     rct.bottom = nm.rc.bottom;
                 } else {
@@ -398,8 +376,7 @@ class TrackBar : Control
             } else {
                 rct.top = nm.rc.top;
                 rct.bottom = nm.rc.bottom;
-                if (this.mReversed)
-                {
+                if (this.mReversed) {
                     rct.left = trc.right;
                     rct.right = nm.rc.right;
                 } else {
@@ -414,8 +391,7 @@ class TrackBar : Control
 
         void setupValueInternal(int value)
         {
-            if (this.mReversed)
-            {
+            if (this.mReversed) {
                 this.mValue = U16_MAX - value;
             } else {
                 this.mValue = value;
@@ -424,8 +400,7 @@ class TrackBar : Control
 
         void backColorSetupInternal()
         {
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 this.mBkBrush = this.mBackColor.getBrush();
 
                 // Here, we need to send this message.
@@ -443,11 +418,9 @@ extern(Windows)
 private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try
-    {
+    try {
         TrackBar tkb = getControl!TrackBar(refData);
-        switch (message)
-        {
+        switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &tkbWndProc, scID); break;
 
             case CM_COLOR_STATIC: return cast(LRESULT) tkb.mBkBrush; break;
@@ -466,24 +439,20 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case WM_MOUSELEAVE : tkb.mouseLeaveHandler(); break;
             case CM_HSCROLL, CM_VSCROLL:
                 auto lwp = LOWORD(wParam);
-                switch (lwp)
-                {
+                switch (lwp) {
                     case TB_THUMBPOSITION:
                         tkb.setupValueInternal(HIWORD(wParam));
-                        if (!tkb.mFreeMove)
-                        {
+                        if (!tkb.mFreeMove) {
                             int pos = tkb.mValue;
                             double half = tkb.mFrequency / 2;
                             auto diff = pos % tkb.mFrequency;
-                            if (diff >= half)
-                            {
+                            if (diff >= half) {
                                 pos = (tkb.mFrequency - diff) + tkb.mValue;
                             } else if (diff < half) {
                                 pos =  tkb.mValue - diff;
                             }
 
-                            if (tkb.mReversed)
-                            {
+                            if (tkb.mReversed) {
                                 tkb.sendMsg(TBM_SETPOS, true, (pos * -1));
                             } else {
                                 tkb.sendMsg(TBM_SETPOS, true, pos);
@@ -527,41 +496,33 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 break;
             case CM_NOTIFY:
                 auto nmh = cast(LPNMHDR) lParam;
-                final switch (nmh.code)
-                {
+                final switch (nmh.code) {
                     case NM_CUSTOMDRAW:
-                        if (tkb.mCustDraw)
-                        {
+                        if (tkb.mCustDraw) {
                             auto nmcd = cast(LPNMCUSTOMDRAW) lParam;
                             if (nmcd.dwDrawStage == CDDS_PREPAINT) return CDRF_NOTIFYITEMDRAW;
 
-                            if (nmcd.dwDrawStage ==  CDDS_ITEMPREPAINT)
-                            {
-                                if (nmcd.dwItemSpec == TBCD_TICS)
-                                {
-                                    if (!tkb.mNoTics)
-                                    {
+                            if (nmcd.dwDrawStage ==  CDDS_ITEMPREPAINT) {
+                                if (nmcd.dwItemSpec == TBCD_TICS) {
+                                    if (!tkb.mNoTics) {
                                         tkb.drawTics(nmcd.hdc);
                                         return CDRF_SKIPDEFAULT;
                                     }
                                 }
 
-                                if (nmcd.dwItemSpec == TBCD_CHANNEL)
-                                {
+                                if (nmcd.dwItemSpec == TBCD_CHANNEL) {
                                     /* Python proect is using EDGE_SUNKEN style without BF_FLAT.
                                     But D gives a strange outline in those flags. So I decided to use...
                                     these flags. But in this case, we don't need to reduce 1 point from...
                                     the coloring rect. It looks perfect without changing rect. */
-                                    if (tkb.mChannelSTyle == ChannelStyle.classic)
-                                    {
+                                    if (tkb.mChannelSTyle == ChannelStyle.classic) {
                                         DrawEdge(nmcd.hdc, &nmcd.rc, BDR_SUNKENOUTER, tkb.mChannelFlag);
                                     } else {
                                         SelectObject(nmcd.hdc, tkb.mChannelPen);
                                         Rectangle(nmcd.hdc, nmcd.rc.left, nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom );
                                     }
 
-                                    if (tkb.mSelRange) // Fill the selection range
-                                    {
+                                    if (tkb.mSelRange) {// Fill the selection range
                                         auto rc = tkb.getThumbRect();
                                         if (tkb.fillChannelRect(nmcd, rc)) InvalidateRect(hWnd, &nmcd.rc, false);
                                     }

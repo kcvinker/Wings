@@ -17,7 +17,8 @@ struct Color  // This struct is used to hold the color values for all control's 
     uint blue;
     COLORREF cref;
 
-    this(uint clr) {
+    this(uint clr)
+    {
         this.value = clr;
         this.red = clr >> 16;
         this.green = (clr & 0x00ff00) >> 8;
@@ -25,7 +26,8 @@ struct Color  // This struct is used to hold the color values for all control's 
         this.cref = cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red);
     }
 
-    this(int red, int green, int blue) {
+    this(int red, int green, int blue)
+    {
         this.value = cast(uint) (red << 16) | (green << 8) | blue;
         this.red = red;
         this.green = green;
@@ -33,7 +35,8 @@ struct Color  // This struct is used to hold the color values for all control's 
         this.cref = cast(COLORREF) ((blue << 16) | (green << 8) | red);
     }
 
-    void opCall(uint clr) {
+    void opCall(uint clr)
+    {
         this.value = clr;
         this.red = clr >> 16;
         this.green = (clr & 0x00ff00) >> 8;
@@ -41,7 +44,8 @@ struct Color  // This struct is used to hold the color values for all control's 
         this.cref = cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red);
     }
 
-    void opCall(int red, int green, int blue) {
+    void opCall(int red, int green, int blue)
+    {
         this.value = cast(uint) (red << 16) | (green << 8) | blue;
         this.red = red;
         this.green = green;
@@ -49,7 +53,8 @@ struct Color  // This struct is used to hold the color values for all control's 
         this.cref = cast(COLORREF) ((blue << 16) | (green << 8) | red);
     }
 
-    void opCall(Color clr) { // Initiate with existing color
+    void opCall(Color clr)
+    { // Initiate with existing color
         this.value = clr.value;
         this.red = clr.red;
         this.green = clr.green;
@@ -57,7 +62,8 @@ struct Color  // This struct is used to hold the color values for all control's 
         this.cref = clr.cref;
     }
 
-    void updateColor(uint clr) {
+    void updateColor(uint clr)
+    {
         this.value = clr;
         this.red = clr >> 16;
         this.green = (clr & 0x00ff00) >> 8;
@@ -65,7 +71,8 @@ struct Color  // This struct is used to hold the color values for all control's 
         this.cref = cast(COLORREF) ((this.blue << 16) | (this.green << 8) | this.red);
     }
 
-    Color changeShade(double changeValue) { // Color.changeShade
+    Color changeShade(double changeValue)
+    { // Color.changeShade
         Color clr;
         clr.red = clip(this.red * changeValue);
         clr.green = clip(this.green * changeValue);
@@ -77,7 +84,8 @@ struct Color  // This struct is used to hold the color values for all control's 
 
     HBRUSH getBrush() {return CreateSolidBrush(this.cref);} // Color.getBrush
 
-    HBRUSH getHotBrush(double adj) { // Color.getHotBrush
+    HBRUSH getHotBrush(double adj)
+    { // Color.getHotBrush
         /* Sometimes, we need to use a special color for mouse hover event.
         In such cases, we have already a back color. But we need to make...
         an hbrush with slightly different color. This function create...
@@ -90,7 +98,8 @@ struct Color  // This struct is used to hold the color values for all control's 
         return CreateSolidBrush(cref);
     }
 
-    HBRUSH getHotBrushEx(int adj) { // Color.getHotBrush
+    HBRUSH getHotBrushEx(int adj)
+    { // Color.getHotBrush
         /* Sometimes, we need to use a special color for mouse hover event.
         In such cases, we have already a back color. But we need to make...
         an hbrush with slightly different color. This function create...
@@ -103,7 +112,8 @@ struct Color  // This struct is used to hold the color values for all control's 
         return CreateSolidBrush(cref);
     }
 
-    HPEN getFramePen(double adj, int pwidth = 1) { // Color.getFramePen
+    HPEN getFramePen(double adj, int pwidth = 1)
+    { // Color.getFramePen
         auto red = clip(this.red + (adj * 8));
         auto green = clip(this.green + (adj * 16));
         auto blue = clip(this.blue + (adj * 32));
@@ -112,17 +122,20 @@ struct Color  // This struct is used to hold the color values for all control's 
     }
 
 
-    int darkRange() { // Color.darkRange
+    int darkRange()
+    { // Color.darkRange
 		int x = cast(int)((this.red * 0.2126) + (this.green * 0.7152) + (this.blue * 0.0722));
 		return x;
 	}
 
-    bool isDark() { // Color.isDark
+    bool isDark()
+    { // Color.isDark
 		int x = cast(int)((this.red * 0.2126) + (this.green * 0.7152) + (this.blue * 0.0722));
 		return x < 40;
     }
 
-    COLORREF mouseFocusColor(float adj) {
+    COLORREF mouseFocusColor(float adj)
+    {
         auto red = this.red + (adj * (255 - this.red));
         auto green = this.green + (adj * (255 - this.green));
         auto blue = this.blue + (adj * (255 - this.blue));
@@ -133,14 +146,16 @@ struct Color  // This struct is used to hold the color values for all control's 
     }
 
 
-    COLORREF makeFrameColor(double adj) {
+    COLORREF makeFrameColor(double adj)
+    {
         uint r = clip(cast(uint)(this.red * adj));
         uint g = clip(cast(uint)(this.green * adj));
         uint b = clip(cast(uint)(this.blue * adj));
         return cast(COLORREF)((b << 16) | (g << 8) | r);
     }
 
-    COLORREF makeHotRef(uint adj) {
+    COLORREF makeHotRef(uint adj)
+    {
         auto r = clip(cast(uint) (this.red * (100 + adj) / 100));
         auto g = clip(cast(uint) (this.green * (100 + adj) / 100));
         auto b = clip(cast(uint) (this.blue * (100 + adj) / 100));
@@ -148,7 +163,8 @@ struct Color  // This struct is used to hold the color values for all control's 
         return cast(COLORREF)((b << 16) | (g << 8) | r);
     }
 
-    Color changeShadeColor(double adj) {
+    Color changeShadeColor(double adj)
+    {
         Color rc;
         rc.red = clip(cast(uint) (cast(double)this.red *  adj) );
         rc.green = clip(cast(uint) (cast(double)this.green * adj));
@@ -158,7 +174,8 @@ struct Color  // This struct is used to hold the color values for all control's 
         return rc;
     }
 
-    Color changeShadeColorEx(int change) {
+    Color changeShadeColorEx(int change)
+    {
         Color rc;
         rc.red = clip(this.red +  change);
         rc.green = clip(this.green + change);
@@ -170,19 +187,23 @@ struct Color  // This struct is used to hold the color values for all control's 
 
 } // End Color
 
-HBRUSH makeHBRUSH(uint clr) {
+HBRUSH makeHBRUSH(uint clr)
+{
     auto c = Color(clr);
     return CreateSolidBrush(c.cref);
 }
 
-int clip(double num) {
+int clip(double num)
+{
     import std.algorithm : clamp;
     import std.math;
     return cast(int) round(clamp(num, 0, 255));
 }
 
 COLORREF getClrRef(uint r, uint g, uint b ) {return cast(COLORREF) ((b << 16) | (g << 8) | r);}
-COLORREF getClrRef(uint clr ) {
+
+COLORREF getClrRef(uint clr )
+{
     auto r = clr >> 16;
     auto g = (clr & 0x00ff00) >> 8;
     auto b = clr & 0x0000ff;
@@ -192,12 +213,14 @@ COLORREF getClrRef(uint clr ) {
 uint fromRgb(uint red, uint green, uint blue) { return ((red << 16) | (green << 8) | blue);}
 
 
-struct  HSV {
+struct  HSV
+{
     double hue;
     double saturation;
     double value;
 
-    static HSV fromRGB(uint r, uint g, uint b ) {
+    static HSV fromRGB(uint r, uint g, uint b )
+    {
         float sr, sg, sb;
         float maxVal = 255.0;
         HSV hsv;
@@ -317,7 +340,8 @@ struct  HSV {
     //     return rc;
     // }
 
-    void setValue(int percentage, bool reduce = false) {
+    void setValue(int percentage, bool reduce = false)
+    {
         double x = percentage / 100;
         if (reduce) {
             x -= 1;
@@ -387,7 +411,8 @@ struct  HSV {
 // }
 
 
-enum Colors {
+enum Colors
+{
     airForceBlue1 = 0x5d8aa8,
     airForceBlue2 = 0x00308f,
     airSuperiorityBlue = 0x72a0c1,

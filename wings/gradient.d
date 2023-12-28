@@ -21,12 +21,14 @@ struct Gradient {
 	HPEN defPen;
 	HPEN hotPen;
 
-    ~this() { // Destructor
+    ~this()
+    { // Destructor
         if (this.defPen) DeleteObject(this.defPen);
         if (this.hotPen) DeleteObject(this.hotPen);
     }
 
-    void setData(uint c1, uint c2, bool r2l = false) {
+    void setData(uint c1, uint c2, bool r2l = false)
+    {
         this.gcDef.c1 = Color(c1);
         this.gcDef.c2 = Color(c2);
         // double hadj = this.gcDef.c1.isDark() ? 1.5 : 1.2;
@@ -48,7 +50,8 @@ struct Gradient {
     // }
 }
 
-package HBRUSH createGradientBrush(HDC dc, RECT rct, Color c1, Color c2, bool t2b = true ) {
+package HBRUSH createGradientBrush(HDC dc, RECT rct, Color c1, Color c2, bool t2b = true )
+{
     HBRUSH tBrush;
     HDC memHDC = CreateCompatibleDC(dc);
     HBITMAP hBmp = CreateCompatibleBitmap(dc, rct.right, rct.bottom);

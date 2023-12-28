@@ -98,8 +98,7 @@ class NumberPicker : Control
         {
             this.mMinRange = value;
             if (this.mValue < value) this.mValue = value;
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 this.sendMsg(UDM_SETRANGE32, this.mMinRange, this.mMaxRange);
             }
         }
@@ -108,8 +107,7 @@ class NumberPicker : Control
         final void maxRange(double value)
         {
             this.mMaxRange = value;
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 this.sendMsg(UDM_SETRANGE32, this.mMinRange, this.mMaxRange);
             }
         }
@@ -119,8 +117,7 @@ class NumberPicker : Control
         final void hideSelection(bool value)
         {
             this.mHideSel = value;
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 SendMessage(this.mBuddyHandle, EM_SETSEL, cast(WPARAM) -1, 0 );
             }
         }
@@ -129,8 +126,7 @@ class NumberPicker : Control
         final void buttonOnLeft(bool value)
         {
             this.mBtnLeft = value;
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 // TODO - change window style using SetWindowLong function.
             }
 
@@ -140,8 +136,7 @@ class NumberPicker : Control
         final void textAlign(Alignment value)
         {
             this.mTxtPos = value;
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 // TODO - change window style using SetWindowLong function.
             }
 
@@ -151,8 +146,7 @@ class NumberPicker : Control
         final void hasSeperator(bool value)
         {
             this.mHasSep = value;
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 // TODO - change window style using SetWindowLong function.
             }
         }
@@ -161,8 +155,7 @@ class NumberPicker : Control
         final void rotateValue(bool value)
         {
             this.mAutoRotate = value;
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 // TODO - change window style using SetWindowLong function.
             }
         }
@@ -178,8 +171,7 @@ class NumberPicker : Control
         final void step(double value)
         {
             this.mStep = value;
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 // TODO - change window style using SetWindowLong function.
             }
         }
@@ -284,8 +276,7 @@ class NumberPicker : Control
             }
             //if (!this.mHasSep) this.mStyle |= UDS_NOTHOUSANDS;
 
-            switch (this.mTxtPos)
-            {
+            switch (this.mTxtPos) {
                 case Alignment.left : this.mBuddyStyle |= ES_LEFT; break;
                 case Alignment.center : this.mBuddyStyle |= ES_CENTER; break;
                 case Alignment.right : this.mBuddyStyle |= ES_RIGHT; break;
@@ -434,9 +425,7 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
             case CM_NOTIFY :
                 auto nm = cast(NMUPDOWN*) lParam;
-                if (nm.hdr.code == UDN_DELTAPOS)
-                //writeln("delta pos");
-                {
+                if (nm.hdr.code == UDN_DELTAPOS) {//writeln("delta pos");
                     auto tbstr = np.getControlText(np.mBuddyHandle);
                     np.mValue = parse!double(tbstr);
                     np.setValueInternal(nm.iDelta);

@@ -37,8 +37,7 @@ class ListView : Control
 {
     this(Window parent, int x, int y, int w, int h, bool autoc = false, string[] colnames = null, int[] widths = null)
     {
-        if (!lvCreated)
-        {
+        if (!lvCreated) {
             lvCreated = true;
             appData.iccEx.dwICC = ICC_LISTVIEW_CLASSES;
             InitCommonControlsEx(&appData.iccEx);
@@ -61,10 +60,8 @@ class ListView : Control
         ++Control.stCtlId;
         ++lvNumber;
         if (autoc) this.createHandle();
-        if ((colnames != null && widths != null) && (colnames.length == widths.length))
-        {
-           foreach (i, name; colnames)
-            {
+        if ((colnames != null && widths != null) && (colnames.length == widths.length)) {
+           foreach (i, name; colnames) {
                 auto col = new ListViewColumn(name, widths[i]);
                 this.addColumnInternal(col);
             }
@@ -79,18 +76,15 @@ class ListView : Control
     {
         this.adjustLVStyles();
         this.createHandleInternal(mClassName.ptr);
-        if (this.mHandle)
-        {
+        if (this.mHandle) {
             this.setSubClass(&lvWndProc);
             this.setLvExStyles();
             if (this.mLvStyle == ListViewStyle.tile) this.sendMsg(LVM_SETVIEW, 0x0004, 0);
 
-            /+  Chances are there to user adds columns before LV is created.
-                In such cases, we need to add those columns right after creation.+/
-            if (this.mColumns.length > 0)
-            {
-                foreach (ci; this.mColumns)
-                {
+            /*  Chances are there to user adds columns before LV is created.
+                In such cases, we need to add those columns right after creation. */
+            if (this.mColumns.length > 0) {
+                foreach (ci; this.mColumns) {
                     this.sendMsg(LVM_INSERTCOLUMNW, ci.index, &ci.pLvc);
                 }
             }
@@ -100,8 +94,7 @@ class ListView : Control
             ++Control.mSubClassId;
 
             if (this.mBackColor.value != defBackColor) ListView_SetBkColor(this.mHandle, this.mBackColor.cref);
-            if (this.mSetCbLast)
-            {
+            if (this.mSetCbLast) {
                 auto ordList = changeColumnOrder();
                 this.sendMsg(LVM_SETCOLUMNORDERARRAY, ordList.length, ordList.ptr);
                 this.mCbisLast = true;
@@ -147,25 +140,20 @@ class ListView : Control
 
         void addColumns(T ...)(T args )
         {
-            if (args.length > 0)
-            {
+            if (args.length > 0) {
                 string[] colnames;
                 int[] widths;
-                foreach (arg; args)
-                {
+                foreach (arg; args) {
                     auto cres = getIntOrString(arg);
-                    if (cres.isString)
-                    {
+                    if (cres.isString) {
                         colnames ~= cres.svalue;
                     } else {
                         widths ~= cres.ivalue;
                     }
                 }
 
-                if ((colnames.length > 0 && widths.length > 0) && (colnames.length == widths.length))
-                {
-                    foreach (i, name; colnames)
-                    {
+                if ((colnames.length > 0 && widths.length > 0) && (colnames.length == widths.length)) {
+                    foreach (i, name; colnames) {
                         auto col = new ListViewColumn(name, widths[i]);
                         this.addColumnInternal(col);
                     }
@@ -224,8 +212,7 @@ class ListView : Control
         /// Adds an item to list view.
         void addItem(T)(T item, int imgIndx = -1)
         {
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 auto lvItem = new ListViewItem(item.toString, imgIndx);
                 this.addItemInternal(lvItem);
             }
@@ -240,11 +227,9 @@ class ListView : Control
         /// Add sub items to an item at given index. Works only report view.
         void addSubItems(T...)(int itemIndex, T subItems)
         {
-            if (this.mIsCreated && this.mLvStyle == ListViewStyle.report)
-            {
+            if (this.mIsCreated && this.mLvStyle == ListViewStyle.report) {
                 int subIndx = 1;
-                foreach (item; subItems)
-                {
+                foreach (item; subItems) {
                     auto sItem = item.toString;
                     this.addSubItemInternal(sItem, itemIndex, subIndx);
                     ++subIndx;
@@ -255,16 +240,14 @@ class ListView : Control
         /// Add subitem to listview.
         void addSubItem(T)(T subItem, int itemIndex, int subIndx, int imgIndx = -1)
         {
-            if (this.mIsCreated && this.mLvStyle == ListViewStyle.report)
-            {
+            if (this.mIsCreated && this.mLvStyle == ListViewStyle.report) {
                 this.addSubItemInternal(subItem.toString, itemIndex, subIndx, imgIndx );
             }
         }
 
         final void deleteItem(int index)
         {
-            if (this.mIsCreated && this.mItems.length > 0)
-            {
+            if (this.mIsCreated && this.mItems.length > 0) {
                 this.sendMsg(LVM_DELETEITEM, index, 0);
                 // TODO delete from mItems
             }
@@ -279,8 +262,7 @@ class ListView : Control
         /// Sets the left to right order of columns
         final void setColumnOrder(int[] ordList...)
         {
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 this.sendMsg(LVM_SETCOLUMNORDERARRAY, ordList.length, ordList.ptr);
             }
         }
@@ -288,10 +270,8 @@ class ListView : Control
         final void checkBoxColumnLast()
         {
             if (!this.mHasCheckBox) this.mHasCheckBox = true;
-            if (mColumns.length > 0 )  // There are some columns
-            {
-                if (this.mIsCreated)
-                {
+            if (mColumns.length > 0 )  {// There are some columns
+                if (this.mIsCreated) {
                     auto ordList = changeColumnOrder();
                     this.sendMsg(LVM_SETCOLUMNORDERARRAY, ordList.length, ordList.ptr);
                     this.mCbisLast = true;
@@ -306,11 +286,9 @@ class ListView : Control
         /// Enable viual styles for header. Otherwise, color & font won't changes.
         final void enableHeaderVisualStyle()
         {
-            if (this.mColumns.length > 0 )
-            {
+            if (this.mColumns.length > 0 ) {
                 MyHdItem hdi;
-                foreach (col; this.mColumns)
-                {
+                foreach (col; this.mColumns) {
                     hdi.mask = HDI_FORMAT;
                     hdi.fmt = HDF_OWNERDRAW;
                     SendMessage(hwHeader, HDM_SETITEM, WPARAM(col.index), cast(LPARAM) &hdi);
@@ -330,8 +308,7 @@ class ListView : Control
         final void hasCheckBox(bool value)
         {
             this.mHasCheckBox = value;
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 print("Can't create checkboxes after ListView created");
             }
         }
@@ -506,8 +483,7 @@ class ListView : Control
             lvc.cx = lvCol.width;
             lvc.pszText = cast(wchar*) lvCol.text.toUTF16z;
 
-            if (lvCol.hasImage)
-            {
+            if (lvCol.hasImage) {
                 lvc.mask |= LVCF_IMAGE;
                 lvc.fmt |= LVCFMT_COL_HAS_IMAGES | LVCFMT_IMAGE;
                 lvc.iImage = lvCol.imageIndex;
@@ -516,8 +492,7 @@ class ListView : Control
 
             lvCol.pLvc = lvc;
 
-            if (this.mIsCreated)
-            {
+            if (this.mIsCreated) {
                 this.sendMsg(LVM_INSERTCOLUMNW, lvCol.index, &lvc);
                 // We need this to do the painting in wm notify.
                // if (!this.mDrawColumns && lvCol.mDrawNeeded) this.mDrawColumns = true;
@@ -561,8 +536,7 @@ class ListView : Control
 
         void adjustLVStyles() // Private
         {
-            switch (this.mLvStyle)
-            {
+            switch (this.mLvStyle) {
                 case ListViewStyle.largeIcon :
                     this.mStyle |= LVS_ICON;
                     break;
@@ -612,15 +586,12 @@ class ListView : Control
             auto col = this.mColumns[nmcd.dwItemSpec];
             SetBkMode(nmcd.hdc, TRANSPARENT);
             if (col.index > 0) nmcd.rc.left += 1;
-            if (this.mHdrClickable)
-            {
-                if (nmcd.uItemState & CDIS_SELECTED)
-                {
+            if (this.mHdrClickable) {
+                if (nmcd.uItemState & CDIS_SELECTED) {
                     // Header is clicked. So we will change the back color.
                     FillRect(nmcd.hdc, &nmcd.rc, this.mHdrDefBkBrush);
                 } else {
-                    if (nmcd.dwItemSpec == this.mHotHdr)
-                    {
+                    if (nmcd.dwItemSpec == this.mHotHdr) {
                         // Mouse pointer is on header. So we will change the back color.
                         FillRect(nmcd.hdc, &nmcd.rc, this.mHdrHotBkBrush);
                     } else {
@@ -628,8 +599,7 @@ class ListView : Control
                     }
                 }
 
-                if (nmcd.uItemState & CDIS_SELECTED)
-                {
+                if (nmcd.uItemState & CDIS_SELECTED) {
                     /* Here we are mimicing dot net's same technique.
                      * We will change the rect's left and top a little bit when header got clicked.
                      * So user will feel the header is pressed. */
@@ -684,8 +654,7 @@ class ListViewColumn
     final void headerAlign(Alignment value)
     {
         this.mHdrTxtAlign = value;
-        switch (value)
-        {
+        switch (value) {
             case Alignment.left:
                 this.mHdrTxtFlag |= DT_SINGLELINE | DT_VCENTER | DT_LEFT | DT_NOPREFIX;
             break;
@@ -809,12 +778,10 @@ extern(Windows)
 private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try
-    {
+    try {
         ListView lv = getControl!ListView(refData);
         //printWinMsg(message);
-        switch (message)
-        {
+        switch (message) {
             case WM_DESTROY: lv.finalize(scID); break;
 
             case WM_PAINT : lv.paintHandler(); break;
@@ -874,12 +841,10 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                 // Windows will send this msg to parent window and parent window transfer this to here.
                 auto nmhdr = cast(NMHDR*) lParam;
                 //print("cm notify code", nmhdr.code);
-                switch (nmhdr.code)
-                {
+                switch (nmhdr.code) {
                     case NM_CUSTOMDRAW :
                         auto nmLvCd = cast(NMLVCUSTOMDRAW*) lParam;
-                        switch (nmLvCd.nmcd.dwDrawStage)
-                        {
+                        switch (nmLvCd.nmcd.dwDrawStage) {
                             case CDDS_PREPAINT : return CDRF_NOTIFYITEMDRAW; break;
                             case CDDS_ITEMPREPAINT :
                                 nmLvCd.clrTextBk = lv.mBackColor.cref;
@@ -892,17 +857,14 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     break;
                     case LVN_ITEMCHANGED:
                         auto nmlv = cast(NMLISTVIEW*) lParam;
-                        if (nmlv.uNewState == 8192 || nmlv.uNewState == 4096)
-                        {
+                        if (nmlv.uNewState == 8192 || nmlv.uNewState == 4096) {
                             lv.mChecked = nmlv.uNewState == 8192 ? true : false;
-                            if (lv.onCheckedChanged)
-                            {
+                            if (lv.onCheckedChanged) {
                                 auto ea = new EventArgs();
                                 lv.onCheckedChanged(lv, ea);
                             }
                         } else {
-                            if (nmlv.uNewState == 3)
-                            {
+                            if (nmlv.uNewState == 3) {
                                 //print("this area oka");
                                 lv.mSelItemIndx = nmlv.iItem;
                                 lv.mSelSubIndx = nmlv.iSubItem;
@@ -914,8 +876,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                         }
                     break;
                     case NM_DBLCLK:
-                        if (lv.onItemDblClicked)
-                        {
+                        if (lv.onItemDblClicked) {
                             auto ea = new EventArgs();
                             lv.onItemDblClicked(lv, ea);
                         }
@@ -923,23 +884,21 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     case NM_CLICK:
                         auto nmia = cast(NMITEMACTIVATE *) lParam;
                         // lv.log(nmia.uOldState);
-                        if (lv.onItemClicked)
-                        {
+                        if (lv.onItemClicked) {
                             auto ea = new EventArgs();
                             lv.onItemClicked(lv, ea);
                         }
                     break;
                     case NM_HOVER:
                         // print("hover test");
-                        if (lv.onItemHover)
-                        {
+                        if (lv.onItemHover) {
                             auto ea = new EventArgs();
                             lv.onItemHover(lv, ea);
                         }
                         //return 0;
                     break;
                     //case LVN_HOTTRACK : print("lvn hot track", 1); break;
-                    /++case NM_RELEASEDCAPTURE  :
+                    case NM_RELEASEDCAPTURE  :
                        print("LVN_ITEMCHANGED", 12); break;
                     case NM_CLICK :
                         // lv.mSelIndex = lv.sendMsg(LVM_GETNEXTITEM, -1, LVNI_SELECTED);
@@ -970,14 +929,11 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
             case WM_NOTIFY: // This msg is coming from Header control.
                  auto nmh= cast(NMHDR*) lParam;
-                switch (nmh.code)
-                {
+                switch (nmh.code) {
                     case NM_CUSTOMDRAW :  // Let's draw header back & fore colors
                         auto nmcd = cast(NMCUSTOMDRAW*) lParam;
-                        if (!lv.mDrawHeader)
-                        {
-                            switch (nmcd.dwDrawStage)  // NM_CUSTOMDRAW is always -12 when item painting
-                            {
+                        if (!lv.mDrawHeader) {
+                            switch (nmcd.dwDrawStage)  {// NM_CUSTOMDRAW is always -12 when item painting
                                 case CDDS_PREPAINT :
                                     /* When drawing started, system will send a NM_CUSTOMDRAW notification to...
                                     parent of the control. Here, parent of header control is list view. So we...
@@ -1019,12 +975,10 @@ extern(Windows)
 private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                     UINT_PTR scID, DWORD_PTR refData)
 {
-    try
-    {
+    try {
        ListView lv = getControl!ListView(refData);
        //printWinMsg(message);
-        switch (message)
-        {
+        switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &hdrWndProc, scID); break;
             case WM_MOUSEMOVE :
                 /** We need to some extra job here. Because, there is no notification
@@ -1046,8 +1000,7 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
             case HDM_LAYOUT :
                 /* Set the window pos structures fields, so that windows will adjust our header & lv */
-                if (lv.mChangeHdrHeight)
-                {
+                if (lv.mChangeHdrHeight) {
                     LPHDLAYOUT pHl = cast(LPHDLAYOUT) lParam;
                     pHl.pwpos.hwnd = hWnd;
                     pHl.pwpos.flags = SWP_FRAMECHANGED;

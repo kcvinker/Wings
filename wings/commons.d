@@ -37,7 +37,8 @@ package {
     alias intArray = int[];
     alias wsArray = wstring[];
 
-    class ApplicationData {
+    class ApplicationData
+    {
         HWND mainWinHandle;
         bool isMainLoopOn;
         bool isDtpInit;
@@ -51,7 +52,8 @@ package {
         Font mainFont;
         INITCOMMONCONTROLSEX iccEx;
 
-        this(string fontName, int fontSize, FontWeight fw = FontWeight.normal) {
+        this(string fontName, int fontSize, FontWeight fw = FontWeight.normal)
+        {
             this.className = "Wing_window";
             this.mainFont = new Font(fontName, fontSize, fw);
             this.appColor = Color(gBkColor);
@@ -80,13 +82,10 @@ package {
     ColumnResult getIntOrString(T)(T arg)
     {
         ColumnResult cres;
-        static if (is(typeof(arg) == int))
-        {
+        static if (is(typeof(arg) == int)) {
             cres.value.ivalue = arg;
             cres.isString = false;
-        }
-        else static if (is(typeof(arg) == double))
-        {
+        } else static if (is(typeof(arg) == double)) {
            cres.isString = true;
            cres.svalue = arg;
         }
@@ -109,9 +108,11 @@ package {
 
     // Window & Button are the control which supports gradient back colors.
     // So this struct will be helpful to store the required info.
-    struct GradientColor {
+    struct GradientColor
+    {
         Color color1, color2;
-        this(uint c1, uint c2) {
+        this(uint c1, uint c2)
+        {
             this.color1 = Color(c1);
             this.color2 = Color(c2);
         }
@@ -130,7 +131,8 @@ package {
     enum falseLresult = cast(LRESULT) false;
     LRESULT toLresult(HBRUSH hbr) {return cast(LRESULT) hbr;}
 
-    RECT adjustRect(RECT rc, int leftTop, int rightBottom) {
+    RECT adjustRect(RECT rc, int leftTop, int rightBottom)
+    {
         RECT rct;
         rct.left = rc.left + leftTop;
         rct.top = rc.top + leftTop;
@@ -139,7 +141,8 @@ package {
         return rct;
     }
 
-    void adjustRect(RECT* rc, int leftTop, int rightBottom) {
+    void adjustRect(RECT* rc, int leftTop, int rightBottom)
+    {
         rc.left = rc.left + leftTop;
         rc.top = rc.top + leftTop;
         rc.right = rc.right + rightBottom;
@@ -157,11 +160,13 @@ package {
     Control toControl(DWORD_PTR refData) { return cast(Control) (cast(void*) refData);}
 
     /// A wrapper for SendMessage function.
-    public void sendMsg(T, U)(HWND hw, UINT msg, T wPm, U lPm){
+    public void sendMsg(T, U)(HWND hw, UINT msg, T wPm, U lPm)
+    {
         SendMessage(hw, msg, cast(WPARAM) wPm, cast(LPARAM) lPm);
     }
 
-    RECT copyRect(const RECT rc) {
+    RECT copyRect(const RECT rc)
+    {
         RECT nr;
         nr.top = rc.top;
         nr.bottom = rc.bottom;
@@ -174,10 +179,10 @@ package {
         In such situations, we need to make a string from user input.
         But if that value already a string, then no need to convert that to a string.
         This function does that check and returns a string. */
-    wstring toString(T)(T value) {
+    wstring toString(T)(T value)
+    {
         wstring result;
-        static if (is(T == wstring))
-        {
+        static if (is(T == wstring)) {
             result = value;
         } else {
             result = value.to!wstring;
@@ -191,7 +196,8 @@ package {
         return to!string(item);
     }
 
-    void printWinMsg(uint msg) {
+    void printWinMsg(uint msg)
+    {
         debug {
             import wings.message_map;
             auto mm = cast(msgMap) msg;
@@ -233,21 +239,24 @@ void setActiveWindow(HWND wind) {SetForegroundWindow(wind);}
 
 
 
-POINT getMousePoints() {
+POINT getMousePoints()
+{
     auto value = GetMessagePos();
     auto x = cast(int) (cast(short) LOWORD(value));
     auto y = cast(int) (cast(short) HIWORD(value));
     return POINT(x, y);
 }
 
-string getCurrentExeFullName() {
+string getCurrentExeFullName()
+{
     wchar[MAX_PATH] buffer;
     auto ret = GetModuleFileNameW(null, buffer.ptr, MAX_PATH);
     if (ret > 0) return buffer[0..ret].to!string;
     return "";
 }
 
-string getCurrentDirectory() {
+string getCurrentDirectory()
+{
     wchar[MAX_PATH] buffer;
     auto ret = GetCurrentDirectoryW( MAX_PATH, buffer.ptr);
     if (ret > 0) return buffer[0..ret].to!string;
@@ -265,12 +274,15 @@ wchar* toWchrPtr(string value){ return toUTFz!(wchar*)(value);}
 ///
 
 
-void printRect(const RECT rc, string msg = "rc values") {
+void printRect(const RECT rc, string msg = "rc values")
+{
     writeln(msg);
     writefln("Left: %d, Top: %d, Right: %d, Bottom: %d", rc.left, rc.top, rc.right, rc.bottom);
     writeln("-------------------------------------------------");
 }
-void printRect(const RECT* rc) {
+
+void printRect(const RECT* rc)
+{
     writefln("Left - %d", rc.left);
     writefln("Top - %d", rc.top);
     writefln("Right - %d", rc.right);
@@ -278,7 +290,8 @@ void printRect(const RECT* rc) {
     writeln("-------------------------------------------------");
 }
 
-void print(T)(string msg, T obj) {
+void print(T)(string msg, T obj)
+{
     debug{
         import std.stdio;
         static x = 1;
@@ -287,7 +300,8 @@ void print(T)(string msg, T obj) {
     }
 }
 
-void print(T)(T value) {
+void print(T)(T value)
+{
     debug{
         import std.stdio;
         static x = 1;
@@ -296,7 +310,8 @@ void print(T)(T value) {
     }
 
 }
-void print(T)(string msg, T value1, T value2) {
+void print(T)(string msg, T value1, T value2)
+{
     debug{
         import std.stdio;
         static x = 1;
@@ -306,7 +321,8 @@ void print(T)(string msg, T value1, T value2) {
     }
 }
 
-void printf(T...)(string fmt, T values) {
+void printf(T...)(string fmt, T values)
+{
     debug{
         import std.stdio;
         writefln(fmt, values);
@@ -316,7 +332,8 @@ void printf(T...)(string fmt, T values) {
 
 
 struct Dpoint{ int x; int y;}
-struct Size {
+struct Size
+{
     int width;
     int height;
     bool valueReady() {return (this.width > -1 && this.height > -1) ? true : false;}
@@ -329,7 +346,8 @@ struct Size {
 //     int subClassId;
 // }
 
-void drawVLine(HDC hdc, int x, int y, int endp, COLORREF clrref, int penWid = 1) {
+void drawVLine(HDC hdc, int x, int y, int endp, COLORREF clrref, int penWid = 1)
+{
     auto pen = CreatePen(PS_SOLID, penWid, clrref);
     MoveToEx(hdc, x, y, null);
     SelectObject(hdc, pen);
@@ -338,14 +356,16 @@ void drawVLine(HDC hdc, int x, int y, int endp, COLORREF clrref, int penWid = 1)
 
 
 
-int arraySearch(t, u)(t[] aArray, u item ) {
+int arraySearch(t, u)(t[] aArray, u item )
+{
     for (int i = 0; i < aArray.length; ++i) {
         if (aArray[i] == item) return i;
     }
     return -1;
 }
 
-mixin template EnableWindowsSubSystem(  ) {
+mixin template EnableWindowsSubSystem(  )
+{
     debug{}else {
         //enum string mnf1 = "\"/manifestdependency:type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' ";
         //enum string mnf2 = "processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"";
@@ -364,7 +384,8 @@ mixin template EnableWindowsSubSystem(  ) {
 
 // Wing's own messages
 
-void sendThreadMsg(int winhwnd, WPARAM wpm, LPARAM lpm) {
+void sendThreadMsg(int winhwnd, WPARAM wpm, LPARAM lpm)
+{
     SendNotifyMessage(cast(HWND)winhwnd, CM_WIN_THREAD_MSG, wpm, lpm );
 }
 

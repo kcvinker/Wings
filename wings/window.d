@@ -66,8 +66,7 @@ class Window : Control
     ///the constructor of form class
     private this(string txt, int x, int y, int w, int h)
     {
-        if (!isWindowInit)  // It's the first window.
-        {
+        if (!isWindowInit)  { // It's the first window.
             isWindowInit = true;
             appData = new ApplicationData( defWinFontName, defWinFontSize, defWinFontWeight);
             regWindowClass(appData.className, appData.hInstance);
@@ -129,27 +128,12 @@ class Window : Control
                                         appData.hInstance,
                                         null);
 
-        //sw.stop();
-        //print("window create speed in milli sec : ", sw.peek.total!"msecs");
-        if (this.mHandle )
-        {
-
-            //myDic[this.mHandle] = this;   To be deleted
-
+        if (this.mHandle ) {
             this.mIsCreated = true;
             if (appData.mainWinHandle == null) appData.mainWinHandle = this.mHandle;
             SetWindowLongPtrW(this.mHandle, GWLP_USERDATA, (cast(LONG_PTR) cast(void*) this) );
             this.setFontInternal();
-            // if (!this.mVisible) {
-            //         SetWindowPos(   this.mHandle, null,
-            //                         this.mXpos, this.mYpos,
-            //                         this.mWidth, this.mHeight,
-            //                         SWP_HIDEWINDOW | SWP_NOACTIVATE
-            //                     );
-            //     }
-
-        }
-        else {
+        } else {
             throw new Exception("Window is not created..."); // Do we need this ?
         }
     }
@@ -162,8 +146,7 @@ class Window : Control
         UpdateWindow(this.mHandle);
 
         if (this.mWinState == WindowState.minimized) {CloseWindow(this.mHandle); }
-        if(!mMainLoopStarted)
-        {
+        if(!mMainLoopStarted) {
             mMainLoopStarted = true;
             mainLoop();
         }
@@ -188,18 +171,9 @@ class Window : Control
         this.onMouseUp = toDelegate(&printFormPoints);
     }
 
-    // final void printPoint(MouseEventArgs e)
-    // {
-    //     import std.stdio;
-    //     static int x = 1;
-    //     writefln("[%s] X : %s, Y : %s", x, e.xPos, e.yPos);
-    //     ++x;
-    // }
-
     final void registerHotKey(HotKeyStruct* hks)
     {
-        if (this.mIsCreated)
-        {
+        if (this.mIsCreated) {
             uint fsMod;
             if (hks.altKey) fsMod |= 0x0001;
             if (hks.ctrlKey) fsMod |= 0x0002;
@@ -209,8 +183,7 @@ class Window : Control
             if (!hks.altKey && !hks.ctrlKey && !hks.shiftKey && !hks.winKey ) return;
             uint vKey = cast(uint) hks.hotKey;
             ++mGlobalHotKeyID; // A static variable of Window class.
-            if (RegisterHotKey(this.mHandle, mGlobalHotKeyID, fsMod, vKey))
-            {
+            if (RegisterHotKey(this.mHandle, mGlobalHotKeyID, fsMod, vKey)) {
                 this.mHotKeyIDList ~= mGlobalHotKeyID;
                 hks.hotKeyID = mGlobalHotKeyID;
                 hks.result = true;
@@ -233,14 +206,12 @@ class Window : Control
         return mbar;
     }
 
-    final Timer addTimer(UINT interval = 100, TimerTickHandler tickHandler = null)
+    final Timer addTimer(UINT interval = 100, EventHandler tickHandler = null)
     {
-        auto timer = new Timer(this, interval, tickHandler);
+        auto timer = new Timer(this.mHandle, interval, tickHandler);
         this.mTimerDic[timer.mIdNum] = timer;
         return timer;
     }
-
-
 
     // final void hideWindow() {
     //     this.sendMsg(WM_SHOWWINDOW, false, )
@@ -305,7 +276,6 @@ class Window : Control
         bool mMinBox;
         bool mGDR2L; // Gradient draw right to left
         Timer[UINT_PTR] mTimerDic;
-        UINT_PTR mStaticTimerID;
         HMENU menuHwnd;
         DWORD winStyle = WS_OVERLAPPEDWINDOW;
         WindowPos mStartPos;
@@ -315,7 +285,8 @@ class Window : Control
         MenuItem[] mMenuItems; // dictionary(key = uint, value = MenuItem)
 
 
-        void setStartPos() { // Private
+        void setStartPos()
+        { // Private
             switch (this.mStartPos) {
                 case WindowPos.center :
                     this.mXpos = (appData.screenWidth - this.mWidth) / 2;
@@ -347,7 +318,8 @@ class Window : Control
 
         }
 
-        void setWindowStyles() { // Private
+        void setWindowStyles()
+        { // Private
             switch(this.mWinStyle) {
                 case WindowStyle.fixed3D :
                     this.mExStyle = fixed3DExStyle;
@@ -407,38 +379,37 @@ class Window : Control
 
         }
 
-    	void propBackColorSetter(uint clr) {   // private
+    	void propBackColorSetter(uint clr)
+        {   // private
     		this.mBackColor(clr);
     		this.mBkDrawMode = WindowBkMode.singleColor;
     		if (this.mIsCreated) InvalidateRect(this.mHandle, null, false);
     	}
 
-        void checkWinVwesion() {
+        void checkWinVwesion()
+        {
             import  std.stdio;
-
             OSVERSIONINFOW ovi;
             ovi.dwOSVersionInfoSize = OSVERSIONINFOW.sizeof;
             GetVersionExW(&ovi);
-            // string b;
-            // b.reserve(ovi.szCSDVersion.length);
-            // foreach (wchar c; ovi.szCSDVersion){
-            //     b ~= c;
-            // }
             writefln("OS Version : %s.%s.%s.%s", ovi.dwMajorVersion,
                 ovi.dwMinorVersion, ovi.dwPlatformId, ovi.dwBuildNumber);
         }
 
-        void setDataAtMoveMsg(int x, int y) {
+        void setDataAtMoveMsg(int x, int y)
+         {
             this.mXpos = x;
             this.mYpos = y;
         }
 
-        void setDataAtSizeMsg(RECT rct) {
+        void setDataAtSizeMsg(RECT rct)
+        {
             this.mWidth = rct.right - rct.left;
             this.mHeight = rct.bottom - rct.top;
         }
 
-        void finalize() {
+        void finalize()
+        {
             // If there is un managed hotkeys, remove all of them.
             if (this.mHotKeyIDList.length > 0) {
                 foreach (int key; mHotKeyIDList) {
@@ -449,7 +420,8 @@ class Window : Control
             }
         }
 
-        void createControlHandles() {
+        void createControlHandles()
+        {
             if (this.mMenubarCreated && !this.mMenubar.mIsCreated) this.mMenubar.createHandle();
             if (this.mControls.length) {
                 foreach (ctl; this.mControls) {
@@ -464,38 +436,36 @@ class Window : Control
 
 class Timer {
     UINT interval;
-    TimerTickHandler onTick;
+    EventHandler onTick;
 
-    this(Window parent, UINT interval, TimerTickHandler handler)
+    this(HWND parentHwnd, UINT interval, EventHandler handler)
     {
-        this.mParent = parent;
+        this.mParentHwnd = parentHwnd;
         this.interval = interval;
         this.onTick = handler;
-        if (parent.mStaticTimerID > 0) {
-            parent.mStaticTimerID += 1;
-        } else {
-            parent.mStaticTimerID = cast(UINT_PTR)(parent.mWindowID * 1000);
-        }
-        this.mIdNum = parent.mStaticTimerID;
+        this.mIdNum = cast(UINT_PTR)(cast(void*)this);
     }
 
-    ~this() {
-        if (this.mIsEnabled) KillTimer(this.mParent.mHandle, this.mIdNum);
+    ~this()
+    {
+        if (this.mIsEnabled) KillTimer(this.mParentHwnd, this.mIdNum);
     }
 
-    void start() {
+    void start()
+    {
         this.mIsEnabled = true;
-        SetTimer(this.mParent.mHandle, this.mIdNum, this.interval, null);
+        SetTimer(this.mParentHwnd, this.mIdNum, this.interval, null);
     }
 
-    void stop() {
-        KillTimer(this.mParent.mHandle, this.mIdNum);
+    void stop()
+    {
+        KillTimer(this.mParentHwnd, this.mIdNum);
         this.mIsEnabled = false;
     }
 
     private:
     UINT_PTR mIdNum;
-    Window mParent;
+    HWND mParentHwnd;
     bool mIsEnabled;
 }
 
@@ -575,7 +545,8 @@ void trackMouseMove(HWND hw)
 
 /// WndProc function for Window class
 extern(Windows)
-LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothrow {
+LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothrow
+{
     try {
         auto win = cast(Window) (cast(void *) GetWindowLongPtrW(hWnd, GWLP_USERDATA));
         switch (message) {

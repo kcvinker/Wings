@@ -153,7 +153,8 @@ enum MenuPosition {
 }
 
 extern(Windows)
-private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)  {
+private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)
+{
     try {
         ContextMenu cm = getControl!ContextMenu(refData);
         switch (message) {

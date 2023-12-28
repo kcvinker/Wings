@@ -52,11 +52,9 @@ class ProgressBar : Control
 		if (this.mBarStyle == ProgressBarStyle.marqueeStyle) this.mStyle |= PBS_MARQUEE;
 		if (this.mVertical) this.mStyle |= PBS_VERTICAL;
         this.createHandleInternal(mClassName.ptr);
-        if (this.mHandle)
-        {
+        if (this.mHandle) {
             this.setSubClass(&pgbWndProc);
-            if (this.mMinValue != 0 || this.mMaxValue != 100)
-            {
+            if (this.mMinValue != 0 || this.mMaxValue != 100) {
                 this.sendMsg(PBM_SETRANGE32, this.mMinValue, this.mMaxValue);
             }
 			this.sendMsg(PBM_SETSTEP, this.mStep, 0);
@@ -65,8 +63,7 @@ class ProgressBar : Control
 
 	final void increment()
     {
-        if (this.mIsCreated)
-        {
+        if (this.mIsCreated) {
             this.mValue = (this.value == this.mMaxValue) ? this.mStep : this.mValue + this.mStep;
             this.sendMsg(PBM_STEPIT, 0, 0);
         }
@@ -75,8 +72,7 @@ class ProgressBar : Control
     final void minValue(int value)
     {
         this.mMinValue = value;
-        if (this.mIsCreated)
-        {
+        if (this.mIsCreated) {
             this.sendMsg(PBM_SETRANGE32, this.mMinValue, this.mMaxValue);
         }
     }
@@ -86,8 +82,7 @@ class ProgressBar : Control
     final void maxValue(int value)
     {
         this.mMaxValue = value;
-        if (this.mIsCreated)
-        {
+        if (this.mIsCreated) {
             this.sendMsg(PBM_SETRANGE32, this.mMinValue, this.mMaxValue);
         }
     }
@@ -96,8 +91,7 @@ class ProgressBar : Control
 
     final void step(int value)
     {
-        if (value >= this.mMinValue && value <= this.mMaxValue)
-        {
+        if (value >= this.mMinValue && value <= this.mMaxValue) {
             this.mStep = value;
             if (this.mIsCreated) {this.sendMsg(PBM_SETSTEP, this.mStep, 0);}
         } else {
@@ -111,8 +105,7 @@ class ProgressBar : Control
 	final void value(int ivalue)
     {
         // writeln("value proc ", value);
-        if (this.mIsCreated)
-        {
+        if (this.mIsCreated) {
             this.mValue = ivalue;
             auto oldval = this.sendMsg(PBM_SETPOS, ivalue, 0);
             // if (oldval > 0) this.mValue = ivalue;
@@ -131,8 +124,7 @@ class ProgressBar : Control
 
     final ProgressBarState state()
     {
-        if (this.mIsCreated)
-        {
+        if (this.mIsCreated) {
             this.mState = cast(ProgressBarState) this.sendMsg(PBM_GETSTATE, 0, 0);
         }
         return this.mState;
@@ -140,22 +132,18 @@ class ProgressBar : Control
 
     final void style(ProgressBarStyle value)
     {
-        if (this.mBarStyle != value)
-        {
+        if (this.mBarStyle != value) {
             this.mValue = 0;
-			if (value == ProgressBarStyle.blockStyle)
-            {
+			if (value == ProgressBarStyle.blockStyle) {
 				this.mStyle ^= PBS_MARQUEE;
 				this.mStyle |= PBS_SMOOTH;
 			} else {
 				this.mStyle ^= PBS_SMOOTH;
 				this.mStyle |= PBS_MARQUEE;
 			}
-			if (this.mIsCreated)
-            {
+			if (this.mIsCreated) {
                 SetWindowLongPtr(this.mHandle, GWL_STYLE, cast(LONG_PTR)this.mStyle);
-			    if (value == ProgressBarStyle.marqueeStyle)
-                {
+			    if (value == ProgressBarStyle.marqueeStyle) {
                     auto x = this.sendMsg(PBM_SETMARQUEE, 1, this.mSpeed);
                     // writefln("pgb sndmsg rslt %d", x);
                 } else {
@@ -174,11 +162,9 @@ class ProgressBar : Control
     final void decimalPrecision(int value)
     {
         this.mDeciPrec = value;
-        if (value == 0)
-        {
+        if (value == 0) {
             this.percFmt = "%d%%";
-        } else if(value > 0)
-        {
+        } else if(value > 0) {
             this.percFmt = "%0." ~ value.to!string ~ "g%%";
             // writefln("perc fmt %s", this.percFmt);
         }
@@ -188,8 +174,7 @@ class ProgressBar : Control
 
     final void startMarquee()
     {
-        if (this.mIsCreated)
-        {
+        if (this.mIsCreated) {
             this.style = ProgressBarStyle.marqueeStyle;
             // auto x = this.sendMsg(PBM_SETMARQUEE, 1, this.mSpeed);
             // writefln("pgb sndmsg rslt %d", x);
@@ -198,8 +183,7 @@ class ProgressBar : Control
 
     final void stopMarquee()
     {
-        if (this.mIsCreated)
-        {
+        if (this.mIsCreated) {
             // this.sendMsg(PBM_SETMARQUEE, 0, 0);
             this.style = ProgressBarStyle.blockStyle;
         }
@@ -220,8 +204,7 @@ class ProgressBar : Control
         {
             auto ret = DefSubclassProc(hWnd, message, wParam, lParam);
             // writefln("showperc %s, bar style %s", this.mShowPerc, this.mBarStyle);
-            if (this.mShowPerc && this.mBarStyle == ProgressBarStyle.blockStyle)
-            {
+            if (this.mShowPerc && this.mBarStyle == ProgressBarStyle.blockStyle) {
                 SIZE ss;
                 double perc = (cast(double)(this.mValue * 100)) / cast(double)this.mMaxValue;
                 string vtext = this.mDeciPrec > 0 ? format(this.percFmt, perc) : format(this.percFmt, cast(int)perc);
@@ -254,12 +237,10 @@ extern(Windows)
 private LRESULT pgbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try
-    {
+    try {
         ProgressBar pgb = getControl!ProgressBar(refData);
         //  gb.log(message);
-        switch (message)
-        {
+        switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &pgbWndProc, scID); break;
             // case WM_PAINT : pgb.paintHandler(); break;
             // case WM_SETFOCUS : pgb.setFocusHandler(); break;

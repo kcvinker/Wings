@@ -15,7 +15,8 @@ struct DateTime {
 	WeekDays dayOfWeek;
 
 
-	this(SYSTEMTIME st) {
+	this(SYSTEMTIME st)
+	{
 		this.year = st.wYear;
 		this.month = st.wMonth;
 		this.day = st.wDay;
@@ -26,7 +27,8 @@ struct DateTime {
 		this.dayOfWeek = cast(WeekDays) st.wDayOfWeek;
 	}
 
-	this(int Year, int Month, int Day) {
+	this(int Year, int Month, int Day)
+	{
 		this.year = Year;
 		this.month = Month;
 		this.day = Day;
@@ -37,11 +39,13 @@ struct DateTime {
 		this.dayOfWeek = cast(WeekDays) Day;
 	}
 
-	this(int Year, int Month, WeekDays Day) {
+	this(int Year, int Month, WeekDays Day)
+	{
 		this(Year, Month, cast(int) Day);
 	}
 
-	this(int Year, int Month, int Day, int Hour, int Minute, int Second) {
+	this(int Year, int Month, int Day, int Hour, int Minute, int Second)
+	{
 		this.year = Year;
 		this.month = Month;
 		this.day = Day;
@@ -53,7 +57,8 @@ struct DateTime {
 	}
 
 
-	static DateTime now() {
+	static DateTime now()
+	{
 		SYSTEMTIME st;
 		GetLocalTime(&st);
 		DateTime dt;

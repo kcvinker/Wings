@@ -47,8 +47,7 @@ class GroupBox : Control
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref );
         this.createHandleInternal(mClassName.ptr);
-        if (this.mHandle)
-        {
+        if (this.mHandle) {
             this.setSubClass(&gbWndProc);
             this.getTextBounds();
         }
@@ -144,12 +143,10 @@ extern(Windows)
 private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try
-    {
+    try {
         GroupBox gb = getControl!GroupBox(refData);
         //  gb.log(message);
-        switch (message)
-        {
+        switch (message) {
             case WM_DESTROY : gb.finalize(scID); break;
             // case WM_PAINT : gb.paintHandler(); break;
             case WM_SETFOCUS : gb.setFocusHandler(); break;
@@ -166,8 +163,7 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_GETTEXTLENGTH: return 0;
 
             case WM_ERASEBKGND :
-                if (gb.mDrawFlag )
-                {
+                if (gb.mDrawFlag ) {
                     auto hdc = cast(HDC) wParam;
                     RECT rc = gb.clientRect();
                     FillRect(hdc, &rc, gb.mBkBrush);

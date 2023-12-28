@@ -96,8 +96,7 @@ class Calendar : Control
     {
     	this.setCalenderStyles();
         this.createHandleInternal(mClassName.ptr);        // Calling base function
-        if (this.mHandle)
-        {
+        if (this.mHandle) {
             this.setSubClass(&calWndProc);
             RECT rct;
             this.sendMsg(MCM_GETMINREQRECT, 0, &rct);
@@ -138,11 +137,9 @@ extern(Windows)
 private LRESULT calWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try
-    {
+    try {
         Calendar cal = getControl!Calendar(refData);
-        switch (message)
-        {
+        switch (message) {
             case WM_DESTROY : RemoveWindowSubclass(hWnd, &calWndProc, scID); break;
             case WM_PAINT : cal.paintHandler(); break;
             case WM_LBUTTONDOWN : cal.mouseDownHandler(message, wParam, lParam); break;
@@ -157,8 +154,7 @@ private LRESULT calWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case CM_NOTIFY :
                 auto nm = cast(NMHDR *) lParam;
 
-                switch (nm.code)
-                {
+                switch (nm.code) {
                     case MCN_SELECT :
                         auto nms = cast(NMSELCHANGE *) lParam;
                         cal.value = DateTime(nms.stSelStart);

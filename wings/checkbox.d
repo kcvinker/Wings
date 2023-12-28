@@ -22,8 +22,7 @@ class CheckBox : Control
     final void checked(bool value)
     {
         this.mChecked = value;
-        if (this.mIsCreated)
-        {
+        if (this.mIsCreated) {
             int bState = value ? BST_CHECKED : BST_UNCHECKED;
             this,sendMsg(BM_SETCHECK, bState, 0 );
         }
@@ -70,8 +69,7 @@ class CheckBox : Control
     {
     	this.setCbStyles();
         this.createHandleInternal(mClassName.ptr);
-        if (this.mHandle)
-        {
+        if (this.mHandle) {
             this.setSubClass(&cbWndProc);
             this.setCbSize();
         }
@@ -82,8 +80,7 @@ class CheckBox : Control
     final override void text(string value)
     {
         this.mText = value;
-        if (this.mIsCreated)
-        {
+        if (this.mIsCreated) {
             SetWindowTextW(this.mHandle, value.toUTF16z);
             if (this.mAutoSize) this.setCbSize;
         }
@@ -101,8 +98,7 @@ class CheckBox : Control
 		void setCbStyles()
         { // Private
             // We need to set some checkbox styles
-			if (this.mRightAlign)
-            {
+			if (this.mRightAlign) {
 				this.mStyle |= BS_RIGHTBUTTON;
 				this.mTxtStyle |= DT_RIGHT;
 			}
@@ -131,11 +127,9 @@ extern(Windows)
 private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                             UINT_PTR scID, DWORD_PTR refData)
 {
-    try
-    {
+    try {
         CheckBox cb = getControl!CheckBox(refData);
-        switch (message)
-        {
+        switch (message) {
             case WM_DESTROY : cb.finalize(scID); break;
             case WM_PAINT : cb.paintHandler(); break;
             case WM_SETFOCUS : cb.setFocusHandler(); break;
@@ -153,8 +147,7 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case CM_CTLCOMMAND :
 				// writefln("CM_CTLCOMMAND in cb %s", 1);
                 cb.mChecked = cast(bool) cb.sendMsg(BM_GETCHECK, 0, 0);
-                if (cb.onCheckedChanged)
-                {
+                if (cb.onCheckedChanged) {
                     auto ea = new EventArgs();
                     cb.onCheckedChanged(cb, ea);
                 }
@@ -175,8 +168,7 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
                 auto nmc = cast(NMCUSTOMDRAW *) lParam;
                 // writefln("dwDrawStage %s", BST_UNCHECKED);
-                switch (nmc.dwDrawStage)
-                {
+                switch (nmc.dwDrawStage) {
                     case CDDS_PREERASE :
                         return CDRF_NOTIFYPOSTERASE;
                         break;

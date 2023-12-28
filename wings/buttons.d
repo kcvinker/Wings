@@ -152,8 +152,7 @@ class Button : Control
     override void createHandle()
     {
         this.createHandleInternal(mClassName.ptr);
-        if (this.mHandle)
-        {
+        if (this.mHandle) {
             this.setSubClass(&btnWndProc);
         }
     }
@@ -183,13 +182,11 @@ class Button : Control
         // Drawing the flat color bkg
         LRESULT drawBackColor(NMCUSTOMDRAW* ncd)
         {
-            switch (ncd.dwDrawStage)
-            {
+            switch (ncd.dwDrawStage) {
                 case CDDS_PREERASE : // This happens when the paint starts
                     return CDRF_NOTIFYPOSTERASE; break; // Telling the program to inform us after erase
                 case CDDS_PREPAINT: // We get the notification after erase happened.
-                    switch (ncd.uItemState)
-                    { // We check the control state and draw
+                    switch (ncd.uItemState) { // We check the control state and draw
                         case mMouseClickFlag:
                             this.paintFlatBtnRoundRect(ncd.hdc, ncd.rc, mFDraw.defBrush, mFDraw.hotPen);
                         break;
@@ -257,23 +254,21 @@ class Button : Control
         LRESULT wmNotifyHandler(LPARAM lpm)
         {
             LRESULT ret = CDRF_DODEFAULT;
-            if (this.mDrawFlag)
-            {
+            if (this.mDrawFlag) {
                 NMCUSTOMDRAW* nmcd = cast(NMCUSTOMDRAW*)lpm;
-                switch (this.mDrawFlag)
-                {
-                        case 1: ret = this.drawTextColor(nmcd); break; // ForeColor only
-                        case 2: ret = this.drawBackColor(nmcd); break; // BackColor only
-                        case 3://-----------------------------------------Back & Fore colors
-                            this.drawBackColor(nmcd);
-                            ret = this.drawTextColor(nmcd);
-                        break;
-                        case 4: ret = this.drawGradientBackColor(nmcd); break; // Gradient only
-                        case 5: //------------------------------------------------Gradient & fore colors
-                            this.drawGradientBackColor(nmcd);
-                            ret = this.drawTextColor(nmcd);
-                        break;
-                    default: return CDRF_DODEFAULT; break;
+                switch (this.mDrawFlag) {
+                    case 1: ret = this.drawTextColor(nmcd); break; // ForeColor only
+                    case 2: ret = this.drawBackColor(nmcd); break; // BackColor only
+                    case 3://-----------------------------------------Back & Fore colors
+                        this.drawBackColor(nmcd);
+                        ret = this.drawTextColor(nmcd);
+                    break;
+                    case 4: ret = this.drawGradientBackColor(nmcd); break; // Gradient only
+                    case 5: //------------------------------------------------Gradient & fore colors
+                        this.drawGradientBackColor(nmcd);
+                        ret = this.drawTextColor(nmcd);
+                    break;
+                default: return CDRF_DODEFAULT; break;
                 }
             }
             return ret;
@@ -330,12 +325,10 @@ extern(Windows)
 private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try
-    {
+    try {
         Button btn = getControl!Button(refData);
         //btn.log(message, "Button message ");
-        switch (message)
-        {
+        switch (message) {
             case WM_DESTROY : btn.finalize(scID); break;
             case WM_PAINT : btn.paintHandler(); break;
             case WM_SETFOCUS :
