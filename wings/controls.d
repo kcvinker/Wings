@@ -155,7 +155,15 @@ class Control {
             }
         }
 
-        int right() {return this.mRect.right;}
+        int right() 
+        {
+            if (this.mIsCreated) {
+                return this.mRect.right;
+            } else {
+                return this.mXpos + this.mWidth;
+            }
+            
+        }
         int bottom() {return this.mRect.bottom;}
 
 
@@ -190,6 +198,18 @@ class Control {
         {
             auto rc = this.getMappedRect();
             return rc.bottom + p;
+        }
+
+        int top(int p)()
+        {
+            auto rc = this.getMappedRect();
+            return rc.top + p;
+        }
+
+        int left(int p)()
+        {
+            auto rc = this.getMappedRect();
+            return rc.left + p;
         }
 
         void backColor(uint value)

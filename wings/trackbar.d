@@ -93,7 +93,7 @@ class TrackBar : Control
         this.mVertical = value;
         if (this.mTicPos == TicPosition.downSide || this.mTicPos == TicPosition.upSide)
         {
-            this.mTicPos = TicPosition.rightSide;
+            this.mTicPos = TicPosition.leftSide;
         }
     }
     //---------------------------------------------------------------------[18] Vertical

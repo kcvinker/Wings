@@ -900,7 +900,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     //case LVN_HOTTRACK : print("lvn hot track", 1); break;
                     case NM_RELEASEDCAPTURE  :
                        print("LVN_ITEMCHANGED", 12); break;
-                    case NM_CLICK :
+                    //case NM_CLICK :
                         // lv.mSelIndex = lv.sendMsg(LVM_GETNEXTITEM, -1, LVNI_SELECTED);
                         // lv.mSelItem = lv.mItems[lv.mSelIndex];
                         // if (lv.onSelectionChanged) {
@@ -922,10 +922,10 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                            // print("label edit ok");
                         }
                         return trueLresult;
-                        break;+/
+                        break;
 
                     default : break;
-                } break;
+                } break; //dmd -i -debug -m64 "app.d" (in directory: C:\Users\kcvin\OneDrive\Programming\D_Lang\Wings)
 
             case WM_NOTIFY: // This msg is coming from Header control.
                  auto nmh= cast(NMHDR*) lParam;

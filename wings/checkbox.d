@@ -24,7 +24,7 @@ class CheckBox : Control
         this.mChecked = value;
         if (this.mIsCreated) {
             int bState = value ? BST_CHECKED : BST_UNCHECKED;
-            this,sendMsg(BM_SETCHECK, bState, 0 );
+            this.sendMsg(BM_SETCHECK, bState, 0 );
         }
     }
 

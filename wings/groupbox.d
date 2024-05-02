@@ -60,6 +60,17 @@ class GroupBox : Control
         this.checkRedrawNeeded();
     }
 
+    int getYpos()
+    {
+        if (this.mIsCreated) {
+            return this.mRect.top + 10;
+        } else {
+            RECT rct = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
+            MapWindowPoints(this.parent.mHandle, this.mParent.mHandle, cast(LPPOINT)&rct, 2 );
+            return rct.top + 10;
+        }
+    }
+
 
     private :
         HBRUSH mBkBrush;
