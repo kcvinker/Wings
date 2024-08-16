@@ -121,9 +121,10 @@ package {
         rc.bottom = rc.bottom + rightBottom;
     }
 
-
-
-
+    pragma(inline, true) T getAs(T)(HWND hw) 
+    {
+        return cast(T) (cast(void *) GetWindowLongPtrW(hw, GWLP_USERDATA));
+    }
 
     T getControl(T)(DWORD_PTR refData){ return cast(T) (cast(void*) refData);}
 

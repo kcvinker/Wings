@@ -257,12 +257,12 @@ class Control {
     {
         this.mCmenu = value;
         if (!this.mCmenu.mParent) this.mCmenu.mParent = this;
-        this.mCmenu.setDummyControl();
+        // this.mCmenu.setDummyControl();
     }
     final void addContextMenu(string[] menuNames ...)
     {
         this.mCmenu = new ContextMenu(this, menuNames);
-        this.mCmenu.setDummyControl();
+        // this.mCmenu.setDummyControl();
     }
 
 

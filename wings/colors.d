@@ -86,11 +86,13 @@ struct Color  // This struct is used to hold the color values for all control's 
 
     HBRUSH getHotBrush(double adj)
     { // Color.getHotBrush
-        /* Sometimes, we need to use a special color for mouse hover event.
+        /*================================================================== 
+        Sometimes, we need to use a special color for mouse hover event.
         In such cases, we have already a back color. But we need to make...
         an hbrush with slightly different color. This function create...
         an hbrush for that purpose. It will create a different color with...
-        given value 'adj'. Try with a 1.2 */
+        given value 'adj'. Try with a 1.2 
+        =======================================================================*/
         auto red = clip(this.red + (adj * 8));
         auto green = clip(this.green + (adj * 16));
         auto blue = clip(this.blue + (adj * 32));
@@ -100,11 +102,13 @@ struct Color  // This struct is used to hold the color values for all control's 
 
     HBRUSH getHotBrushEx(int adj)
     { // Color.getHotBrush
-        /* Sometimes, we need to use a special color for mouse hover event.
+        /*====================================================================== 
+        Sometimes, we need to use a special color for mouse hover event.
         In such cases, we have already a back color. But we need to make...
         an hbrush with slightly different color. This function create...
         an hbrush for that purpose. It will create a different color with...
-        given value 'adj'. Try with a 1.2 */
+        given value 'adj'. Try with a 1.2 
+        ==========================================================================*/
         auto red = clip(this.red + adj);
         auto green = clip(this.green + adj);
         auto blue = clip(this.blue + adj);
@@ -232,20 +236,20 @@ struct  HSV
         float cmin = min(sr, sg, sb);
         float diff = cmax - cmin;
 
-        if (cmax == cmin) {
+        if (cmax == cmin)
             hsv.hue = 0;
-        } else if (cmax == sr) {
+        else if (cmax == sr)
             hsv.hue = (60 * ((sg - sb) / diff) + 360) % 360;
-        } else if (cmax == sg) {
+        else if (cmax == sg)
             hsv.hue = (60 * ((sb - sr) / diff) + 120) % 360;
-        } else if (cmax == sb) {
+        else if (cmax == sb)
             hsv.hue = (60 * ((sr - sg) / diff) + 240) % 360;
-        }
-        if (cmax == 0) {
+        /*---------------------------------------------------*/
+        if (cmax == 0) 
             hsv.saturation = 0;
-        } else {
+        else
             hsv.saturation = (diff / cmax) * 100;
-        }
+        
         hsv.value = fabsf(cmax * 100);
         return hsv;
     }
@@ -343,11 +347,11 @@ struct  HSV
     void setValue(int percentage, bool reduce = false)
     {
         double x = percentage / 100;
-        if (reduce) {
+        if (reduce)
             x -= 1;
-        } else {
+        else
             x += 1;
-        }
+            
         this.value = min((this.value * x), 1);
     }
 }

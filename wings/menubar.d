@@ -273,6 +273,17 @@ class MenuItem : MenuBase
             }
         }
 
+        void finalize() 
+        {
+            if (this.mMenus.length > 0) {
+                foreach (string key; this.mMenus.byKey()) {
+                    this.mMenus[key].finalize();
+                }
+            }
+            DestroyMenu(this.mHandle);
+            print("MenuItem %s destroyed", this.mText);
+        }
+
     private:
         HMENU mParentHandle;
         uint mIndex;

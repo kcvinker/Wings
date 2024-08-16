@@ -4,15 +4,16 @@ import core.sys.windows.windows;
 import std.utf;
 import core.sys.windows.commctrl: SetWindowSubclass, RemoveWindowSubclass, DefSubclassProc;
 
-import wings.form: Form;
+import std.stdio;
 import wings.controls: Control;
 import wings.fonts: Font;
 import wings.enums: MenuType, ControlType;
 import wings.menubar: MenuBase, MenuItem, getMenuItem, ParentKind;
 import wings.events: EventHandler, EventArgs;
 import wings.colors: makeHBRUSH, getClrRef;
-import wings.commons: getControl, getMousePoints, getMousePos;
+import wings.commons: getControl, getMousePoints, getMousePos, getAs, print;
 
+enum wstring cmenuWndClass = "Wings_Cmenu_Msg_Window";
 
 class ContextMenu : MenuBase 
 {
@@ -28,6 +29,10 @@ class ContextMenu : MenuBase
         this.mBorderBrush = makeHBRUSH(0x0077b6);
         this.mGrayBrush = makeHBRUSH(0xced4da);
         this.mGrayCref = getClrRef(0x979dac);
+        if (!mMsgWinRegistered) {
+            appData.registerMsgOnlyWindow(cmenuWndClass.ptr, &cmenuWndProc2);
+            mMsgWinRegistered = true;
+        }
     }
 
     this(Control parent, string[] menuNames ...) {
@@ -39,6 +44,29 @@ class ContextMenu : MenuBase
     this(Control parent) {
         this();
         this.mParent = parent;
+    }
+
+    ~this()
+    {
+        // Just for a safety, although dummy hwnd already be destroyed.
+        if (this.mDummyHwnd) DestroyWindow(this.mDummyHwnd);
+
+        /*----------------------------------------------------------
+        When context menu dissappers, the backing message-only window
+        wil be destroyed. But we will destroy our menu related 
+        resources when the whole program ends.
+        ------------------------------------------------------------*/
+        if (this.mMenus.length > 0) {
+            foreach (key; this.mMenus.byKey()) {
+                this.mMenus[key].finalize();
+            }
+        }
+        DeleteObject(this.mDefBgBrush);
+        DeleteObject(this.mHotBgBrush);
+        DeleteObject(this.mBorderBrush);
+        DeleteObject(this.mGrayBrush);
+        DestroyMenu(this.mHandle);
+        // writeln("Context menu dtor worked");
     }
 
     MenuItem addItem(string item) {
@@ -55,18 +83,11 @@ class ContextMenu : MenuBase
     package:
         Control mParent;
 
-        // This function executed at the 'contextMenu' property if each control.
-        // 'contextMenu' property will set the parent if it is null.
-        void setDummyControl() {
-            auto pHwnd = isWindow() ? this.mParent.mHandle : this.mParent.mParent.mHandle;
-            auto hinst = appData.hInstance;
-            this.mDummyHwnd = CreateWindowExW(0, "Button".toUTF16z, null, WS_CHILD, 0, 0, 0, 0, pHwnd, null, hinst, null);
-            SetWindowSubclass(this.mDummyHwnd, &cmenuWndProc, UINT_PTR(Control.mSubClassId), this.toDwordPtr);
-            Control.mSubClassId += 1;
+        void showMenu(LPARAM lpm) 
+        {
+            this.setDummyWindow(); // Create the message-only window.
+            scope(exit) DestroyWindow(this.mDummyHwnd);
             if (!this.mFont.handle) this.mFont.createFontHandle(this.mDummyHwnd);
-        }
-
-        void showMenu(LPARAM lpm) {
             if (!this.mCmenuCreated) this.createCmenuHandle();
             if (this.mParent && this.mMenus.length) {
                 POINT pt = getMousePos(lpm);
@@ -96,13 +117,11 @@ class ContextMenu : MenuBase
     private:
         int mWidth, mHeight, mMenuCount;
         bool mRightClick, mCmenuCreated;
+        static bool mMsgWinRegistered;
         COLORREF mGrayCref;
         HWND mDummyHwnd;
-
         HBRUSH mDefBgBrush, mHotBgBrush, mBorderBrush, mGrayBrush;
 
-        bool isWindow() {return this.mParent.mControlType == ControlType.window;}
-        DWORD_PTR toDwordPtr() {return cast(DWORD_PTR) (cast(void*) this);}
 
         void setMenuInternal(string[] menuNames) {
             if (menuNames.length > 0) {
@@ -126,6 +145,18 @@ class ContextMenu : MenuBase
             this.mCmenuCreated = true;
         }
 
+        void setDummyWindow() 
+        {
+            this.mDummyHwnd = CreateWindowExW(0, cmenuWndClass.ptr, null, 
+                                                0, 0, 0, 0, 0, HWND_MESSAGE, 
+                                                null, appData.hInstance, null);
+            if (this.mDummyHwnd) {
+                SetWindowLongPtrW(this.mDummyHwnd, GWLP_USERDATA, (cast(LONG_PTR) cast(void*) this));
+                // writeln("dummy message-nly window created");
+            } 
+
+        }
+
 } // End of ContextMenu class
 
 enum MenuStyle {
@@ -145,23 +176,28 @@ enum MenuPosition {
     bottomAlign = 20
 }
 
+
+
 extern(Windows)
-private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR scID, DWORD_PTR refData)
+private LRESULT cmenuWndProc2(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothrow
 {
     try {
-        ContextMenu cm = getControl!ContextMenu(refData);
+        // print("Cmenu Wndproc rcvd", message);
         switch (message) {
-            case WM_DESTROY :
-                DestroyMenu(cm.mHandle);
-                RemoveWindowSubclass(hWnd, &cmenuWndProc, scID);
-            break;
+            // case WM_DESTROY:
+                // auto cm = getAs!ContextMenu(hWnd);  
+                // cm.finalize();        
+                // writeln("Cmenu Message only window got WM_DESTROY");
+            // break;
             case WM_MEASUREITEM:
+                auto cm = getAs!ContextMenu(hWnd);
                 auto pmi = cast(LPMEASUREITEMSTRUCT) lParam;
                 pmi.itemWidth = UINT(cm.mWidth);
                 pmi.itemHeight = UINT(cm.mHeight);
                 return 1;
             break;
             case WM_DRAWITEM:
+                auto cm = getAs!ContextMenu(hWnd);
                 auto dis = cast(LPDRAWITEMSTRUCT) lParam;
                 auto mi = getMenuItem(dis.itemData);
                 COLORREF txtClrRef = mi.mFgColor.cref;
@@ -186,9 +222,16 @@ private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 DrawTextW(dis.hDC, mi.mWideText, -1, &dis.rcItem, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
                 return 0;
             break;
-            case WM_ENTERMENULOOP: if (cm.onMenuShown) cm.onMenuShown(cm.mParent, new EventArgs()); break;
-            case WM_EXITMENULOOP: if (cm.onMenuClose) cm.onMenuClose(cm.mParent, new EventArgs()); break;
+            case WM_ENTERMENULOOP: 
+                auto cm = getAs!ContextMenu(hWnd);
+                if (cm.onMenuShown) cm.onMenuShown(cm.mParent, new EventArgs()); 
+            break;
+            case WM_EXITMENULOOP: 
+                auto cm = getAs!ContextMenu(hWnd);
+                if (cm.onMenuClose) cm.onMenuClose(cm.mParent, new EventArgs()); 
+            break;
             case WM_MENUSELECT:
+                auto cm = getAs!ContextMenu(hWnd);
                 immutable int idNum = cast(int) (LOWORD(wParam));
                 auto hMenu = cast(HMENU) lParam;
                 if (hMenu && idNum > 0) {
@@ -199,6 +242,7 @@ private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 }
             break;
             case WM_COMMAND:
+                auto cm = getAs!ContextMenu(hWnd);
                 immutable int idNum2 = cast(int)(LOWORD(wParam));
                 if (idNum2 > 0) {
                     auto menu = cm.getMenuItem(idNum2);
@@ -207,10 +251,9 @@ private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                     }
                 }
             break;
-            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
+            default: break;
         }
-
     }
-    catch (Exception e) {}
-    return DefSubclassProc(hWnd, message, wParam, lParam);
+    catch (Exception e){}
+    return DefWindowProcW(hWnd, message, wParam, lParam);
 }

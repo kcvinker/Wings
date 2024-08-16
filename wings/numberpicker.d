@@ -73,13 +73,14 @@ class NumberPicker: Control
             SendMessageW(oldBuddy, CM_BUDDY_RESIZE, 0, 0);
             this.getRightAndBottom();
 
-            /*  This thing is a hack. The edit control is not turned on the...
-                vertical alignment without setting the WS_BORDER style.
-                But if we set that style, it will create a border around the edit.
-                However, when we draw edges of the edit, 3 of the borders will be deleted.
-                But, we need to manually erase the forth one.
-                And drawing a line with background color is the hack. */
-
+            /*==================================================================
+            This thing is a hack. The edit control is not turned on the...
+            vertical alignment without setting the WS_BORDER style.
+            But if we set that style, it will create a border around the edit.
+            However, when we draw edges of the edit, 3 of the borders will be deleted.
+            But, we need to manually erase the forth one.
+            And drawing a line with background color is the hack. 
+            =========================================================================*/
             //test_tb_rect();
             this.displayValue;
             ++Control.stCtlId;

@@ -71,8 +71,8 @@ class ApplicationData
         this.iccEx.dwSize = INITCOMMONCONTROLSEX.sizeof;
         this.iccEx.dwICC = ICC_STANDARD_CLASSES;
         
-        prepareAppIcon();
-        regWindowClass();
+        this.prepareAppIcon();
+        this.regWindowClass();
         InitCommonControlsEx(&this.iccEx);
 
     }
@@ -92,6 +92,16 @@ class ApplicationData
         wcEx.lpszClassName = this.className.ptr;
         auto x = RegisterClassExW(&wcEx);
         writefln("window register result %d", x);
+    }
+
+    void registerMsgOnlyWindow(LPCWSTR clsName, WNDPROC pFunc)
+    {
+        WNDCLASSEXW wc;
+        wc.lpfnWndProc   = pFunc;
+        wc.hInstance     = this.hInstance;
+        wc.lpszClassName = clsName;
+        auto x = RegisterClassExW(&wc);
+        writefln("Message Only window register result %d", x);
     }
 
     void prepareAppIcon()
