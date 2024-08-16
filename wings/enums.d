@@ -12,23 +12,23 @@ enum FontWeight {
 }
 
 /// Describe window positions
-enum WindowPos {
+enum FormPos {
     topLeft, topMid, topRight,
     midLeft, center, midRight,
     bottomLeft, bottomMid, bottomRight, manual
 }
 
 /// display style
-enum WindowStyle {fixedSingle, fixed3D, fixedDialog, normalWin, fixedTool, sizableTool, hidden }
+enum FormStyle {fixedSingle, fixed3D, fixedDialog, normalWin, fixedTool, sizableTool, hidden }
 enum ButtonStyle {normal, flat, gradient} // For Button
 package enum BtnDrawMode {normal, textOnly, bkgOnly, textBkg, gradient, gradientText} // For Button
 enum ViewMode {month, year, decade, centuary}  // for calander
 enum DtpFormat {longDate = 1, shortDate, timeOnly = 4, custom = 8 } // For DateTimePicker
 
 /// display state
-enum WindowState { normal, maximized, minimized }
+enum FormState { normal, maximized, minimized }
 
-enum WindowBkMode {normal, singleColor, gradient}
+enum FormBkMode {normal, singleColor, gradient}
 
 enum GradientStyle {topToBottom, leftToRight} // For window & button
 

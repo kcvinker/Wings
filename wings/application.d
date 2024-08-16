@@ -1,8 +1,18 @@
-// module winglib.application;
 
+module wings.application;
+
+import std.stdio;
+import core.sys.windows.windows;
+import core.sys.windows.commctrl;
 // import core.runtime ;
 // import std.string;
 
+// Tell the linker to link these libs when compiling.
+pragma(lib, "user32.lib");
+pragma(lib, "gdi32.lib");
+pragma(lib, "comctl32.lib");
+pragma(lib, "gdiplus.lib");
+pragma(lib, "UxTheme.lib");
 
 // import core.sys.windows.windef;
 // import core.sys.windows.winuser;
@@ -10,95 +20,114 @@
 
 // import winglib.events;
 
-// HMODULE gModuleInstance;
 
-// class Application {
 
-//     import winglib.window : Window;
+package ApplicationData appData;
+
+static this() 
+{
+    writeln("Application started");
+    appData = new ApplicationData();
+}
+
+static ~this()
+{
     
+    writeln("Application end");
     
-    
+}
 
-//     @property Window mainWindow() { return this.mMainWindow ; } 
-//     @property void mainWindow(Window win) {  this.mMainWindow = win; } 
+class ApplicationData
+{
+    import wings.colors;
+    import wings.enums;
+    import wings.fonts;
+    import wings.form : mainWndProc;
 
-//     /// Name of the window class
-//     @property wstring className() { return this.mClsName ; } 
+    HWND mainHwnd;
+    HWND trayHwnd;
+    bool isMainLoopOn;
+    bool isDtpInit;
+    wstring className;
+    HINSTANCE hInstance;
+    HICON appIcon;
+    int screenWidth;
+    int screenHeight;
+    int frmCount;
+    int sysDPI;
+    double scaleF;
+    Color appColor;
+    Font appFont;
+    INITCOMMONCONTROLSEX iccEx;
 
-//     /// Module instance handle of current exe
-//     @property HMODULE instanceHandle() { return this.mHinstance ; }
+    this()
+    {
+        this.className = "Wing_window";
+        this.appFont = new Font("Tahoma", 11);
+        this.appColor = Color(0xF0F0F0);
+        this.hInstance = GetModuleHandleW(null);
+        this.screenWidth = GetSystemMetrics(0);
+        this.screenHeight = GetSystemMetrics(1);
+        this.iccEx.dwSize = INITCOMMONCONTROLSEX.sizeof;
+        this.iccEx.dwICC = ICC_STANDARD_CLASSES;
+        
+        prepareAppIcon();
+        regWindowClass();
+        InitCommonControlsEx(&this.iccEx);
 
-//     /// Constructor of application class
-//     this() {
-//         this.mClsName = "WingLib-Window" ;
-//         this.mHinstance = GetModuleHandleW(null) ;
-//         gModuleInstance = this.mHinstance;
-//         this.regWindowClass();
-//         this.clkData = ClickData();
-//     }
-// //---------------------------------------------------------------------
-   
+    }
 
-//     /// This function will enter our program into the main loop
-//     void mainLoop() {
-//         this.mainWindow.showWindow();        
-//         while (GetMessage(&uMsg, null, 0, 0)) {
-//             switch (uMsg.message){   
-//                 case WM_LBUTTONDOWN :
-//                     clkData.downTime = uMsg.time;
-//                     break;
-//                 case WM_LBUTTONUP :
-//                     clkData.upTime = uMsg.time;
-//                     if ((clkData.upTime - clkData.downTime) < 100) {
-//                         PostMessage(uMsg.hwnd, um_single_Click, uMsg.wParam, uMsg.lParam);
-//                     }
-//                     break;
-//                 case WM_RBUTTONDOWN :
-//                     clkData.rightDownTime = uMsg.time;
-//                     break;
-//                 case WM_RBUTTONUP :
-//                     clkData.rightUpTime = uMsg.time;
-//                     if ((clkData.rightUpTime - clkData.rightDownTime) < 200) {                    
-//                         PostMessage(uMsg.hwnd, um_right_click, uMsg.wParam, uMsg.lParam);
-//                     }
-//                     break;  
-//                 default: break  ;        
-//             }
+    void regWindowClass()
+    {
+        WNDCLASSEXW wcEx;
+        wcEx.style         = CS_HREDRAW | CS_VREDRAW  | CS_OWNDC;
+        wcEx.lpfnWndProc   = &mainWndProc;
+        wcEx.cbClsExtra    = 0;
+        wcEx.cbWndExtra    = 0;
+        wcEx.hInstance     = this.hInstance;
+        wcEx.hIcon         = this.appIcon;//LoadIconW(null, IDI_APPLICATION);
+        wcEx.hCursor       = LoadCursorW(null, IDC_ARROW);
+        wcEx.hbrBackground = CreateSolidBrush(this.appColor.cref);//COLOR_WINDOW;
+        wcEx.lpszMenuName  = null;
+        wcEx.lpszClassName = this.className.ptr;
+        auto x = RegisterClassExW(&wcEx);
+        writefln("window register result %d", x);
+    }
 
-//             TranslateMessage(&uMsg);
-//             DispatchMessage(&uMsg);
-//         }
-//     }
-// //---------------------------------------------------------------------
- 
-// private :
-//     HMODULE mHinstance ;
-//     Window mMainWindow;    
-//     wstring mClsName ;
-//     WNDCLASSW wndclass;
-//     MSG uMsg ;
-//     ClickData clkData;
+    void prepareAppIcon()
+    {
+        // We need to make sure that the compiler get the icon path
+        // regardless of the working directory. 
+        import std.path;
+        import std.format;
+        import std.utf;
+        auto modulebase = dirName(__FILE_FULL_PATH__);
+        auto icopath = format("%s\\wings_icon.ico", modulebase);
+        this.appIcon = LoadImageW(null, icopath.toUTF16z(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
+    }
 
+    void finaize()
+    {
+        DestroyIcon(appData.appIcon);
+        writeln("App Icon destroyed in appdata finalize");
+    }
 
+    void mainLoop()
+    {
+        this.isMainLoopOn = true;
+        MSG uMsg;
+        while (GetMessage(&uMsg, null, 0, 0) != 0) {
+            TranslateMessage(&uMsg);
+            DispatchMessage(&uMsg);
+        }
+        writeln("Main loop returned");
+        scope(exit) this.finaize();        
+    }
 
-//     int regWindowClass() {  
-    
-//         import winglib.window : fpWndProc = wndProc;
-//         wndclass.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS ;
-//         wndclass.lpfnWndProc   = &fpWndProc;
-//         wndclass.cbClsExtra    = 0;
-//         wndclass.cbWndExtra    = 0;
-//         wndclass.hInstance     = this.mHinstance;
-//         wndclass.hIcon         = LoadIconW(null, IDI_APPLICATION);
-//         wndclass.hCursor       = LoadCursorW(null, IDC_ARROW);
-//         wndclass.hbrBackground = cast(HBRUSH)COLOR_WINDOW;
-//         wndclass.lpszMenuName  = null;
-//         wndclass.lpszClassName = this.mClsName.ptr;
+    //~this()
+    //{
+    //    DestroyIcon(this.appIcon);
+    //    writeln("App Icon destroyed");
+    //}
+}
 
-//         if (!RegisterClassW(&wndclass)) {           
-//             return 0;
-//         }
-//         return 1 ;
-//     } 
-       
-// }

@@ -4,9 +4,9 @@ import std.stdio;
 import wings.d_essentials;
 import wings.wings_essentials;
 
-private int tkbNumber = 1;
-private wchar[] mClassName = ['m','s','c','t','l','s','_','t','r','a','c','k','b','a','r','3','2', 0];
-
+enum wchar[] mClassName = ['m','s','c','t','l','s','_','t','r','a','c','k','b','a','r','3','2', 0];
+enum DWORD tkbStyle = WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS;
+enum DWORD tkbExStyle = WS_EX_RIGHTSCROLLBAR | WS_EX_LTRREADING |WS_EX_LEFT;
 enum U16_MAX = 1 << 16;
 enum THUMB_PAGE_HIGH = 3;
 enum THUMB_PAGE_LOW = 2;
@@ -30,16 +30,19 @@ class TicData
     }
 }
 
-class TrackBar : Control
+class TrackBar: Control
 {
-    this (Window parent, int x, int y, int w, int h, bool cdraw = false, bool autoc = false, EventHandler evtFn = null)
+    this (Form parent, int x, int y, int w, int h, bool cdraw = false, 
+                bool autoc = false, EventHandler evtFn = null, bool vertical = false )
     {
         mixin(repeatingCode); // Setting size, position, parent & font
+        ++tkbNumber;
         mName = format("TrackBar_%d", tkbNumber);
         mControlType = ControlType.trackBar;
-        mStyle = WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS;
-        mExStyle = WS_EX_RIGHTSCROLLBAR | WS_EX_LTRREADING |WS_EX_LEFT;
+        mStyle = tkbStyle;
+        mExStyle = tkbExStyle;
         mBackColor = parent.mBackColor;
+        mVertical = vertical;
         mTicWidth = 1;
         mTicLen = 4;
         mTicPos = TicPosition.downSide;
@@ -57,12 +60,12 @@ class TrackBar : Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        ++tkbNumber;
+        if (vertical) this.mTicPos = TicPosition.leftSide;
         if (evtFn != null) this.onValueChanged = evtFn;
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this (Window parent, int x, int y, bool autoc = false) {this(parent, x, y, 150, 24, autoc);}
+    this (Form parent, int x, int y, bool autoc = false) {this(parent, x, y, 150, 24, autoc);}
 
     // Events
     EventHandler onValueChanged,onDragging,onDragged;
@@ -91,10 +94,15 @@ class TrackBar : Control
     final void vertical(bool value)
     {
         this.mVertical = value;
-        if (this.mTicPos == TicPosition.downSide || this.mTicPos == TicPosition.upSide)
-        {
+        if (this.mTicPos == TicPosition.downSide || this.mTicPos == TicPosition.upSide) {
             this.mTicPos = TicPosition.leftSide;
         }
+        // Destroy current trackbar & create new one
+        this.mRecreateEnabled = true;
+        DestroyWindow(this.mHandle);
+        this.mStyle = tkbStyle;
+        this.mStyle = tkbExStyle;
+        this.createHandle();
     }
     //---------------------------------------------------------------------[18] Vertical
 
@@ -138,7 +146,9 @@ class TrackBar : Control
             if (this.mCustDraw) this.prepareForCustDraw();
             this.sendInitialMessages();
             if (this.mCustDraw) this.calculateTics();
-            if (this.mSelRange) this.mSelBrush = CreateSolidBrush(this.mSelColor.cref);
+            if (!this.mRecreateEnabled) 
+                if (this.mSelRange) this.mSelBrush = CreateSolidBrush(this.mSelColor.cref);
+            this.mRecreateEnabled = false;
         }
     }
 
@@ -156,36 +166,39 @@ class TrackBar : Control
     }
 
     private:
-        bool mVertical;
-        bool mReversed;
-        bool mNoTics;
-        bool mSelRange;
-        bool mDefaultTics;
-        bool mNoThumb;
-        bool mToolTip;
-        bool mCustDraw;
-        bool mFreeMove;
-        Color mTicColor, mChannelColor, mSelColor;
-        HBRUSH mBkBrush, mSelBrush;
-        HPEN mChannelPen, mTicPen;
-        ChannelStyle mChannelSTyle;
-        TrackChange mTrackChange;
-        TicPosition mTicPos;
-        RECT mChannelRc, mThumbRc, mMyRc;
-        TicData[] mTics;
-        int mTicWidth;
-        int mMinRange;
-        int mMaxRange;
-        int mFrequency;
-        int mPageSize;
-        int mValue;
-        int mLineSize;
-        int mTicLen;
-        int mThumbHalf;
-        int mPoint1, mPoint2; // To hold x/y point of tics.
-        int mTicCount;
-        double mRange;
-        DWORD mChannelFlag = BF_RECT | BF_ADJUST;
+        // Private members
+            bool mVertical;
+            bool mReversed;
+            bool mNoTics;
+            bool mSelRange;
+            bool mDefaultTics;
+            bool mNoThumb;
+            bool mToolTip;
+            bool mCustDraw;
+            bool mFreeMove;
+            bool mRecreateEnabled;
+            Color mTicColor, mChannelColor, mSelColor;
+            HBRUSH mSelBrush;
+            HPEN mChannelPen, mTicPen;
+            ChannelStyle mChannelSTyle;
+            TrackChange mTrackChange;
+            TicPosition mTicPos;
+            RECT mChannelRc, mThumbRc, mMyRc;
+            TicData[] mTics;
+            int mTicWidth;
+            int mMinRange;
+            int mMaxRange;
+            int mFrequency;
+            int mPageSize;
+            int mValue;
+            int mLineSize;
+            int mTicLen;
+            int mThumbHalf;
+            int mPoint1, mPoint2; // To hold x/y point of tics.
+            int mTicCount;
+            double mRange;
+            DWORD mChannelFlag = BF_RECT | BF_ADJUST;
+            static int tkbNumber;
 
         void setTkbStyle()
         {
@@ -354,12 +367,14 @@ class TrackBar : Control
 
         bool fillChannelRect(NMCUSTOMDRAW * nm, RECT trc)
         {
-            /*  If show_selection property is enabled in this trackbar,
-                we need to show the area between thumb and channel starting in diff color.
-                But we need to check if the trackbar is reversed or not.
-                NOTE: If we change the drawing flags for DrawEdge function in channel drawing area,
-                We need to reduce the rect size 1 point. Because, current flags working perfectly...
-                Without adsting rect. So change it carefully. */
+            /*----------------------------------------------------------------------------------
+            If show_selection property is enabled in this trackbar,
+            we need to show the area between thumb and channel starting in diff color.
+            But we need to check if the trackbar is reversed or not.
+            NOTE: If we change the drawing flags for DrawEdge function in channel drawing area,
+            We need to reduce the rect size 1 point. Because, current flags working perfectly...
+            Without adsting rect. So change it carefully. 
+            ----------------------------------------------------------------------------------------*/
             bool result = false;
             RECT rct;
 
@@ -410,6 +425,15 @@ class TrackBar : Control
             }
         }
 
+        void finalize(HWND hw, UINT_PTR subid)
+        {
+            if (this.mSelBrush) DeleteObject(this.mSelBrush);
+            if (this.mChannelPen) DeleteObject(this.mChannelPen);
+            if (this.mTicPen) DeleteObject(this.mTicPen);
+            DeleteObject(this.mBkBrush);
+            RemoveWindowSubclass(hw, &tkbWndProc, subid); 
+        }
+
 } // End of TrackBar class
 
 
@@ -419,25 +443,62 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        TrackBar tkb = getControl!TrackBar(refData);
         switch (message) {
-            case WM_DESTROY : RemoveWindowSubclass(hWnd, &tkbWndProc, scID); break;
-
-            case CM_COLOR_STATIC: return cast(LRESULT) tkb.mBkBrush; break;
-
-            case WM_PAINT : tkb.paintHandler(); break;
-            case WM_SETFOCUS : tkb.setFocusHandler(); break;
-            case WM_KILLFOCUS : tkb.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : tkb.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : tkb.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : tkb.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : tkb.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : tkb.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : tkb.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : tkb.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : tkb.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE : tkb.mouseLeaveHandler(); break;
+            case WM_DESTROY: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                if (tkb.mRecreateEnabled) {
+                    RemoveWindowSubclass(hWnd, &tkbWndProc, scID); 
+                } else {
+                    tkb.finalize(hWnd, scID);
+                }
+                
+            break;
+            case CM_COLOR_STATIC: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                return cast(LRESULT) tkb.mBkBrush; 
+            break;
+            case WM_PAINT: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                tkb.paintHandler(); 
+            break;
+            case WM_SETFOCUS: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                tkb.setFocusHandler(); 
+            break;
+            case WM_KILLFOCUS: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                tkb.killFocusHandler(); 
+            break;
+            case WM_LBUTTONDOWN: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                tkb.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                tkb.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                tkb.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                tkb.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                tkb.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                tkb.mouseMoveHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSELEAVE: 
+                TrackBar tkb = getControl!TrackBar(refData);
+                tkb.mouseLeaveHandler(); 
+            break;
             case CM_HSCROLL, CM_VSCROLL:
+                TrackBar tkb = getControl!TrackBar(refData);
                 auto lwp = LOWORD(wParam);
                 switch (lwp) {
                     case TB_THUMBPOSITION:
@@ -493,8 +554,9 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     break;
                     default: break;
                 }
-                break;
+            break;
             case CM_NOTIFY:
+                TrackBar tkb = getControl!TrackBar(refData);
                 auto nmh = cast(LPNMHDR) lParam;
                 final switch (nmh.code) {
                     case NM_CUSTOMDRAW:
@@ -511,10 +573,12 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                 }
 
                                 if (nmcd.dwItemSpec == TBCD_CHANNEL) {
-                                    /* Python proect is using EDGE_SUNKEN style without BF_FLAT.
+                                    /*------------------------------------------------------------------ 
+                                    Python proect is using EDGE_SUNKEN style without BF_FLAT.
                                     But D gives a strange outline in those flags. So I decided to use...
                                     these flags. But in this case, we don't need to reduce 1 point from...
-                                    the coloring rect. It looks perfect without changing rect. */
+                                    the coloring rect. It looks perfect without changing rect. 
+                                    ----------------------------------------------------------------------*/
                                     if (tkb.mChannelSTyle == ChannelStyle.classic) {
                                         DrawEdge(nmcd.hdc, &nmcd.rc, BDR_SUNKENOUTER, tkb.mChannelFlag);
                                     } else {
@@ -526,7 +590,6 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                         auto rc = tkb.getThumbRect();
                                         if (tkb.fillChannelRect(nmcd, rc)) InvalidateRect(hWnd, &nmcd.rc, false);
                                     }
-
                                     return CDRF_SKIPDEFAULT;
                                 }
                             }
@@ -534,15 +597,13 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                             return CDRF_DODEFAULT;
                         }
                     break;
-                    case 4_294_967_280: // con.TRBN_THUMBPOSCHANGING:
+                    case 4_294_967_280: // con.TRBN_THUMBPOSCHANGING:                        
                         tkb.mTrackChange = TrackChange.mouseClick;
                     break;
                 }
             break;
-
-            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
+            default: return DefSubclassProc(hWnd, message, wParam, lParam); 
         }
-
     }
     catch (Exception e) {}
     return DefSubclassProc(hWnd, message, wParam, lParam);

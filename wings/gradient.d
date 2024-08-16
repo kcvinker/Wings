@@ -17,14 +17,16 @@ struct Gradient {
 	GradColor gcDef;
 	GradColor gcHot;
     bool rtl;
+    bool isActive;
     int iAdj = 20; // Value to add or subtract to/from RGB value.
 	HPEN defPen;
 	HPEN hotPen;
 
-    ~this()
+    void finalize()
     { // Destructor
         if (this.defPen) DeleteObject(this.defPen);
         if (this.hotPen) DeleteObject(this.hotPen);
+        print("GradDraw resources freed");
     }
 
     void setData(uint c1, uint c2, bool r2l = false)
@@ -40,6 +42,7 @@ struct Gradient {
         this.defPen = CreatePen(PS_SOLID, 1, frmRc.cref);
         this.hotPen = CreatePen(PS_SOLID, 1, this.gcHot.c1.makeFrameColor(0.3));
         this.rtl = r2l;
+        this.isActive = true;
     }
 
     // Gradient changeColors(double value) const {

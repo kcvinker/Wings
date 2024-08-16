@@ -4,7 +4,8 @@ import wings.d_essentials;
 import wings.wings_essentials;
 import std.stdio;
 
-class MenuBase {
+class MenuBase 
+{
     HMENU mHandle;
 	MenuItem[string] mMenus;
 	Font mFont;
@@ -14,9 +15,9 @@ class MenuBase {
 
 enum ParentKind {mainMenu, contextMenu}
 
-class MenuBar : MenuBase
+class MenuBar : MenuBase 
 {
-    this (Window parent)
+    this (Form parent)
     {
         this.mHandle = CreateMenu();
         this.mWindow = parent;
@@ -27,13 +28,13 @@ class MenuBar : MenuBase
         parent.mMenubar = this;
     }
 
-    this(Window parent, string[] menuNames ...)
+    this(Form parent, string[] menuNames ...)
     {
         this(parent);
         this.addItems(menuNames);
     }
 
-    // this (Window parent) {
+    // this (Form parent) {
     //     this.mParent = parent;
     //     this.mFont = parent.font;
     //     this.mMenuHandle = CreateMenu();
@@ -108,7 +109,7 @@ class MenuBar : MenuBase
 
 
     private:
-        Window mWindow;
+        Form mWindow;
         HWND mWinHwnd;
 
 
@@ -118,7 +119,7 @@ class MenuBar : MenuBase
 
 // bool isPopupMenu(MenuType mtp) { return mtp == MenuType.baseMenu || mtp == MenuType.popumMenu;}
 
-class MenuItem : MenuBase
+class MenuItem : MenuBase 
 {
     this (string txt, MenuType mtyp, HMENU parentmenuHandle, int indexNum)
     {

@@ -1,4 +1,4 @@
-module wings.listview; // Created on : 01-Jun-22 11:26:46 AM
+module wings.listview; // Created on: 01-Jun-22 11:26:46 AM
 
 /* Usage Manual.
     Constructor = auto lv = new ListView(frm, 100, 50, 200, 300); // frm is the form class instance
@@ -22,20 +22,17 @@ import core.vararg;
 
 int bottomClrAdj = 11;
 private wchar[] mClassName = ['S','y','s','L','i','s','t','V','i','e','w','3','2', 0];
-int lvNumber = 1;
-// wstring wcLvClass;
-DWORD lvStyle = WS_VISIBLE|WS_CHILD|WS_CLIPCHILDREN|WS_CLIPSIBLINGS|LVS_REPORT|WS_BORDER|LVS_ALIGNLEFT|LVS_SINGLESEL;
-bool lvCreated = false;
+enum DWORD lvStyle = WS_VISIBLE|WS_CHILD|WS_CLIPCHILDREN|WS_CLIPSIBLINGS|LVS_REPORT|WS_BORDER|LVS_ALIGNLEFT|LVS_SINGLESEL;
 enum DWORD HDN_FILTERCHANGE = HDN_FIRST - 12;
 enum DWORD HDI_STATE =  0x0200;
-
-DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
+enum DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
 enum DWORD txtFlag = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX;
+bool lvCreated = false;
 
 
-class ListView : Control
+class ListView: Control
 {
-    this(Window parent, int x, int y, int w, int h, bool autoc = false, string[] colnames = null, int[] widths = null)
+    this(Form parent, int x, int y, int w, int h, bool autoc = false, string[] colnames = null, int[] widths = null)
     {
         if (!lvCreated) {
             lvCreated = true;
@@ -43,6 +40,7 @@ class ListView : Control
             InitCommonControlsEx(&appData.iccEx);
         }
         mixin(repeatingCode);
+        ++lvNumber;
         mControlType = ControlType.listView;
         mLvStyle = ListViewStyle.report;
         mShowGridLines = true;
@@ -58,8 +56,7 @@ class ListView : Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        ++lvNumber;
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
         if ((colnames != null && widths != null) && (colnames.length == widths.length)) {
            foreach (i, name; colnames) {
                 auto col = new ListViewColumn(name, widths[i]);
@@ -68,11 +65,11 @@ class ListView : Control
         }
     }
 
-    this(Window parent) { this(parent, 20, 20, 250, 200); }
-    this(Window parent, int x, int y) { this(parent, x, y, 250, 200);}
+    this(Form parent) { this(parent, 20, 20, 250, 200); }
+    this(Form parent, int x, int y) { this(parent, x, y, 250, 200);}
 
 
-    override void createHandle()  //=======================================================CREATE FUNC
+    override void createHandle()  
     {
         this.adjustLVStyles();
         this.createHandleInternal(mClassName.ptr);
@@ -118,19 +115,22 @@ class ListView : Control
             this.addColumnInternal(lvc);
         }
 
-        final void addColumn(string text, int width, int imgIndx ) {
+        final void addColumn(string text, int width, int imgIndx ) 
+        {
             auto lvc = new ListViewColumn(text, width, imgIndx);
             this.addColumnInternal(lvc);
         }
 
-        final void addColumns(string[] names... ) {
+        final void addColumns(string[] names... ) 
+        {
             foreach (name; names) {
                 auto lvc = new ListViewColumn(name);
                 this.addColumnInternal(lvc);
             }
         }
 
-        final void addColumns(string[] names, int[] widths ) {
+        final void addColumns(string[] names, int[] widths ) 
+        {
             if (names.length != widths.length) return;
             foreach (i, name; names) {
                 auto lvc = new ListViewColumn(name, widths[i]);
@@ -151,7 +151,6 @@ class ListView : Control
                         widths ~= cres.ivalue;
                     }
                 }
-
                 if ((colnames.length > 0 && widths.length > 0) && (colnames.length == widths.length)) {
                     foreach (i, name; colnames) {
                         auto col = new ListViewColumn(name, widths[i]);
@@ -391,13 +390,11 @@ class ListView : Control
 
         final int headerHeight() {return this.mHdrHeight;}
 
-
-
-
     // Event section
-    EventHandler onSelectionChanged, onCheckedChanged, onItemClicked, onItemDblClicked, onItemHover;
+    EventHandler onSelectionChanged, onCheckedChanged;
+    EventHandler onItemClicked, onItemDblClicked, onItemHover;
 
-    package :
+    package:
         int mSelIndex = -1;
         ListViewItem mSelItem;
         bool mEditLabel;
@@ -405,8 +402,7 @@ class ListView : Control
         HWND hwLabel;
         HWND hwHeader;
 
-
-    private :
+    private:
         // Variables
             bool mitemTopAlign;
             bool mHideSel;
@@ -426,10 +422,6 @@ class ListView : Control
             bool mMouseOnHdr;
             bool mHdrClickable = true;
             Font mHdrFont;
-
-
-            //HBRUSH mHdrBkBrushTop;
-            //HBRUSH mHdrBkBrushBot;
             HBRUSH mHdrDefBkBrush;
             HBRUSH mHdrHotBkBrush;
             HPEN mHdrPen;
@@ -445,24 +437,13 @@ class ListView : Control
             int mSelItemIndx;
             int mSelSubIndx;
             int stColIndex;
-
+            static int lvNumber;
             Color mHdrBackColor;
             Color mHdrForeColor;
-
-
             ImageList mImgList;
             POINT mHdrMousePoint;
-
         // End of Variables.
 
-        void finalize(UINT_PTR scid)
-        {
-            //if (this.mHdrBkBrushTop != null) DeleteObject(this.mHdrBkBrushTop);
-            if (this.mHdrHotBkBrush != null) DeleteObject(this.mHdrHotBkBrush);
-            if (this.mHdrDefBkBrush != null) DeleteObject(this.mHdrDefBkBrush);
-            if (this.mHdrPen != null) DeleteObject(this.mHdrPen);
-            RemoveWindowSubclass(this.mHandle, &lvWndProc, scid);
-        }
 
         int[] changeColumnOrder()
         {
@@ -471,8 +452,6 @@ class ListView : Control
             indices ~= 0;
             return indices;
         }
-
-
 
         void addColumnInternal(ListViewColumn lvCol)  // Private
         {
@@ -537,19 +516,19 @@ class ListView : Control
         void adjustLVStyles() // Private
         {
             switch (this.mLvStyle) {
-                case ListViewStyle.largeIcon :
+                case ListViewStyle.largeIcon:
                     this.mStyle |= LVS_ICON;
-                    break;
-                case ListViewStyle.report :
+                break;
+                case ListViewStyle.report:
                     this.mStyle |= LVS_REPORT;
-                    break;
-                case ListViewStyle.smallIcon :
+                break;
+                case ListViewStyle.smallIcon:
                     this.mStyle |= LVS_SMALLICON;
-                    break;
-                case ListViewStyle.list :
+                break;
+                case ListViewStyle.list:
                     this.mStyle |= LVS_LIST;
-                    break;
-                default : break;
+                break;
+                default: break;
             }
 
             // Set some more styles...
@@ -576,7 +555,6 @@ class ListView : Control
             this.sendMsg(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, lvExStyle);
         }
 
-
         DWORD headerCustomDraw(NMCUSTOMDRAW* nmcd)
         {
             /* We need colors in header's background & foreground.
@@ -600,9 +578,12 @@ class ListView : Control
                 }
 
                 if (nmcd.uItemState & CDIS_SELECTED) {
-                    /* Here we are mimicing dot net's same technique.
-                     * We will change the rect's left and top a little bit when header got clicked.
-                     * So user will feel the header is pressed. */
+                    /*----------------------------------------------- 
+                    Here we are mimicing dot net's same technique.
+                    We will change the rect's left and top a 
+                    little bit when header got clicked.
+                    So user will feel the header is pressed. 
+                    -------------------------------------------------*/
                     nmcd.rc.left += 2;
                     nmcd.rc.top += 2;
                 }
@@ -620,7 +601,18 @@ class ListView : Control
             return CDRF_SKIPDEFAULT;
         }
 
-        void setHdrMouseLeave() {foreach (col1; mColumns) col1.mIsHotItem = false;}
+        void setHdrMouseLeave() 
+        {
+            foreach (col1; mColumns) col1.mIsHotItem = false;
+        }
+
+         void finalize(UINT_PTR scid)
+        {
+            if (this.mHdrHotBkBrush != null) DeleteObject(this.mHdrHotBkBrush);
+            if (this.mHdrDefBkBrush != null) DeleteObject(this.mHdrDefBkBrush);
+            if (this.mHdrPen != null) DeleteObject(this.mHdrPen);
+            RemoveWindowSubclass(this.mHandle, &lvWndProc, scid);
+        }
 
 } // End of class ListView
 
@@ -669,20 +661,18 @@ class ListViewColumn
     }
 
     final int index() {return this.mIndex;}
-    final bool hasImage() {return (this.mImgIndex > -1) ? true : false;}
+    final bool hasImage() {return (this.mImgIndex > -1) ? true: false;}
 
-    package :
+    package:
         bool mDrawNeeded;
         bool mIsHotItem;
 
-    private :
+    private:
         string mText;
         int mWidth;
         int mIndex = -1;
         int mImgIndex = -1;
-
         int mOrder;
-
         Color mBackColor;
         Color mForeColor;
         bool mImgOnRight;
@@ -691,8 +681,11 @@ class ListViewColumn
         Alignment mHdrTxtAlign;
         DWORD mHdrTxtFlag;
         LVCOLUMN pLvc;
-        //static mIndexNum = 0;
-        void setIndex(int index) { this.mIndex = index; }
+    
+        void setIndex(int index) 
+        {
+            this.mIndex = index; 
+        }
 
 } // End of ListViewColumn class
 
@@ -722,7 +715,7 @@ class ListViewItem
     final void addSubItem(string subItm) { this.mSubItems ~= subItm; }
     final string[] subItems() {return this.mSubItems;}
 
-    private :
+    private:
         int mIndex;
         int mImgIndex;
         Color mBkClr;
@@ -730,7 +723,6 @@ class ListViewItem
         Font mFont;
         string mText;
         string[] mSubItems;
-
         static int mStIndex;
 
 } // ListViewItem class
@@ -779,26 +771,58 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        ListView lv = getControl!ListView(refData);
-        //printWinMsg(message);
         switch (message) {
-            case WM_DESTROY: lv.finalize(scID); break;
+            case WM_DESTROY: 
+                ListView lv = getControl!ListView(refData);
+                lv.finalize(scID); 
+            break;
+            case WM_PAINT: 
+                ListView lv = getControl!ListView(refData);
+                lv.paintHandler(); 
+            break;
+            case WM_SETFOCUS: 
+                ListView lv = getControl!ListView(refData);
+                lv.setFocusHandler(); 
+            break;
+            case WM_KILLFOCUS: 
+                ListView lv = getControl!ListView(refData);
+                lv.killFocusHandler(); 
+            break;
+            case WM_LBUTTONDOWN: 
+                ListView lv = getControl!ListView(refData);
+                lv.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP: 
+                ListView lv = getControl!ListView(refData);
+                lv.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN: 
+                ListView lv = getControl!ListView(refData);
+                lv.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP: 
+                ListView lv = getControl!ListView(refData);
+                lv.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL: 
+                ListView lv = getControl!ListView(refData);
+                lv.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE: 
+                ListView lv = getControl!ListView(refData);
+                lv.mouseMoveHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSELEAVE: 
+                ListView lv = getControl!ListView(refData);
+                lv.mouseLeaveHandler(); 
+            break;
+            case WM_CONTEXTMENU: 
+                ListView lv = getControl!ListView(refData);
+                if (lv.mCmenu) lv.mCmenu.showMenu(lParam); 
+            break;
 
-            case WM_PAINT : lv.paintHandler(); break;
-            case WM_SETFOCUS : lv.setFocusHandler(); break;
-            case WM_KILLFOCUS : lv.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : lv.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : lv.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : lv.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : lv.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : lv.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : lv.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : lv.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : lv.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE : lv.mouseLeaveHandler(); break;
-            case WM_CONTEXTMENU: if (lv.mCmenu) lv.mCmenu.showMenu(lParam); break;
 
-            //case WM_DRAWITEM :  // This is coming from child controls( aka Header)
+            //case WM_DRAWITEM:  // This is coming from child controls( aka Header)
             //    auto pdi = cast(DRAWITEMSTRUCT*) lParam;
             //    auto col = lv.mColumns[pdi.itemID];
             //    SetBkMode(pdi.hDC, TRANSPARENT);
@@ -837,20 +861,21 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             //    return trueLresult;
             //break;
 
-            case CM_NOTIFY :
+            case CM_NOTIFY:
                 // Windows will send this msg to parent window and parent window transfer this to here.
+                ListView lv = getControl!ListView(refData);
                 auto nmhdr = cast(NMHDR*) lParam;
                 //print("cm notify code", nmhdr.code);
                 switch (nmhdr.code) {
-                    case NM_CUSTOMDRAW :
+                    case NM_CUSTOMDRAW:
                         auto nmLvCd = cast(NMLVCUSTOMDRAW*) lParam;
                         switch (nmLvCd.nmcd.dwDrawStage) {
-                            case CDDS_PREPAINT : return CDRF_NOTIFYITEMDRAW; break;
-                            case CDDS_ITEMPREPAINT :
+                            case CDDS_PREPAINT: return CDRF_NOTIFYITEMDRAW; break;
+                            case CDDS_ITEMPREPAINT:
                                 nmLvCd.clrTextBk = lv.mBackColor.cref;
                                 return CDRF_NEWFONT | CDRF_DODEFAULT;
                             break;
-                            default : break;
+                            default: break;
                         }
                     break;
                     case LVN_ITEMCHANGING:
@@ -858,114 +883,100 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     case LVN_ITEMCHANGED:
                         auto nmlv = cast(NMLISTVIEW*) lParam;
                         if (nmlv.uNewState == 8192 || nmlv.uNewState == 4096) {
-                            lv.mChecked = nmlv.uNewState == 8192 ? true : false;
-                            if (lv.onCheckedChanged) {
-                                auto ea = new EventArgs();
-                                lv.onCheckedChanged(lv, ea);
-                            }
+                            lv.mChecked = nmlv.uNewState == 8192 ? true: false;
+                            if (lv.onCheckedChanged) 
+                                lv.onCheckedChanged(lv, new EventArgs());
                         } else {
                             if (nmlv.uNewState == 3) {
                                 //print("this area oka");
                                 lv.mSelItemIndx = nmlv.iItem;
                                 lv.mSelSubIndx = nmlv.iSubItem;
-                                if (lv.onSelectionChanged) {
-                                    auto ea = new EventArgs();
-                                    lv.onSelectionChanged(lv, ea);
-                                }
+                                if (lv.onSelectionChanged) lv.onSelectionChanged(lv, new EventArgs());                                
                             }
                         }
                     break;
                     case NM_DBLCLK:
-                        if (lv.onItemDblClicked) {
-                            auto ea = new EventArgs();
-                            lv.onItemDblClicked(lv, ea);
-                        }
+                        if (lv.onItemDblClicked) lv.onItemDblClicked(lv, new EventArgs());
                     break;
                     case NM_CLICK:
                         auto nmia = cast(NMITEMACTIVATE *) lParam;
                         // lv.log(nmia.uOldState);
-                        if (lv.onItemClicked) {
-                            auto ea = new EventArgs();
-                            lv.onItemClicked(lv, ea);
-                        }
+                        if (lv.onItemClicked) lv.onItemClicked(lv, new EventArgs());
                     break;
                     case NM_HOVER:
                         // print("hover test");
-                        if (lv.onItemHover) {
-                            auto ea = new EventArgs();
-                            lv.onItemHover(lv, ea);
-                        }
-                        //return 0;
+                        if (lv.onItemHover) lv.onItemHover(lv, new EventArgs());
                     break;
-                    //case LVN_HOTTRACK : print("lvn hot track", 1); break;
-                    case NM_RELEASEDCAPTURE  :
-                       print("LVN_ITEMCHANGED", 12); break;
-                    //case NM_CLICK :
+                    //case LVN_HOTTRACK: print("lvn hot track", 1); break;
+                    case NM_RELEASEDCAPTURE:
+                    //    print("LVN_ITEMCHANGED", 12); break;
+                    //case NM_CLICK:
                         // lv.mSelIndex = lv.sendMsg(LVM_GETNEXTITEM, -1, LVNI_SELECTED);
                         // lv.mSelItem = lv.mItems[lv.mSelIndex];
                         // if (lv.onSelectionChanged) {
                         //     auto ea = new EventArgs();
                         //     lv.onSelectionChanged(lv, ea);
                         // }
-                        // break;
-
-                    case LVN_BEGINLABELEDITW :
+                    break;
+                    case LVN_BEGINLABELEDITW:
                         lv.hwLabel = ListView_GetEditControl(lv.mHandle);
                         //return cast(LRESULT) false;
-                        break;
+                    break;
 
-                    case LVN_COLUMNCLICK :
+                    case LVN_COLUMNCLICK:
                         // Implement column click event here.
-
-                    case LVN_ENDLABELEDITW :
+                    break;
+                    case LVN_ENDLABELEDITW:
                         if (lv.mEditLabel) {
                            // print("label edit ok");
                         }
                         return trueLresult;
-                        break;
-
-                    default : break;
+                    break;
+                    default: break;
                 } break; //dmd -i -debug -m64 "app.d" (in directory: C:\Users\kcvin\OneDrive\Programming\D_Lang\Wings)
 
             case WM_NOTIFY: // This msg is coming from Header control.
-                 auto nmh= cast(NMHDR*) lParam;
+                ListView lv = getControl!ListView(refData);
+                auto nmh= cast(NMHDR*) lParam;
                 switch (nmh.code) {
-                    case NM_CUSTOMDRAW :  // Let's draw header back & fore colors
+                    case NM_CUSTOMDRAW:  // Let's draw header back & fore colors
                         auto nmcd = cast(NMCUSTOMDRAW*) lParam;
                         if (!lv.mDrawHeader) {
                             switch (nmcd.dwDrawStage)  {// NM_CUSTOMDRAW is always -12 when item painting
-                                case CDDS_PREPAINT :
-                                    /* When drawing started, system will send a NM_CUSTOMDRAW notification to...
-                                    parent of the control. Here, parent of header control is list view. So we...
-                                    get the notification with WM_NOTIFY message. We returns the CDRF_NOTIFYITEMDRAW...
-                                    value so that system will notify us when the pre paint stage begins for each item.*/
-                                    //print("Draw Started", nmcd.lItemlParam);
-                                    return CDRF_NOTIFYITEMDRAW; break;
-
-                                case CDDS_ITEMPREPAINT :
-                                    /* So we get the notification at the pre paint statge. We can draw the header...
-                                    colors, text and tell the system to not to draw anything on this header. So...
-                                    system will skip the default drawing jobs. */
-                                    //print("at prepaint",nmcd.dwItemSpec);
+                                case CDDS_PREPAINT:
+                                    /*-------------------------------------------------------------- 
+                                    When drawing started, system will send a NM_CUSTOMDRAW 
+                                    notification to parent of the control. Here, parent of 
+                                    header control is list view. So we get the notification 
+                                    with WM_NOTIFY message. We returns the CDRF_NOTIFYITEMDRAW
+                                    value so that system will notify us when the pre paint stage 
+                                    begins for each item.
+                                    ---------------------------------------------------------------------*/
+                                    return CDRF_NOTIFYITEMDRAW; 
+                                break;
+                                case CDDS_ITEMPREPAINT:
+                                    /*------------------------------------------------------------------- 
+                                    So we get the notification at the pre paint statge. We can draw the 
+                                    header colors, text and tell the system to not to draw anything on 
+                                    this header. So system will skip the default drawing jobs. 
+                                    --------------------------------------------------------------------*/
                                     return lv.headerCustomDraw(nmcd);
                                 break;
-
-                                //case CDDS_ITEMPOSTPAINT :
+                                //case CDDS_ITEMPOSTPAINT:
                                 //   // lv.headerCustomDraw(nmcd);
                                 //    return CDRF_NEWFONT | CDRF_DODEFAULT;
                                 //    break;
-                                default : break;
+                                default: break;
                             }
                         }
-                        break;
-                    default : /*print("other code ", nmcd.hdr.code); */ break;
-
+                    break;
+                    default: /*print("other code ", nmcd.hdr.code); */ break;
                 }
-                break;
-
-            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
+            break;
+            default: 
+                return DefSubclassProc(hWnd, message, wParam, lParam); 
+            break;
         }
-
     }
     catch (Exception e) {}
     return DefSubclassProc(hWnd, message, wParam, lParam);
@@ -975,31 +986,32 @@ extern(Windows)
 private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                     UINT_PTR scID, DWORD_PTR refData)
 {
-    try {
-       ListView lv = getControl!ListView(refData);
+    try {       
        //printWinMsg(message);
         switch (message) {
-            case WM_DESTROY : RemoveWindowSubclass(hWnd, &hdrWndProc, scID); break;
-            case WM_MOUSEMOVE :
-                /** We need to some extra job here. Because, there is no notification
-                    for a header control when mouse pointer passes upon it. So We collect
-                    the mouse pointer coordinates and send the HDM_HITTEST message to header
-                    control. The control will fill the iItem member of the struct. It contains
-                    the item index which is under the pointer. So we can set the drawing
-                    flag for that column. */
+            case WM_DESTROY: RemoveWindowSubclass(hWnd, &hdrWndProc, scID); break;
+            case WM_MOUSEMOVE:
+                /*-------------------------------------------------------------------
+                We need to some extra job here. Because, there is no notification
+                for a header control when mouse pointer passes upon it. So We collect
+                the mouse pointer coordinates and send the HDM_HITTEST message to header
+                control. The control will fill the iItem member of the struct. It contains
+                the item index which is under the pointer. So we can set the drawing
+                flag for that column. 
+                --------------------------------------------------------------------------*/
+                ListView lv = getControl!ListView(refData);
                 HD_HITTESTINFO hinfo;
                 hinfo.pt = getMousePos(lParam);
                 lv.mHotHdr = cast(int) SendMessage(hWnd, HDM_HITTEST, 0, cast(LPARAM) &hinfo);
-
             break;
-
-            case WM_MOUSELEAVE :
+            case WM_MOUSELEAVE:
                 /* When mouse leaves the header, we need to set flag to false and repaint */
+                ListView lv = getControl!ListView(refData);
                 lv.mHotHdr = -1;
             break;
-
-            case HDM_LAYOUT :
+            case HDM_LAYOUT:
                 /* Set the window pos structures fields, so that windows will adjust our header & lv */
+                ListView lv = getControl!ListView(refData);
                 if (lv.mChangeHdrHeight) {
                     LPHDLAYOUT pHl = cast(LPHDLAYOUT) lParam;
                     pHl.pwpos.hwnd = hWnd;
@@ -1012,12 +1024,14 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     return 1;
                 }
             break;
-
             case WM_PAINT:
-            /* We need to paint the last part of the header control. Otherwise,
-             * it will look like a weird white color square and it's ugly unless,
-             * we are using white color for header. */
+                /*---------------------------------------------------------------- 
+                We need to paint the last part of the header control. Otherwise,
+                it will look like a weird white color square and it's ugly unless,
+                we are using white color for header. 
+                -------------------------------------------------------------------*/
                 // First, let the control to do it's necessary drawings.
+                ListView lv = getControl!ListView(refData);
                 DefSubclassProc(hWnd, message, wParam, lParam);
 
                 // Now, we can draw the last part of the header.
@@ -1029,9 +1043,10 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 ReleaseDC(hWnd, hdc);
                 return 0;
             break;
-            default : return DefSubclassProc(hWnd, message, wParam, lParam);break;
+            default: 
+                return DefSubclassProc(hWnd, message, wParam, lParam);
+            break;
         }
-
     }
     catch (Exception e) {}
     return DefSubclassProc(hWnd, message, wParam, lParam);
@@ -1098,27 +1113,27 @@ struct tagNMLVCUSTOMDRAW
 void printNmLV(NMITEMACTIVATE * nm)
 {
     import std.stdio;
-    writefln("iItem : %s", nm.iItem);
-    writefln("iSubItem : %s", nm.iSubItem);
-    writefln("uNewState : %s", nm.uNewState);
-    writefln("uOldState : %s", nm.uOldState);
-    writefln("uChanged : %s", nm.uChanged);
-    writefln("ptAction : %s", nm.ptAction);
-    writefln("lParam : %s", nm.lParam);
-    writefln("uKeyFlags : %s", nm.uKeyFlags);
+    writefln("iItem: %s", nm.iItem);
+    writefln("iSubItem: %s", nm.iSubItem);
+    writefln("uNewState: %s", nm.uNewState);
+    writefln("uOldState: %s", nm.uOldState);
+    writefln("uChanged: %s", nm.uChanged);
+    writefln("ptAction: %s", nm.ptAction);
+    writefln("lParam: %s", nm.lParam);
+    writefln("uKeyFlags: %s", nm.uKeyFlags);
 
 }
 
 void printNmLV(NMLISTVIEW * nm)
 {
     import std.stdio;
-    writefln("iItem : %s", nm.iItem);
-    writefln("iSubItem : %s", nm.iSubItem);
-    writefln("uNewState : %s", nm.uNewState);
-    writefln("uOldState : %s", nm.uOldState);
-    writefln("uChanged : %s", nm.uChanged);
-    writefln("ptAction : %s", nm.ptAction);
-    writefln("lParam : %s", nm.lParam);
-    //writefln("uKeyFlags : %s", nm.uKeyFlags);
+    writefln("iItem: %s", nm.iItem);
+    writefln("iSubItem: %s", nm.iSubItem);
+    writefln("uNewState: %s", nm.uNewState);
+    writefln("uOldState: %s", nm.uOldState);
+    writefln("uChanged: %s", nm.uChanged);
+    writefln("ptAction: %s", nm.ptAction);
+    writefln("lParam: %s", nm.lParam);
+    //writefln("uKeyFlags: %s", nm.uKeyFlags);
 
 }

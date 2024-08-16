@@ -66,7 +66,7 @@ class Calendar : Control
 
     EventHandler valueChanged, selectionChanged, viewChanged;
 
-	 this(Window parent, int x, int y, int w, int h, bool autoc = false)
+	 this(Form parent, int x, int y, int w, int h, bool autoc = false)
      {
         if (!appData.isDtpInit) {
             appData.isDtpInit = true;
@@ -83,11 +83,11 @@ class Calendar : Control
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++calNumber;
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
         // writefln("mcn first %d, mcn sel changed %d, mcn vew changed %d", MCN_FIRST, MCN_SELCHANGE, MCN_VIEWCHANGE);
     }
 
-    this(Window p, int x, int y, bool autoc = false)
+    this(Form p, int x, int y, bool autoc = false)
     {
         this(p, x, y, 0, 0, autoc);
     }
@@ -105,11 +105,8 @@ class Calendar : Control
             SYSTEMTIME st;
             this.sendMsg(MCM_GETCURSEL, 0, &st);
             this.value = DateTime(st);
-
         }
     }
-
-
 
     private :
     	DateTime mValue;
@@ -137,23 +134,45 @@ extern(Windows)
 private LRESULT calWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try {
-        Calendar cal = getControl!Calendar(refData);
+    try {        
         switch (message) {
-            case WM_DESTROY : RemoveWindowSubclass(hWnd, &calWndProc, scID); break;
-            case WM_PAINT : cal.paintHandler(); break;
-            case WM_LBUTTONDOWN : cal.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : cal.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : cal.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : cal.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : cal.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : cal.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : cal.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : cal.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE : cal.mouseLeaveHandler(); break;
+            case WM_DESTROY : 
+                // Calendar cal = getControl!Calendar(refData);
+                RemoveWindowSubclass(hWnd, &calWndProc, scID); 
+            break;
+            case WM_PAINT :
+                Calendar cal = getControl!Calendar(refData);
+                cal.paintHandler(); 
+            break;
+            case WM_LBUTTONDOWN :
+                Calendar cal = getControl!Calendar(refData);
+                cal.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP :
+                Calendar cal = getControl!Calendar(refData);
+                cal.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN :
+                Calendar cal = getControl!Calendar(refData);
+                cal.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP :
+                Calendar cal = getControl!Calendar(refData);
+                cal.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL :
+                Calendar cal = getControl!Calendar(refData);
+                cal.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE :
+                Calendar cal = getControl!Calendar(refData);
+                cal.mouseMoveHandler(message, wParam, lParam); break;
+            case WM_MOUSELEAVE :
+                Calendar cal = getControl!Calendar(refData);
+                cal.mouseLeaveHandler(); break;
             case CM_NOTIFY :
+                Calendar cal = getControl!Calendar(refData);
                 auto nm = cast(NMHDR *) lParam;
-
                 switch (nm.code) {
                     case MCN_SELECT :
                         auto nms = cast(NMSELCHANGE *) lParam;

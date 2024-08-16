@@ -7,7 +7,7 @@ public {
     import wings.enums ;
     import wings.colors ;
     import wings.controls ;
-    import wings.window ; 
+    import wings.form ; 
     import wings.buttons;
     import wings.label;
     

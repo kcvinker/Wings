@@ -9,15 +9,12 @@ import std.stdio;
 
 //------------------------------------------------------
 
-//private DWORD btnStyle = WS_CHILD | BS_NOTIFY | WS_TABSTOP | WS_VISIBLE;
-// private DWORD btnExStyle = 0;
-// private Button[] buttonList;
 private static int btnNumber = 1;
 // private int subClsID = 1001;
 private const int mMouseClickFlag = 0b1;
 private const int mMouseOverFlag = 0b1000000;
 private const int roundCurve = 5;
-private wchar[] mClassName = ['B','u','t','t','o','n', 0];
+package wchar[] btnClassName = ['B','u','t','t','o','n', 0];
 //---------------------------------------------------------
 
 
@@ -90,18 +87,8 @@ class Button : Control
 
 // End of Properties
 
-    // void testObj() {
-    //     LOGFONTW lf;
-    //     auto value = 0x640A1A04;
-    //     void* vp = cast(void*) value;
-    //     auto res = GetObject(vp, LOGFONTW.sizeof, &lf );
-    //     print("result ", res);
-    //     print("lfFaceName - ", lf.lfFaceName);
-    // }
-
-
 // Ctors
-    this(Window parent, string txt, int x, int y, int w, int h)
+    private this(Form parent, string txt, int x, int y, int w, int h)
     {
         this.mName = format("%s_%d", "Button", btnNumber);
         mixin(repeatingCode);
@@ -112,37 +99,38 @@ class Button : Control
         SetRect(&this.mRect, x, y, w, h);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
+        this.mTextable = true;
         ++Control.stCtlId;
         ++btnNumber;
 
     }
 
-    this(Window parent, bool autoc = false)
+    this(Form parent, bool autoc = false)
     {
         string btxt = format("%s_%d", "Button", btnNumber);
         this(parent, btxt, 20, 20, 120, 35);
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this(Window parent, string txt, bool autoc = false)
+    this(Form parent, string txt, bool autoc = false)
     {
         this(parent, txt, 20, 20, 120, 35);
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this(Window parent, string txt, int x, int y, bool autoc = false, EventHandler clickFn = null)
+    this(Form parent, string txt, int x, int y, bool autoc = false, EventHandler clickFn = null)
     {
         this(parent, txt, x, y, 120, 35);
-        if (clickFn) this.onMouseClick = clickFn;
-        if (autoc) this.createHandle();
+        if (clickFn) this.onClick = clickFn;
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this(Window parent, int x, int y, int w, int h, bool autoc = false, EventHandler clickFn = null)
+    this(Form parent, int x, int y, int w, int h, bool autoc = false, EventHandler clickFn = null)
     {
         string btxt = format("%s_%d", "Button", btnNumber);
         this(parent, btxt, x, y, w, h);
-        if (clickFn) this.onMouseClick = clickFn;
-        if (autoc) this.createHandle();
+        if (clickFn) this.onClick = clickFn;
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 // End of Ctors
 
@@ -151,7 +139,7 @@ class Button : Control
     /// Create the button handle
     override void createHandle()
     {
-        this.createHandleInternal(mClassName.ptr);
+        this.createHandleInternal(btnClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&btnWndProc);
         }
@@ -160,7 +148,7 @@ class Button : Control
 
     package :
         BtnDrawMode mDrawMode;
-        DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
+        static DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
 
 
 
@@ -276,8 +264,9 @@ class Button : Control
 
         void finalize(UINT_PTR scID)
         {
-            // this.remSubClass(scID);
-            // writeln("Button destro");
+            if (this.mGDraw.isActive) this.mGDraw.finalize;
+            if (this.mFDraw.isActive) this.mFDraw.finalize;
+            if (this.mBkBrush) DeleteObject(this.mBkBrush);
             RemoveWindowSubclass(this.mHandle, &btnWndProc, scID);
         }
     //-----------------------------------------------------------------------
@@ -296,7 +285,7 @@ struct FlatDraw
     bool isActive;
     int iAdj = 15; // This value is to add/subtract to/from RGB values
 
-    ~this()
+    void finalize()
     {
         if (this.defBrush) DeleteObject(this.defBrush);
 	    if (this.hotBrush) DeleteObject(this.hotBrush);
@@ -304,7 +293,7 @@ struct FlatDraw
 	    if (this.hotPen) DeleteObject(this.hotPen);
 	    if (this.dFrmBrush) DeleteObject(this.dFrmBrush);
 	    if (this.hFrmBrush) DeleteObject(this.hFrmBrush);
-        // print("FlatDraw resources freed");
+        print("FlatDraw resources freed");
     }
 
     void setData(Color c)
@@ -325,32 +314,59 @@ extern(Windows)
 private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try {
-        Button btn = getControl!Button(refData);
+    try {        
         //btn.log(message, "Button message ");
         switch (message) {
-            case WM_DESTROY : btn.finalize(scID); break;
-            case WM_PAINT : btn.paintHandler(); break;
+            case WM_DESTROY: 
+                Button btn = getControl!Button(refData);
+                btn.finalize(scID); 
+            break;
+            case WM_PAINT: 
+                Button btn = getControl!Button(refData);
+                btn.paintHandler(); 
+            break;
             case WM_SETFOCUS :
+                Button btn = getControl!Button(refData);
                 btn.setFocusHandler();
                 return 1;
             break;
             case WM_KILLFOCUS :
+                Button btn = getControl!Button(refData);
                 btn.killFocusHandler();
                 return 1;
             break;
-            case WM_LBUTTONDOWN : btn.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : btn.mouseUpHandler(message, wParam, lParam); break;
-
-            case CM_LEFTCLICK : btn.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : btn.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : btn.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : btn.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : btn.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : btn.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE : btn.mouseLeaveHandler(); break;
-            case CM_NOTIFY : return btn.wmNotifyHandler(lParam); break;
-
+            case WM_LBUTTONDOWN : 
+                Button btn = getControl!Button(refData);
+                btn.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP : 
+                Button btn = getControl!Button(refData);
+                btn.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN : 
+                Button btn = getControl!Button(refData);
+                btn.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP : 
+                Button btn = getControl!Button(refData);
+                btn.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL : 
+                Button btn = getControl!Button(refData);
+                btn.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE : 
+                Button btn = getControl!Button(refData);
+                btn.mouseMoveHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSELEAVE : 
+                Button btn = getControl!Button(refData);
+                btn.mouseLeaveHandler(); 
+            break;
+            case CM_NOTIFY : 
+                Button btn = getControl!Button(refData);
+                return btn.wmNotifyHandler(lParam); 
+            break;
             default : return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }

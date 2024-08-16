@@ -1,22 +1,24 @@
-module wings.numberpicker; // Created on : 10-Jun-22 05:24:04 PM
+module wings.numberpicker; // Created on: 10-Jun-22 05:24:04 PM
 
 import wings.d_essentials;
 import wings.wings_essentials;
 import std.conv;
 import wings.clipboard;
-import std.algorithm : clamp;
+import std.algorithm: clamp;
 import std.stdio;
 import std.datetime.stopwatch;
 
-int npNumber = 1;
+enum DWORD buddyStyle = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP| WS_BORDER;
+enum DWORD buddyExStyle = WS_EX_LEFT | WS_EX_LTRREADING;
 bool isNpCreated;
 DWORD npStyle = WS_VISIBLE | WS_CHILD | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_HOTTRACK;
 DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
 DWORD swp_flag = SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER;
 
-class NumberPicker : Control
+class NumberPicker: Control
 {
-    this(Window parent, int x, int y, int w, int h, bool autoc = false, EventHandler evtFn = null)
+    this(Form parent, int x, int y, int w, int h, 
+            bool autoc = false, EventHandler evtFn = null, bool btnLeft = false)
     {
         if (!isNpCreated) {
             isNpCreated = true;
@@ -25,15 +27,17 @@ class NumberPicker : Control
         }
 
         mixin(repeatingCode);
+        ++npNumber;
         mControlType = ControlType.numberPicker;
+        mBtnLeft = btnLeft;
         mMaxRange = 100;
         mMinRange = 0;
         mDeciPrec = 2;
         mStep = 1;
         mStyle = npStyle;
-        mExStyle = 0x00000000;//WS_EX_LTRREADING | WS_EX_RTLREADING | WS_EX_CLIENTEDGE;   ES_LEFT := 0x0
-        mBuddyStyle = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP| WS_BORDER;// | WS_CLIPCHILDREN;// WS_BORDER;
-        mBuddyExStyle = WS_EX_LEFT | WS_EX_LTRREADING;//| WS_EX_STATICEDGE;//| WS_EX_LEFT;//WS_EX_LTRREADING | WS_EX_RTLREADING | WS_EX_LEFT;//| WS_EX_CLIENTEDGE;
+        mExStyle = 0x00000000;//WS_EX_LTRREADING | WS_EX_RTLREADING | WS_EX_CLIENTEDGE;   ES_LEFT:= 0x0
+        mBuddyStyle = buddyStyle; 
+        mBuddyExStyle = buddyExStyle;
         mBackColor(defBackColor);
         mForeColor(defForeColor);
         mFmtStr = "%.02f";
@@ -42,19 +46,18 @@ class NumberPicker : Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        ++npNumber;
         if (evtFn != null) this.onValueChanged = evtFn;
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this(Window parent) {this(parent, 10, 10, 100, 27);}
-    this(Window parent, int x, int y, bool autoc = false, EventHandler evntFn = null )
+    this(Form parent) {this(parent, 10, 10, 100, 27);}
+    this(Form parent, int x, int y, bool autoc = false, EventHandler evntFn = null, bool btnLeft = false )
     {
-        this(parent, x, y, 70, 27, autoc, evntFn);
+        this(parent, x, y, 70, 27, autoc, evntFn, btnLeft);
     }
 
     override void createHandle()
-    {
+    {        
     	this.adjustNpStyles();
         this.createUpdown();
         this.createBuddy();
@@ -198,9 +201,11 @@ class NumberPicker : Control
 
         mixin finalProperty!("hideCaret", this.mHideCaret);
 
-        /+  Since, we are handling the mouse leave event specially,
-            We need to use these three event handler props individually.
-            We can't use parent's methods for these. +/
+        /+++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
+        Since, we are handling the mouse leave event specially,
+        We need to use these three event handler props individually.
+        We can't use parent's methods for these. 
+        ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++/
         final void onMouseEnter(EventHandler value)
         {
             this.mOnMouseEnter = value;
@@ -224,7 +229,7 @@ class NumberPicker : Control
     EventHandler onValueChanged;
     PaintEventHandler onTextPaint;
 
-    private :
+    private:
     // region private members
         bool mEditStarted;
         bool mEditFinished;
@@ -253,7 +258,6 @@ class NumberPicker : Control
         uint mBuddyCid;
         SUBCLASSPROC mBuddySubClsProc;
         Alignment mTxtPos;
-        HBRUSH mBkBrush;
         RECT mUDRect;
         RECT mTBRect;
         RECT mMyRect;
@@ -261,7 +265,7 @@ class NumberPicker : Control
         EventHandler mOnMouseEnter;
         MouseEventHandler mOnMouseMove;
         static wchar[] mUpdClassName = ['m', 's', 'c', 't', 'l', 's', '_', 'u', 'p', 'd', 'o', 'w', 'n', '3', '2', 0];
-        static wchar[] mBuddyClassName = ['E','d','i','t', 0];
+        static int npNumber;
     // endregion private members
 
     // region private functions
@@ -277,10 +281,10 @@ class NumberPicker : Control
             //if (!this.mHasSep) this.mStyle |= UDS_NOTHOUSANDS;
 
             switch (this.mTxtPos) {
-                case Alignment.left : this.mBuddyStyle |= ES_LEFT; break;
-                case Alignment.center : this.mBuddyStyle |= ES_CENTER; break;
-                case Alignment.right : this.mBuddyStyle |= ES_RIGHT; break;
-                default : break;
+                case Alignment.left: this.mBuddyStyle |= ES_LEFT; break;
+                case Alignment.center: this.mBuddyStyle |= ES_CENTER; break;
+                case Alignment.right: this.mBuddyStyle |= ES_RIGHT; break;
+                default: break;
             }
         }
 
@@ -309,11 +313,12 @@ class NumberPicker : Control
         void createBuddy()  // Private
         {
             // Creating buddy edit control
+            import wings.textbox: tbClsName;
 
             this.mBuddyCid = Control.stCtlId;
             if (this.mBtnLeft) this.mWidth -= 2; // To match the size of a button right control.
             this.mBuddyHandle = CreateWindowEx( this.mBuddyExStyle,
-                                                this.mBuddyClassName.ptr,
+                                                tbClsName.ptr,
                                                 null,
                                                 this.mBuddyStyle,
                                                 this.mXpos,
@@ -377,11 +382,13 @@ class NumberPicker : Control
 
         bool isMouseOnMe()  // Private
         {
-            /* If this returns False, mouse_leave event will triggered
-             * Since, updown control is a combo of an edit and button controls...
-             * we have no better options to control the mouse enter & leave mechanism.
-             * Now, we create an imaginary rect over the bondaries of these two controls.
-             * If mouse is inside that rect, there is no mouse leave. Perfect hack. */
+            /*---------------------------------------------------------------------- 
+            If this returns False, mouse_leave event will triggered
+            Since, updown control is a combo of an edit and button controls...
+            we have no better options to control the mouse enter & leave mechanism.
+            Now, we create an imaginary rect over the bondaries of these two controls.
+            If mouse is inside that rect, there is no mouse leave. Perfect hack. 
+            ---------------------------------------------------------------------------*/
             POINT pt;
             GetCursorPos(&pt);
             ScreenToClient(this.mParent.handle, &pt);
@@ -406,7 +413,6 @@ class NumberPicker : Control
         {
             if (this.mBkBrush) DeleteObject(this.mBkBrush);
             RemoveWindowSubclass(this.mHandle, &npWndProc, subClsId);
-            // this.remSubClass(subClsId );
         }
 
     // endregion private functions
@@ -418,12 +424,14 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        NumberPicker np = getControl!NumberPicker(refData);
         //printWinMsg(message);
         switch (message) {
-            case WM_DESTROY : np.finalize(scID); break;
-
-            case CM_NOTIFY :
+            case WM_DESTROY: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.finalize(scID); 
+            break;
+            case CM_NOTIFY:
+                NumberPicker np = getControl!NumberPicker(refData);
                 auto nm = cast(NMUPDOWN*) lParam;
                 if (nm.hdr.code == UDN_DELTAPOS) {//writeln("delta pos");
                     auto tbstr = np.getControlText(np.mBuddyHandle);
@@ -432,8 +440,8 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     if (np.onValueChanged) np.onValueChanged(np, new EventArgs());
                 }
             break;
-
-            case WM_MOUSELEAVE :
+            case WM_MOUSELEAVE:
+                NumberPicker np = getControl!NumberPicker(refData);
                 if (np.mTrackMouseLeave) {
                     if (!np.isMouseOnMe()) {
                         np.isMouseEntered = false;
@@ -441,20 +449,43 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     }
                 }
             break;
-
-            case WM_PAINT : np.paintHandler(); break;
-            case WM_SETFOCUS : np.setFocusHandler(); break;
-            case WM_KILLFOCUS : np.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : np.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : np.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : np.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : np.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : np.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : np.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : np.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : np.npMouseMoveHandler(message, wParam, lParam); break;
-
-            default : return DefSubclassProc(hWnd, message, wParam, lParam);
+            case WM_PAINT: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.paintHandler(); 
+            break;
+            case WM_SETFOCUS: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.setFocusHandler(); 
+            break;
+            case WM_KILLFOCUS: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.killFocusHandler(); 
+            break;
+            case WM_LBUTTONDOWN: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.npMouseMoveHandler(message, wParam, lParam); 
+            break;
+            default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }
     catch (Exception e) { writeln("error ", message);}
@@ -466,34 +497,58 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                                                     UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        NumberPicker np = getControl!NumberPicker(refData);
         //printWinMsg(message);
         switch (message) {
-            case WM_DESTROY : RemoveWindowSubclass(hWnd, &buddyWndProc, scID ); break;
-            case WM_SETFOCUS : np.setFocusHandler(); break;
-            case WM_KILLFOCUS : np.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : np.mouseDownHandler(message, wParam, lParam); break;
-            //case WM_LBUTTONDBLCLK:
-            //    InvalidateRect(hWnd, &np.mTBRect, true);
-            //    break;
-            case WM_LBUTTONUP : np.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : np.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : np.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : np.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : np.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : np.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : np.npMouseMoveHandler(message, wParam, lParam); break;
+            case WM_DESTROY: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                RemoveWindowSubclass(hWnd, &buddyWndProc, scID ); 
+            break;
+            case WM_SETFOCUS: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.setFocusHandler(); 
+            break;
+            case WM_KILLFOCUS: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.killFocusHandler(); 
+            break;
+            case WM_LBUTTONDOWN: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.npMouseMoveHandler(message, wParam, lParam); 
+            break;
+            case WM_PAINT:
+                NumberPicker np = getControl!NumberPicker(refData);
 
-            case WM_PAINT :
                 // Let the control paint it's basic stuff.
                 DefSubclassProc(hWnd, message, wParam, lParam);
 
-                /* We need WM_BORDER style to preserve the alignment of text in edit control.
-                 * But that will cause a border around the edit control and it will separate...
-                 * the updown and edit visualy. So we need to erase one border. It will be...
-                 * either right side of the edit or left side of the edit, depends upon where...
-                 * the bupown button locates. To erase the border, we just draw a line with...
-                 * edit's back color. */
+                /*---------------------------------------------------------------------------- 
+                We need WM_BORDER style to preserve the alignment of text in edit control.
+                But that will cause a border around the edit control and it will separate...
+                the updown and edit visualy. So we need to erase one border. It will be...
+                either right side of the edit or left side of the edit, depends upon where...
+                the bupown button locates. To erase the border, we just draw a line with...
+                edit's back color. 
+                ------------------------------------------------------------------------------*/
                 HDC hdc = GetDC(hWnd);
                 DrawEdge(hdc, &np.mTBRect, BDR_SUNKENOUTER, np.mTopEdgeFlag);
                 DrawEdge(hdc, &np.mTBRect, BDR_RAISEDINNER, np.mBotEdgeFlag);
@@ -505,9 +560,9 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 ReleaseDC(hWnd, hdc);
                 return 1;
             break;
-
-            case EM_SETSEL : return 1; break; // To eliminate the text selection
-            case CM_COLOR_EDIT :
+            case EM_SETSEL: return 1; break; // To eliminate the text selection
+            case CM_COLOR_EDIT:
+                NumberPicker np = getControl!NumberPicker(refData);
                 if (np.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     if (np.mDrawFlag & 1) SetTextColor(hdc, np.mForeColor.cref);
@@ -516,23 +571,21 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                     return cast(LRESULT) np.mBkBrush;
                 }
             break;
-
-            case WM_KEYDOWN :
+            case WM_KEYDOWN:
+                NumberPicker np = getControl!NumberPicker(refData);
                 np.mKeyPressed = true;
                 np.keyDownHandler(wParam);
             break;
-
-            case WM_KEYUP : np.keyUpHandler(wParam); break;
-            case WM_CHAR : np.keyPressHandler(wParam); break;
-
-            //case CM_TBTXTCHANGED :
-            //    if (np.onValueChanged) {
-            //        auto ea = new EventArgs();
-            //        np.onValueChanged(np, ea);
-            //    }
-            //break;
-
-            case WM_MOUSELEAVE :
+            case WM_KEYUP: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.keyUpHandler(wParam); 
+            break;
+            case WM_CHAR: 
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.keyPressHandler(wParam); 
+            break;
+            case WM_MOUSELEAVE:
+                NumberPicker np = getControl!NumberPicker(refData);
                 if (np.mTrackMouseLeave) {
                     if (!np.isMouseOnMe()) {
                         np.isMouseEntered = false;
@@ -540,20 +593,24 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                     }
                 }
             break;
-
-            case CM_CTLCOMMAND :
+            case CM_CTLCOMMAND:
+                NumberPicker np = getControl!NumberPicker(refData);
                 auto nCode = HIWORD(wParam);
                 if (nCode == EN_UPDATE) {
                     if (np.mHideCaret) HideCaret(hWnd);
                 }
             break;
-            /* We don't get this msg for the first NumberPicker. We will get this for...
-             * each one after the first NumberPicker. This is a fix for a strange problem.
-             * After sending the UDM_SETBUDDY message, the previous NumberPicker's buddy...
-             * will be sperated from it's updown. So we need to combine them once again. */
-            case CM_BUDDY_RESIZE: np.resizeBuddy(); break;
-
-            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
+            case CM_BUDDY_RESIZE: 
+                /*---------------------------------------------------------------------------
+                We don't get this msg for the first NumberPicker. We will get this for...
+                each one after the first NumberPicker. This is a fix for a strange problem.
+                After sending the UDM_SETBUDDY message, the previous NumberPicker's buddy...
+                will be sperated from it's updown. So we need to combine them once again. 
+                ----------------------------------------------------------------------------*/
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.resizeBuddy(); 
+            break;
+            default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }
     catch (Exception e) {}

@@ -3,7 +3,7 @@
 module wings.datetimepicker; // Change the wndproc code - 09-feb-2023
 
 import wings.d_essentials;
-import std.conv : to;
+import std.conv: to;
 import wings.wings_essentials;
 import wings.date_and_time;
 
@@ -33,7 +33,7 @@ struct NMDATETIMESTRINGW
 /**
  * DateTimePicker
  */
-class DateTimePicker : Control
+class DateTimePicker: Control
 {
 
     /// Returns the format string of DateTimPicker
@@ -57,7 +57,7 @@ class DateTimePicker : Control
 	EventHandler onCalendarClosed;
 	DateTimeEventHandler onTextChanged;
 
-	this(Window parent, int x, int y, int w, int h, bool autoc = false)
+	this(Form parent, int x, int y, int w, int h, bool autoc = false)
     {
         if (!appData.isDtpInit) {
             appData.isDtpInit = true;
@@ -74,11 +74,11 @@ class DateTimePicker : Control
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++dtpNumber;
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this(Window p ) { this(p, 20, 20, 140, 25); }
-    this(Window p, int x, int y,bool autoc = false ) { this(p, x, y, 140, 25, autoc); }
+    this(Form p ) { this(p, 20, 20, 140, 25); }
+    this(Form p, int x, int y,bool autoc = false ) { this(p, x, y, 140, 25, autoc); }
 
     override void createHandle()
     {
@@ -90,12 +90,12 @@ class DateTimePicker : Control
         }
     }
 
-    package :
+    package:
         int dropDownCount; // DTN_DATETIMECHANGE notification occures two times. So we need to limit it to once.
 
 
 
-	private :
+	private:
 		DtpFormat mFormat;
 		string mFormatString;
 		bool mRightAlign;
@@ -112,23 +112,23 @@ class DateTimePicker : Control
         void setDtpStyles()
         { // Private
             switch (this.mFormat) {
-                case DtpFormat.custom :
+                case DtpFormat.custom:
                     this.mStyle = WS_TABSTOP | WS_CHILD| WS_VISIBLE | DTS_LONGDATEFORMAT | DTS_APPCANPARSE;
                     break;
-                case DtpFormat.longDate :
+                case DtpFormat.longDate:
                     this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_LONGDATEFORMAT;
                     break;
-                case DtpFormat.shortDate :
+                case DtpFormat.shortDate:
                     if (this.mFourDigitYear) {
                         this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATECENTURYFORMAT;
                     } else {
                         this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_SHORTDATEFORMAT;
                     }
                     break;
-                case DtpFormat.timeOnly :
+                case DtpFormat.timeOnly:
                     this.mStyle = WS_TABSTOP | WS_CHILD|WS_VISIBLE|DTS_TIMEFORMAT;
                     break;
-                default : break;
+                default: break;
             }
 
             if (this.mShowWeekNum) this.mCalStyle |= MCS_WEEKNUMBERS;
@@ -175,27 +175,59 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        DateTimePicker dtp = getControl!DateTimePicker(refData);
+        
         switch (message) {
-            case WM_DESTROY : RemoveWindowSubclass(hWnd, &dtpWndProc, scID); break;
-            case WM_PAINT : dtp.paintHandler(); break;
-            case WM_SETFOCUS : dtp.setFocusHandler(); break;
-            case WM_KILLFOCUS : dtp.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : dtp.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : dtp.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : dtp.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : dtp.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : dtp.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : dtp.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : dtp.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : dtp.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE : dtp.mouseLeaveHandler(); break;
+            case WM_DESTROY: 
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
+                RemoveWindowSubclass(hWnd, &dtpWndProc, scID); 
+            break;
+            case WM_PAINT: 
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
+                dtp.paintHandler(); 
+            break;
+            case WM_SETFOCUS: 
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
+                dtp.setFocusHandler(); 
+            break;
+            case WM_KILLFOCUS: 
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
+                dtp.killFocusHandler(); 
+            break;
+            case WM_LBUTTONDOWN: 
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
+                dtp.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP: 
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
+                dtp.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN: 
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
+                dtp.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP: 
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
+                dtp.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL: 
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
+                dtp.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE: 
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
+                dtp.mouseMoveHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSELEAVE: 
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
+                dtp.mouseLeaveHandler(); 
+            break;
 
-            case CM_NOTIFY :
+            case CM_NOTIFY:
+                DateTimePicker dtp = getControl!DateTimePicker(refData);
                 auto nm = cast(NMHDR *) lParam;
                 //print("nm.code", nm.code);
                 switch (nm.code) {
-                    case DTN_USERSTRING :
+                    case DTN_USERSTRING:
                         if (dtp.onTextChanged) {
                             auto dts = cast(NMDATETIMESTRINGW *) lParam;
                             auto dea = new DateTimeEventArgs(dts.pszUserString);
@@ -205,16 +237,14 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                             }
                         }
                     break;
-
-                    case DTN_DROPDOWN :
+                    case DTN_DROPDOWN:
                         if (dtp.onCalendarOpened) {
                             auto ea = new EventArgs();
                             dtp.onCalendarOpened(dtp, ea);
                             return 0;
                         }
                     break;
-
-                    case DTN_DATETIMECHANGE :
+                    case DTN_DATETIMECHANGE:
                         //print("time change arrived");
                         if (dtp.dropDownCount == 0) {
                             dtp.dropDownCount = 1;
@@ -230,20 +260,20 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                             return 0;
                         }
                     break;
-
-                    case DTN_FORMATQUERY :
-
-                    case DTN_CLOSEUP :
+                    case DTN_FORMATQUERY: break;
+                    case DTN_CLOSEUP:
                         if (dtp.onCalendarClosed) {
                             auto ea = new EventArgs();
                             dtp.onCalendarClosed(dtp, ea);
                         }
                     break;
-                    default : break;
+                    default: break;
                 }
                 //return 1;
             break;
-            default : return DefSubclassProc(hWnd, message, wParam, lParam);
+            default: 
+                return DefSubclassProc(hWnd, message, wParam, lParam);
+            break;
         }
     }
     catch (Exception e) {}

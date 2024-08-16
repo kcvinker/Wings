@@ -1,22 +1,22 @@
-module wings.label; // Created on : 24-May-2022 05:53:28 PM
+module wings.label; // Created on: 24-May-2022 05:53:28 PM
 
 import std.algorithm;
 import wings.d_essentials;
 import wings.wings_essentials;
 
-
-int lblNumber = 1;
 private wchar[] mClassName = ['S', 't', 'a', 't', 'i', 'c', 0];
+enum DWORD lbStyle = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY;
 
-class Label : Control
+class Label: Control
 {
-    this(Window parent, string txt, int x, int y, int w, int h, bool autoc = false)
+    this(Form parent, string txt, int x, int y, int w, int h, bool autoc = false)
     {
         mixin(repeatingCode);
         mText = txt;
+        ++lblNumber;
         mControlType = ControlType.label;
         mTxtAlign = TextAlignment.midLeft;
-        mStyle = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_NOTIFY;
+        mStyle = lbStyle;
         mExStyle = 0;
         mAutoSize = true;
         mBackColor = parent.mBackColor;
@@ -25,22 +25,20 @@ class Label : Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        ++lblNumber;
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
         //mBorder = LabelBorder.singleLine;
     }
 
-    this(Window parent) { this(parent, format("Label_", lblNumber), 20, 20, 0, 0); }
-    this(Window parent, int x, int y, bool autoc = false)
+    this(Form parent) { this(parent, format("Label_", lblNumber), 20, 20, 0, 0); }
+    this(Form parent, int x, int y, bool autoc = false)
     {
         this(parent, format("Label_", lblNumber), x, y, 0, 0, autoc);
     }
-    this(Window parent, string txt, bool autoc = false) { this(parent, txt, 20, 20, 0, 0, autoc); }
-    this(Window parent, string txt, int x, int y, bool autoc = false)
+    this(Form parent, string txt, bool autoc = false) { this(parent, txt, 20, 20, 0, 0, autoc); }
+    this(Form parent, string txt, int x, int y, bool autoc = false)
     {
         this(parent, txt, x, y, 0, 0, autoc);
     }
-
 
     override void createHandle()
     {
@@ -67,34 +65,32 @@ class Label : Control
         }
     }
 
-    EventHandler selectionChanged;
+    // EventHandler selectionChanged;
 
-    private :
+    private:
         bool mAutoSize;
         bool mMultiLine;
         bool mRightAlign;
         LabelBorder mBorder;
         TextAlignment mTxtAlign;
         DWORD dwTxtAlign;
-        HBRUSH mBkBrush;
+        static int lblNumber;
 
-        void adjustAlignment()
-        { // Private
-            final switch (this.mTxtAlign)
-            {
-                case TextAlignment.topLeft : this.dwTxtAlign = DT_TOP | DT_LEFT; break;
-                case TextAlignment.topCenter : this.dwTxtAlign = DT_TOP | DT_CENTER; break;
-                case TextAlignment.topRight : this.dwTxtAlign = DT_TOP | DT_RIGHT; break;
+        void adjustAlignment() // Private
+        { 
+            final switch (this.mTxtAlign) {
+                case TextAlignment.topLeft: this.dwTxtAlign = DT_TOP | DT_LEFT; break;
+                case TextAlignment.topCenter: this.dwTxtAlign = DT_TOP | DT_CENTER; break;
+                case TextAlignment.topRight: this.dwTxtAlign = DT_TOP | DT_RIGHT; break;
 
-                case TextAlignment.midLeft : this.dwTxtAlign = DT_VCENTER | DT_LEFT; break;
-                case TextAlignment.center : this.dwTxtAlign = DT_VCENTER | DT_CENTER; break;
-                case TextAlignment.midRight : this.dwTxtAlign = DT_VCENTER | DT_RIGHT; break;
+                case TextAlignment.midLeft: this.dwTxtAlign = DT_VCENTER | DT_LEFT; break;
+                case TextAlignment.center: this.dwTxtAlign = DT_VCENTER | DT_CENTER; break;
+                case TextAlignment.midRight: this.dwTxtAlign = DT_VCENTER | DT_RIGHT; break;
 
-                case TextAlignment.bottomLeft : this.dwTxtAlign = DT_BOTTOM | DT_LEFT; break;
-                case TextAlignment.bottomCenter : this.dwTxtAlign = DT_BOTTOM | DT_CENTER; break;
-                case TextAlignment.bottomRight : this.dwTxtAlign = DT_BOTTOM | DT_RIGHT; break;
+                case TextAlignment.bottomLeft: this.dwTxtAlign = DT_BOTTOM | DT_LEFT; break;
+                case TextAlignment.bottomCenter: this.dwTxtAlign = DT_BOTTOM | DT_CENTER; break;
+                case TextAlignment.bottomRight: this.dwTxtAlign = DT_BOTTOM | DT_RIGHT; break;
             }
-
             if (this.mMultiLine) {
                 this.dwTxtAlign |= DT_WORDBREAK;
             } else {
@@ -136,11 +132,10 @@ class Label : Control
         // }
 
         void finalize(UINT_PTR scID)
-        { // private
+        { 
             // This is our destructor. Clean all the dirty stuff
             DeleteObject(this.mBkBrush);
             RemoveWindowSubclass(this.mHandle, &lblWndProc, scID);
-            // this.remSubClass(scID);
         }
 
 } // End of Label Class
@@ -150,31 +145,60 @@ private LRESULT lblWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        Label lbl = getControl!Label(refData);
-        //print("message", message);
         switch (message) {
-            case WM_DESTROY : lbl.finalize(scID); break;
-            case WM_PAINT : lbl.paintHandler(); break;
-            case WM_SETFOCUS : lbl.setFocusHandler(); break;
-            case WM_KILLFOCUS : lbl.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : lbl.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : lbl.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : lbl.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : lbl.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : lbl.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : lbl.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : lbl.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : lbl.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE : lbl.mouseLeaveHandler(); break;
-
+            case WM_DESTROY: 
+                Label lbl = getControl!Label(refData);
+                lbl.finalize(scID); 
+            break;
+            case WM_PAINT: 
+                Label lbl = getControl!Label(refData);
+                lbl.paintHandler(); 
+            break;
+            case WM_SETFOCUS: 
+                Label lbl = getControl!Label(refData);
+                lbl.setFocusHandler(); 
+            break;
+            case WM_KILLFOCUS: 
+                Label lbl = getControl!Label(refData);
+                lbl.killFocusHandler(); 
+            break;
+            case WM_LBUTTONDOWN: 
+                Label lbl = getControl!Label(refData);
+                lbl.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP: 
+                Label lbl = getControl!Label(refData);
+                lbl.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN: 
+                Label lbl = getControl!Label(refData);
+                lbl.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP: 
+                Label lbl = getControl!Label(refData);
+                lbl.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL: 
+                Label lbl = getControl!Label(refData);
+                lbl.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE: 
+                Label lbl = getControl!Label(refData);
+                lbl.mouseMoveHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSELEAVE: 
+                Label lbl = getControl!Label(refData);
+                lbl.mouseLeaveHandler(); 
+            break;
             case CM_COLOR_STATIC:
+                Label lbl = getControl!Label(refData);
                 auto hdc = cast(HDC) wParam;
                 if (lbl.mDrawFlag & 1) SetTextColor(hdc, lbl.mForeColor.cref);
                 SetBkColor(hdc, lbl.mBackColor.cref);
                 return cast(LRESULT)lbl.mBkBrush;
             break;
 
-            default : return DefSubclassProc(hWnd, message, wParam, lParam);
+            default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }
     catch (Exception e) {}

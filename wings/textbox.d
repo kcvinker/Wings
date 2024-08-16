@@ -6,44 +6,41 @@ import wings.wings_essentials;
 import std.datetime.stopwatch;
 import std.stdio;
 
+enum wchar[] tbClsName = ['E', 'd', 'i', 't', 0];
+enum DWORD tbStyle = WS_TABSTOP|WS_CLIPCHILDREN|WS_CLIPSIBLINGS|WS_VISIBLE|WS_CHILD| ES_AUTOHSCROLL| ES_LEFT;
+enum DWORD tbExStyle = WS_EX_LEFT|WS_EX_LTRREADING|WS_EX_CLIENTEDGE;
 
-private int tbNumber = 1;
-private wchar[] mClassName = ['E', 'd', 'i', 't', 0];
-private DWORD tbStyle = WS_TABSTOP|WS_CLIPCHILDREN|WS_CLIPSIBLINGS|WS_VISIBLE|WS_CHILD| ES_AUTOHSCROLL| ES_LEFT;
-private DWORD tbExStyle = WS_EX_LEFT|WS_EX_LTRREADING|WS_EX_CLIENTEDGE;
-
-class TextBox : Control
+class TextBox: Control
 {
     EventHandler onTextChanged;
-    this (Window parent, int x, int y, int w, int h, bool autoc = false)
+    this (Form parent, int x, int y, int w, int h, bool autoc = false)
     {
         mixin(repeatingCode);
+        ++tbNumber;
         this.mControlType = ControlType.textBox;
         this.mName = format("%s_%d", "Textbox_", tbNumber);
-        //if (txt.length > 0 ) mText = txt;
-        this.mStyle = tbStyle;   //  WS_CHILD | WS_VISIBLE | ES_LEFT | ES_NOHIDESEL;
+        this.mStyle = tbStyle;  
         this.mExStyle = tbExStyle;
         this.mBackColor(0Xffffff); // White
         this.mForeColor(0x000000); // Black
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        ++tbNumber;
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this (Window parent, int x, int y, bool autoc = false)
+    this (Form parent, int x, int y, bool autoc = false)
     {
         this(parent, x, y, 120, 25, autoc);
     }
-    //this (Window parent, int x, int y, int w, int h) {this(parent, "", x, y, w, h);}
+    //this (Form parent, int x, int y, int w, int h) {this(parent, "", x, y, w, h);}
 
     override void createHandle()
     {
     	this.setTbStyle();
         // printf("textbox style %X", this.mStyle);
-    	this.createHandleInternal(mClassName.ptr);
+    	this.createHandleInternal(tbClsName.ptr);
     	if (this.mHandle) {
             this.setSubClass(&tbWndProc);
             this.createLogFontInternal();
@@ -67,6 +64,7 @@ class TextBox : Control
         bool mDrawFocus;
         bool mDrawBkClr = true;
         wstring mCue;
+        static int tbNumber;
 
 
         void setTbStyle() // Private
@@ -98,6 +96,7 @@ class TextBox : Control
 
         void finalize(UINT_PTR subid)
         {
+            DeleteObject(this.mBkBrush);
             RemoveWindowSubclass(this.mHandle, &tbWndProc, subid );
         }
 
@@ -110,31 +109,13 @@ private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        TextBox tb = getControl!TextBox(refData);
         switch (message) {
-            case WM_NCDESTROY : tb.finalize(scID); break;
-            // case WM_PAINT:
-            //     //if (tb.mDrawFocus) {
-            //     //    PAINTSTRUCT ps;
-            //     //    auto dc = BeginPaint(hWnd, &ps);
-            //     //    auto fBrush = CreateSolidBrush(tb.mFrmCref);
-            //     //    FrameRect(dc, &ps.rcPaint, fBrush);
-            //     //    EndPaint(hWnd, &ps);
-            //     //    return 0;
-            //     //}
-            // break;
-
-            // case WM_SETFOCUS:
-            //     //tb.mDrawFocus = true;
-
-            // break;
-
-            // case WM_KILLFOCUS:
-            //     //tb.mDrawFocus = false;
-            // break;
-
+            case WM_NCDESTROY: 
+                TextBox tb = getControl!TextBox(refData);
+                tb.finalize(scID); 
+            break;
             case CM_COLOR_EDIT:
-                // writefln("tb hwnd in subclass %s", hWnd);
+                TextBox tb = getControl!TextBox(refData);
                 if (tb.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     if (tb.mDrawFlag & 1) SetTextColor(hdc, tb.mForeColor.cref);
@@ -142,52 +123,44 @@ private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                 }
                 return toLresult(tb.mBkBrush);
             break;
-
-
-
-            case CM_CTLCOMMAND :
+            case CM_CTLCOMMAND:
+                TextBox tb = getControl!TextBox(refData);
             	if (HIWORD(wParam) == EN_CHANGE) {
             		if (tb.onTextChanged) tb.onTextChanged(tb, new EventArgs());
             	}
-            	break;
-            //case WM_SETFONT :
-            //    print("WM_SETFONT rcvd"); break;
-
-            // case CM_NOTIFY:
-            //     auto nmcd = getNmcdPtr(lParam);
-            //     switch (nmcd.dwDrawStage) {
-            //         case CDDS_PREERASE:
-            //             return CDRF_NOTIFYPOSTERASE;
-            //             break;
-            //         case CDDS_PREPAINT:
-            //             RECT rct = nmcd.rc;
-            //             if (tb.mRightAlign) { rct.right -= 18;} else {rct.left += 18;}
-            //             SetTextColor(nmcd.hdc, tb.mFClrRef);
-            //             DrawTextW(nmcd.hdc, tb.text.ptr, -1, &rct, tb.mTxtStyle);
-            //             return CDRF_SKIPDEFAULT;
-            //             break;
-            //         default: break;
-            //     }
-            //     break;
-
-            case WM_LBUTTONDOWN : tb.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : tb.mouseUpHandler(message, wParam, lParam); break;
-
-            case WM_RBUTTONDOWN : tb.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : tb.mouseRUpHandler(message, wParam, lParam); break;
-
-            case WM_MOUSEWHEEL : tb.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : tb.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE : tb.mouseLeaveHandler(); break;
-
-            default : return DefSubclassProc(hWnd, message, wParam, lParam);
+            break;
+            case WM_LBUTTONDOWN: 
+                TextBox tb = getControl!TextBox(refData);
+                tb.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP: 
+                TextBox tb = getControl!TextBox(refData);
+                tb.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN: 
+                TextBox tb = getControl!TextBox(refData);
+                tb.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP: 
+                TextBox tb = getControl!TextBox(refData);
+                tb.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL: 
+                TextBox tb = getControl!TextBox(refData);
+                tb.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE: 
+                TextBox tb = getControl!TextBox(refData);
+                tb.mouseMoveHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSELEAVE: 
+                TextBox tb = getControl!TextBox(refData);
+                tb.mouseLeaveHandler(); 
+            break;
+            default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }
-
-    catch (Exception e)
-    {
-        // return DefSubclassProc(hWnd, message, wParam, lParam);
-    }
+    catch (Exception e)  { }
     return DefSubclassProc(hWnd, message, wParam, lParam);
 }
 

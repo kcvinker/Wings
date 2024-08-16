@@ -37,6 +37,13 @@ class Font {
         if (createNow) this.createFontHandle();
     }
 
+    ~this()
+    {
+        import std.stdio;
+        DeleteObject(this.mHandle);
+        writeln("Font handle destroyed");
+    }
+
     void createFontHandle(HWND wHandle = null) {
         // import wings.wingdi : CreateFont;
         HDC dcHandle = GetDC(wHandle);

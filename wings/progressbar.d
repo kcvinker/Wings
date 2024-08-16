@@ -7,26 +7,23 @@ import wings.wings_essentials;
 import std.stdio;
 import std.conv;
 
-
-
-int pgbNumber = 1;
-DWORD pgbStyle = WS_CHILD | WS_VISIBLE | PBS_SMOOTH | WS_OVERLAPPED;
+enum DWORD pgbStyle = WS_CHILD | WS_VISIBLE | PBS_SMOOTH | WS_OVERLAPPED;
 enum PBM_SETSTATE  = (WM_USER+16);
 enum PBM_GETSTATE  = 0x0420;
-DWORD pgbExStyle = 0;
-private wchar[] mClassName = ['m','s','c','t','l','s','_','p','r','o','g','r','e','s','s','3','2', 0];
-
+enum DWORD pgbExStyle = 0;
+enum wchar[] mClassName = ['m','s','c','t','l','s','_','p','r','o','g','r','e','s','s','3','2', 0];
 enum ProgressBarState {normal = 1, error, paused}
 enum ProgressBarStyle {blockStyle, marqueeStyle}
 
 class ProgressBar : Control
 {
-    this(Window parent, int x, int y, int w, int h, bool autoc = false)
+    this(Form parent, int x, int y, int w, int h, bool autoc = false)
     {
         mixin(repeatingCode);
+        ++pgbNumber;
         mControlType = ControlType.progressBar;
-        mStyle = pgbStyle; // WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP;
-        mExStyle = pgbExStyle; // WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT;
+        mStyle = pgbStyle; 
+        mExStyle = pgbExStyle; 
 		mBarStyle = ProgressBarStyle.blockStyle;
         mState = ProgressBarState.normal;
 		mMinValue = 0;
@@ -40,12 +37,11 @@ class ProgressBar : Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        ++pgbNumber;
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this(Window parent, int x, int y, bool autoc = false) { this(parent, x, y, 180, 25, autoc);}
-    this(Window parent) { this(parent, 20, 20, 180, 25);}
+    this(Form parent, int x, int y, bool autoc = false) { this(parent, x, y, 180, 25, autoc);}
+    this(Form parent) { this(parent, 20, 20, 180, 25);}
 
     override void createHandle()
     {
@@ -199,6 +195,7 @@ class ProgressBar : Control
         bool mVertical, mShowPerc;
         int mMinValue, mMaxValue, mStep, mValue, mSpeed, mDeciPrec;
         string percFmt;
+        static int pgbNumber;
 
         LRESULT drawPercentage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
@@ -238,28 +235,45 @@ private LRESULT pgbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        ProgressBar pgb = getControl!ProgressBar(refData);
         //  gb.log(message);
         switch (message) {
-            case WM_DESTROY : RemoveWindowSubclass(hWnd, &pgbWndProc, scID); break;
-            // case WM_PAINT : pgb.paintHandler(); break;
-            // case WM_SETFOCUS : pgb.setFocusHandler(); break;
-            // case WM_KILLFOCUS : pgb.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : pgb.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : pgb.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : pgb.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : pgb.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : pgb.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : pgb.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : pgb.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : pgb.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE : pgb.mouseLeaveHandler(); break;
-            case WM_PAINT :
-
-                return pgb.drawPercentage(hWnd, message, wParam, lParam);
-                // return ret;
+            case WM_DESTROY : 
+                // ProgressBar pgb = getControl!ProgressBar(refData);
+                RemoveWindowSubclass(hWnd, &pgbWndProc, scID); 
             break;
-            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
+            case WM_LBUTTONDOWN : 
+                ProgressBar pgb = getControl!ProgressBar(refData);
+                pgb.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP : 
+                ProgressBar pgb = getControl!ProgressBar(refData);
+                pgb.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN : 
+                ProgressBar pgb = getControl!ProgressBar(refData);
+                pgb.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP : 
+                ProgressBar pgb = getControl!ProgressBar(refData);
+                pgb.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL : 
+                ProgressBar pgb = getControl!ProgressBar(refData);
+                pgb.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE : 
+                ProgressBar pgb = getControl!ProgressBar(refData);
+                pgb.mouseMoveHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSELEAVE : 
+                ProgressBar pgb = getControl!ProgressBar(refData);
+                pgb.mouseLeaveHandler(); 
+            break;
+            case WM_PAINT :
+                ProgressBar pgb = getControl!ProgressBar(refData);
+                return pgb.drawPercentage(hWnd, message, wParam, lParam);
+            break;
+            default : return DefSubclassProc(hWnd, message, wParam, lParam); 
         }
     }
     catch (Exception e) {}

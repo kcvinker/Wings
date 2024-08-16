@@ -4,20 +4,20 @@ import core.sys.windows.windows;
 import std.utf;
 import core.sys.windows.commctrl: SetWindowSubclass, RemoveWindowSubclass, DefSubclassProc;
 
-import wings.window: Window;
+import wings.form: Form;
 import wings.controls: Control;
 import wings.fonts: Font;
 import wings.enums: MenuType, ControlType;
 import wings.menubar: MenuBase, MenuItem, getMenuItem, ParentKind;
 import wings.events: EventHandler, EventArgs;
 import wings.colors: makeHBRUSH, getClrRef;
-import wings.commons: appData, getControl, getMousePoints, getMousePos;
+import wings.commons: getControl, getMousePoints, getMousePos;
 
 
-class ContextMenu : MenuBase {
-
-    this ()
-    {
+class ContextMenu : MenuBase 
+{
+    import wings.application: appData;
+    this () {
         this.mHandle = CreatePopupMenu();
         this.mWidth = 120;
         this.mHeight = 25;
@@ -30,21 +30,18 @@ class ContextMenu : MenuBase {
         this.mGrayCref = getClrRef(0x979dac);
     }
 
-    this(Control parent, string[] menuNames ...)
-    {
+    this(Control parent, string[] menuNames ...) {
         this();
         this.mParent = parent;
         this.setMenuInternal(menuNames);
     }
 
-    this(Control parent)
-    {
+    this(Control parent) {
         this();
         this.mParent = parent;
     }
 
-    MenuItem addItem(string item)
-    {
+    MenuItem addItem(string item) {
         MenuType mtyp = item == "|" ? MenuType.separator : MenuType.normalMenu;
         MenuItem mi = new MenuItem(item, mtyp, this.mHandle, this.mMenuCount);
         mi.mParentKind = ParentKind.contextMenu;
@@ -60,8 +57,7 @@ class ContextMenu : MenuBase {
 
         // This function executed at the 'contextMenu' property if each control.
         // 'contextMenu' property will set the parent if it is null.
-        void setDummyControl()
-        {
+        void setDummyControl() {
             auto pHwnd = isWindow() ? this.mParent.mHandle : this.mParent.mParent.mHandle;
             auto hinst = appData.hInstance;
             this.mDummyHwnd = CreateWindowExW(0, "Button".toUTF16z, null, WS_CHILD, 0, 0, 0, 0, pHwnd, null, hinst, null);
@@ -70,8 +66,7 @@ class ContextMenu : MenuBase {
             if (!this.mFont.handle) this.mFont.createFontHandle(this.mDummyHwnd);
         }
 
-        void showMenu(LPARAM lpm)
-        {
+        void showMenu(LPARAM lpm) {
             if (!this.mCmenuCreated) this.createCmenuHandle();
             if (this.mParent && this.mMenus.length) {
                 POINT pt = getMousePos(lpm);
@@ -88,8 +83,7 @@ class ContextMenu : MenuBase {
         }
 
 
-        MenuItem getMenuItem(int idNum)
-        {
+        MenuItem getMenuItem(int idNum) {
             foreach (key; this.mMenus.byKey()) {
                 auto menu = this.mMenus[key];
                 if (menu.mId == idNum) return menu;
@@ -110,8 +104,7 @@ class ContextMenu : MenuBase {
         bool isWindow() {return this.mParent.mControlType == ControlType.window;}
         DWORD_PTR toDwordPtr() {return cast(DWORD_PTR) (cast(void*) this);}
 
-        void setMenuInternal(string[] menuNames)
-        {
+        void setMenuInternal(string[] menuNames) {
             if (menuNames.length > 0) {
                 foreach (name; menuNames) {
                     auto mtyp = name == "|" ? MenuType.separator : MenuType.normalMenu;

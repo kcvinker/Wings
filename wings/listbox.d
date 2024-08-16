@@ -1,5 +1,5 @@
 module wings.listbox;
-// Created on : 27-May-22 02:42:52 PM
+// Created on: 27-May-22 02:42:52 PM
 
 import wings.d_essentials;
 import std.conv;
@@ -8,17 +8,17 @@ import std.algorithm;
 import wings.wings_essentials;
 import std.stdio;
 
+enum wchar[] mClassName = ['L', 'I', 'S', 'T', 'B', 'O', 'X', 0];
+enum DWORD lbxStyle = WS_VISIBLE | WS_CHILD | WS_BORDER  | LBS_NOTIFY | LBS_HASSTRINGS;
 
-int lbxNumber = 1;
-private wchar[] mClassName = ['L', 'I', 'S', 'T', 'B', 'O', 'X', 0];
+class ListBox: Control {
 
-class ListBox : Control {
-
-    this(Window parent, int x, int y, int w, int h, bool autoc = false)
+    this(Form parent, int x, int y, int w, int h, bool autoc = false)
     {
         mixin(repeatingCode);
+        ++lbxNumber;
         mControlType = ControlType.listBox;
-        mStyle = WS_VISIBLE | WS_CHILD | WS_BORDER  | LBS_NOTIFY | LBS_HASSTRINGS;
+        mStyle = lbxStyle;
         mExStyle = 0;
         mBackColor(defBackColor);
         mForeColor(defForeColor);
@@ -26,12 +26,11 @@ class ListBox : Control {
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        ++lbxNumber;
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this(Window parent) { this(parent, 20, 20, 180, 200); }
-    this(Window parent, int x, int y, bool autoc = false) { this(parent, x, y, 180, 200, autoc);}
+    this(Form parent) { this(parent, 20, 20, 180, 200); }
+    this(Form parent, int x, int y, bool autoc = false) { this(parent, x, y, 180, 200, autoc);}
 
 
     mixin finalProperty!("hasHScroll", this.mUseHscroll);
@@ -223,7 +222,7 @@ class ListBox : Control {
     EventHandler onSelectionChanged;
 
 
-    private :
+    private:
         bool mHasSort;
         bool mNoSel;
         bool mMultiCol;
@@ -235,7 +234,7 @@ class ListBox : Control {
         string[] mItems;
         int mDummyIndex = -1;
         int mSelIndex = -1;
-        HBRUSH mBkBrush;
+        static int lbxNumber;
 
         // Setting list box styles as per user's choice.
         void setLboxStyles()
@@ -268,10 +267,9 @@ class ListBox : Control {
         }
 
         void finalize(UINT_PTR scID)
-        { // private
+        { 
             DeleteObject(this.mBkBrush);
             RemoveWindowSubclass(this.mHandle, &lbxWndProc, scID);
-            // this.remSubClass(scID);
         }
 
 } // End of ListBox class
@@ -281,22 +279,45 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        ListBox lbx = getControl!ListBox(refData);
-       // printWinMsg(message);
         switch (message) {
-            case WM_DESTROY : lbx.finalize(scID); break;
-            case WM_PAINT : lbx.paintHandler(); break;
-            case WM_LBUTTONDOWN : lbx.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : lbx.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : lbx.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : lbx.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : lbx.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : lbx.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : lbx.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : lbx.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE : lbx.mouseLeaveHandler(); break;
-
-            case CM_COLOR_EDIT :
+            case WM_DESTROY: 
+                ListBox lbx = getControl!ListBox(refData);
+                lbx.finalize(scID); 
+            break;
+            case WM_PAINT: 
+                ListBox lbx = getControl!ListBox(refData);
+                lbx.paintHandler(); 
+            break;
+            case WM_LBUTTONDOWN: 
+                ListBox lbx = getControl!ListBox(refData);
+                lbx.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP: 
+                ListBox lbx = getControl!ListBox(refData);
+                lbx.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN: 
+                ListBox lbx = getControl!ListBox(refData);
+                lbx.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP: 
+                ListBox lbx = getControl!ListBox(refData);
+                lbx.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL: 
+                ListBox lbx = getControl!ListBox(refData);
+                lbx.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE: 
+                ListBox lbx = getControl!ListBox(refData);
+                lbx.mouseMoveHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSELEAVE: 
+                ListBox lbx = getControl!ListBox(refData);
+                lbx.mouseLeaveHandler(); 
+            break;
+            case CM_COLOR_EDIT:
+                ListBox lbx = getControl!ListBox(refData);
                 if (lbx.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     SetBkMode(hdc, TRANSPARENT);
@@ -306,59 +327,38 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     return cast(LRESULT) lbx.mBkBrush;
                 }
             break;
-
-            case CM_CTLCOMMAND :
+            case CM_CTLCOMMAND:
+                ListBox lbx = getControl!ListBox(refData);
                 auto nCode = HIWORD(wParam);
                 switch (nCode) {
-                    case LBN_DBLCLK :
+                    case LBN_DBLCLK:
                         if (lbx.onDoubleClick) lbx.onDoubleClick(lbx, new EventArgs());
                     break;
-
-                    case LBN_KILLFOCUS :
+                    case LBN_KILLFOCUS:
                         if (lbx.onLostFocus) lbx.onLostFocus(lbx, new EventArgs());
                     break;
-
-                    case LBN_SELCHANGE :
+                    case LBN_SELCHANGE:
                         if (!lbx.mMultiSel) {
                             auto selIndx = lbx.sendMsg(LB_GETCURSEL, 0, 0);
                             if (selIndx != LB_ERR) {
                                 lbx.mSelIndex = cast(int) selIndx;
-                                if (lbx.onSelectionChanged) {
-                                    auto ea = new EventArgs();
-                                    lbx.onSelectionChanged(lbx, ea);
-                                }
+                                if (lbx.onSelectionChanged) 
+                                    lbx.onSelectionChanged(lbx, new EventArgs());
                             }
                         }
                     break;
-
-                    case LBN_SETFOCUS :
+                    case LBN_SETFOCUS:
                         if (lbx.onGotFocus) lbx.onGotFocus(lbx, new EventArgs());
                     break;
-
-                    case LBN_SELCANCEL :
-                        break;
-                    case LBN_ERRSPACE :
-                        //print("ERR SPACE");break;
-
-                    default : break;
+                    // case LBN_SELCANCEL: break;
+                    // case LBN_ERRSPACE: break;
+                    default: break;
                 }
             break;
-
-            // case CM_WIN_THREAD_MSG:
-
-            //     // writeln("counter ");
-            //     // stdout.flush();
-            //     int en = cast(int)lParam;
-            //     auto cp = cast(char*)wParam;
-            //     auto st = cp[0..en];
-            //     // writefln("wnd proc: %s", st);
-            //     lbx.addItem(cast(string)st);
-            //     // stdout.flush();
-            //     break;
-
-            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
+            default: 
+                return DefSubclassProc(hWnd, message, wParam, lParam); 
+            break;
         }
-
     }
     catch (Exception e) {}
     return DefSubclassProc(hWnd, message, wParam, lParam);

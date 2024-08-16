@@ -10,16 +10,17 @@ import std.algorithm.mutation; // We have a function called 'remove'. So this mu
 import wings.wings_essentials;
 
 
-private int cmbNumber = 1;
+// private int cmbNumber = 1;
 private int editSubClsID = 4000;
 /**
- * ComboBox : Control
+ * ComboBox: Control
  */
-class ComboBox : Control
+class ComboBox: Control
 {
-    this(Window parent, int x, int y, int w, int h, bool autoc = false)
+    this(Form parent, int x, int y, int w, int h, bool autoc = false)
     {
         mixin(repeatingCode);
+        ++cmbNumber;
         mControlType = ControlType.comboBox;
         mStyle = WS_CHILD | WS_VISIBLE;
         mExStyle = WS_EX_CLIENTEDGE;
@@ -29,13 +30,12 @@ class ComboBox : Control
         this.mName = format("%s_%d", "ComboBox_", cmbNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
-        ++Control.stCtlId;
-        ++cmbNumber;
-        if (autoc) this.createHandle();
+        ++Control.stCtlId;        
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this(Window parent, bool autoc = false) { this(parent, 20, 20, 150, 30, autoc); }
-    this (Window parent, int x, int y, bool autoc = false) { this(parent, x, y, 150, 30, autoc); }
+    this(Form parent, bool autoc = false) { this(parent, 20, 20, 150, 30, autoc); }
+    this (Form parent, int x, int y, bool autoc = false) { this(parent, x, y, 150, 30, autoc); }
 
     /// Returns the items collection of ComboBox
 	final string[] items() {return this.mItems;}
@@ -68,27 +68,37 @@ class ComboBox : Control
         return result;
     }
 
-    /// Set the drop down style of ComboBox.
-    final void dropDownStyle(DropDownStyle value) // Two values - textCombo, labelCombo
+    /// Set the drop down style of ComboBox. Possible values(textCombo, labelCombo)
+    final void dropDownStyle(DropDownStyle value) 
     {
-        /* There is no other way to change the dropdown style of an existing combo box.
-         * We need to delete the old combo and create a new one.
-         * Then make it look like the old combo. So this function will do that */
+        /*----------------------------------------------------------------------- 
+        There is no other way to change the dropdown style of an existing combo box.
+        We need to destroy the old combo and create new one. Then make it look like 
+        the old combo. So this function will do that 
+        --------------------------------------------------------------------------*/
         if (this.mIsCreated) {
             if (this.mCmbStyle == value) return;
             this.mSelIndex = cast(int) this.sendMsg(CB_GETCURSEL, 0, 0);
             this.mCmbStyle = value;
             this.mRecreateEnabled = true;
             DestroyWindow(this.mHandle);
+
+            // Revrting styles to default state. 
+            // So that we can start from clean state.
+            this.mStyle = WS_CHILD | WS_VISIBLE;
             this.createHandle();
         } else {
-            // No need to create a new one.
+            // No need to create new combobox.
             this.mCmbStyle = value;
         }
     }
 
     /// Get the drop down style of ComboBox.
-    final DropDownStyle dropDownStyle() {return this.mCmbStyle;} // Two values - textCombo, labelCombo
+    /// Possible values(textCombo, labelCombo)
+    final DropDownStyle dropDownStyle() 
+    {
+        return this.mCmbStyle;
+    } 
 
     /// Add an item into ComboBox's items collection.
     void addItem(T)(T value)
@@ -135,7 +145,7 @@ class ComboBox : Control
     /// Remove the given item from ComboBox's items collection.
     void removeItem(T)(T item)
     {
-        zstring cmbItem = item.toUTF16z;
+        auto cmbItem = item.toUTF16z; // Zstring ???
         string myItem = item.makeString();
         if (this.mItems.length > 0) {
             this.mItems = this.mItems.remove!(a => a == myItem);
@@ -181,16 +191,23 @@ class ComboBox : Control
     EventHandler onTextMouseClick, onTextRightClick;
 
 
-    /// Create the handle of ComboBox control.
+    /// Create the handle of ComboBox control. 
     override void createHandle()
     {
-        if (!this.mRecreateEnabled) this.ctlId = Control.stCtlId;
+        /*---------------------------------------------------------------- 
+        We are not using the base class function here.
+        Because, we sometimes need to create the hwnd for existing combo.
+        -------------------------------------------------------------------*/ 
+        if (!this.mRecreateEnabled) {
+            this.ctlId = Control.stCtlId;
+            this.mBkBrush = this.mBackColor.getBrush();
+        }
         if (this.mCmbStyle == DropDownStyle.labelCombo) {
             this.mStyle |= CBS_DROPDOWNLIST;
         } else {
             this.mStyle |= CBS_DROPDOWN;
         }
-        this.mBkBrush = this.mBackColor.getBrush();
+        
         this.mHandle = CreateWindowEx(  this.mExStyle,
                                         this.mClassName.ptr,
                                         this.mText.toUTF16z,
@@ -217,7 +234,7 @@ class ComboBox : Control
     }
 
 
-	private :
+	private:
     // Variables
 		DropDownStyle mCmbStyle;
 		string[] mItems;
@@ -226,16 +243,16 @@ class ComboBox : Control
         int ctlId;
 		bool mRecreateEnabled;
         bool tbMLDownHappened, tbMRDownHappened;
-		HBRUSH mBkBrush;
 		HWND mOldHwnd;
         static wchar[] mClassName = ['C', 'o', 'm', 'b', 'o', 'B', 'o', 'x', 0];
+        static int cmbNumber;
         //ComboInfo myInfo;
     // End of private vars
 
 
         // Get and save the internal info of a ComboBox.
-		void getComboInfo()
-        { // Private
+		void getComboInfo() // Private
+        { 
 			COMBOBOXINFO cmbInfo;
 			cmbInfo.cbSize = cmbInfo.sizeof;
 			this.sendMsg(CB_GETCOMBOBOXINFO, 0, &cmbInfo);
@@ -248,8 +265,8 @@ class ComboBox : Control
 		}
 
         // Internal function to insert items to ComboBox.
-        void insertItems()
-        { // Private
+        void insertItems() // Private
+        { 
             if (this.mItems.length > 0 ) {
                 foreach (item; this.mItems) {
                     auto witem = toUTF16z(item);
@@ -258,36 +275,22 @@ class ComboBox : Control
             }
         }
 
-        int isInComboRect(HWND hw)
-        { // Private
+        int isInComboRect(HWND hw) // Private
+        { 
             RECT rc;
             GetWindowRect(hw, &rc);
             auto pts = getMousePoints();
             return PtInRect(&rc, pts);
         }
 
-        void finalize(UINT_PTR scID)
-        { // Private
-    		DeleteObject(this.mBkBrush);
-            // We need to remove the subclassing of the edit control.
-           RemoveWindowSubclass(this.mHandle, &cmbWndProc, scID);
+        void finalize(UINT_PTR scID) // Private
+        { 
+            if (!this.mRecreateEnabled) DeleteObject(this.mBkBrush);
+            RemoveWindowSubclass(this.mHandle, &cmbWndProc, scID);
+            // print("Combo finalizer worked");
     	}
 
-        //void pCinfo(const ref ComboInfo c) {
-        //    import std.stdio : writefln;
-        //    writefln("List handle - %s", c.lbHwnd);
-        //    writefln("Edit handle - %s", c.tbHwnd);
-        //    writefln("Combo handle - %s", this.mHandle);
-        //    writefln("End------------------------");
-        //}
-
-
-
 } // End class ComboBox...........................................
-
-
-
-
 
 
 
@@ -296,28 +299,52 @@ extern(Windows)
 private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try {
-        ComboBox cmb = getControl!ComboBox(refData);
+    try {        
         //print("ComboBox Messages", message);
         switch (message) {
-            case WM_DESTROY : cmb.finalize(scID); break;
-            case WM_PAINT: cmb.paintHandler(); break;
-            case WM_LBUTTONUP : cmb.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : cmb.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : cmb.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : cmb.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : cmb.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : cmb.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : cmb.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE :
-                // Here, we need to do a trick. Actually, in a Combobox, when it's
-                // text input mode enabled, we get two mouse leave msg & two mouse move msg
-                // Because, combo's text area is an edit control. It is surrounded by the combo.
-                // So, when mouse enters the combo's rect, we get a mouse move msg.
-                // But when mouse enters into text box's rect, we get a mouse leave from
-                // combo and mouse move from textbox. So here we are checking the mouse is
-                // in combo's rect or not. If it is stil inside, we suppress the mouse leave
-                // and continue receiving the mouse move msgs from text are.
+            case WM_DESTROY: 
+                // print("Combo's main window proc destroyed");
+                ComboBox cmb = getControl!ComboBox(refData);
+                cmb.finalize(scID); 
+            break;
+            case WM_PAINT: 
+                ComboBox cmb = getControl!ComboBox(refData);
+                cmb.paintHandler(); 
+            break;
+            case WM_LBUTTONUP: 
+                ComboBox cmb = getControl!ComboBox(refData);
+                cmb.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN: 
+                ComboBox cmb = getControl!ComboBox(refData);
+                cmb.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP: 
+                ComboBox cmb = getControl!ComboBox(refData);
+                cmb.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL: 
+                ComboBox cmb = getControl!ComboBox(refData);
+                cmb.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE: 
+                ComboBox cmb = getControl!ComboBox(refData);
+                cmb.mouseMoveHandler(message, wParam, lParam); 
+            break;
+
+            case WM_MOUSELEAVE:
+                ComboBox cmb = getControl!ComboBox(refData);
+                /*-----------------------------------------------------------------
+                Here, we need to do a trick. Actually, in a Combobox, when the
+                text input mode enabled, we get two mouse leave msg & two mouse 
+                move msg. Because, combo's text area is an edit control. 
+                It is surrounded by the combo. So, when mouse enters the combo's 
+                rect, we get a mouse move msg. But when mouse enters into 
+                text box's rect, we get a mouse leave from combo and mouse move 
+                from textbox. So here we are checking the mouse is in combo's rect 
+                or not. If it is stil inside, we suppress the mouse leave
+                and continue receiving the mouse move msgs from text are.
+                -------------------------------------------------------------------*/
                 if (cmb.dropDownStyle == DropDownStyle.textCombo) {
                     if (cmb.isInComboRect(hWnd)) {
                         return 1;
@@ -329,7 +356,8 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 }
             break;
 
-            case WM_KEYDOWN :
+            case WM_KEYDOWN:
+                ComboBox cmb = getControl!ComboBox(refData);
                 // To get this message here, cmb's drop down style must be labelCombo.
                 if (cmb.onKeyDown) {
                     auto kea = new KeyEventArgs(wParam);
@@ -337,7 +365,8 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 }
             break;
 
-            case WM_KEYUP :
+            case WM_KEYUP:
+                ComboBox cmb = getControl!ComboBox(refData);
                 // To get this message here, cmb's drop down style must be labelCombo.
                 if (cmb.onKeyUp) {
                     auto kea = new KeyEventArgs(wParam);
@@ -345,11 +374,15 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 }
             break;
 
-            case CM_COLOR_CMB_LIST :
-                // We can change the colors of List area & text area of a combo. Here we are dealing with list area.
-                // NOTE : You can change colors OF both text & list only when DropDownStyle = textCombo.
-                // NOTE : In labelCombo mode, if you change the color, it won't be affect in text area.
-                // Only change the color if user wants to be.
+            case CM_COLOR_CMB_LIST:
+                ComboBox cmb = getControl!ComboBox(refData);
+                /*---------------------------------------------------------------
+                We can change the colors of List area & text area of a combo. 
+                Here we are dealing with list area. NOTE: You can change 
+                colors of both text & list only when DropDownStyle = textCombo.
+                NOTE: In labelCombo mode, if you change the color, it won't 
+                affect in text area. Only change the color if user wants to be.
+                ------------------------------------------------------------------*/
                 if (cmb.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     SetBkMode(hdc, TRANSPARENT);
@@ -360,89 +393,93 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 return cast(LRESULT)cmb.mBkBrush;
             break;
 
-            case CM_CTLCOMMAND :
+            case CM_CTLCOMMAND:
+                ComboBox cmb = getControl!ComboBox(refData);
                 auto nCode = HIWORD(wParam);
                 switch (nCode) {
-                    case CBN_SELCHANGE :
+                    case CBN_SELCHANGE:
                         if (cmb.onSelectionChanged) cmb.onSelectionChanged(cmb, new EventArgs());
                     break;
 
-                    case CBN_SETFOCUS :
+                    case CBN_SETFOCUS:
                         if (cmb.onGotFocus) cmb.onGotFocus(cmb, new EventArgs());
                     break;
 
-                    case CBN_KILLFOCUS :
+                    case CBN_KILLFOCUS:
                         if (cmb.onLostFocus) cmb.onLostFocus(cmb, new EventArgs());
                     break;
 
-                    case CBN_EDITCHANGE :
+                    case CBN_EDITCHANGE:
                         if (cmb.onTextChanged) cmb.onTextChanged(cmb, new EventArgs());
                     break;
 
-                    case CBN_EDITUPDATE :
+                    case CBN_EDITUPDATE:
                         if (cmb.onTextUpdated) cmb.onTextUpdated(cmb, new EventArgs());
                     break;
 
-                    case CBN_DROPDOWN :
+                    case CBN_DROPDOWN:
                         if (cmb.onListOpened) cmb.onListOpened(cmb, new EventArgs());
                     break;
 
-                    case CBN_CLOSEUP :
+                    case CBN_CLOSEUP:
                         if (cmb.onListClosed) cmb.onListClosed(cmb, new EventArgs());
                     break;
 
-                    case CBN_SELENDOK :
+                    case CBN_SELENDOK:
                         if (cmb.onSelectionCommitted) cmb.onSelectionCommitted(cmb, new EventArgs());
                     break;
 
-                    case CBN_SELENDCANCEL :
+                    case CBN_SELENDCANCEL:
                         if (cmb.onSelectionCancelled) cmb.onSelectionCancelled(cmb, new EventArgs());
                     break;
 
-                    default : break;
+                    default: break;
                 }
             break;
-
-            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
+            default: 
+                return DefSubclassProc(hWnd, message, wParam, lParam); 
+            break;
         }
     }
     catch (Exception e) {}
     return DefSubclassProc(hWnd, message, wParam, lParam);
 }
 
-/*
-    We are using second Wndproc function to handle the text box operations...
-    of a combo box in textCombo drop down style. Because otherwise, we cannot implement...
-    a key down or key up message in this style. The one and only caveat of this...
-    approach is, we need to take extra care in the mouse enter & mouse leave messages.
-    In textCombo mode, we need to check the mouse pointer is inside the combo's rect.
-*/
+/*========================================================================================
+We are using special Wndproc function to handle the text box operations...
+of a combo box in 'textCombo' drop down style. Because otherwise, we cannot implement...
+a key down or key up message handler in textCombo style. The only caveat of this...
+approach is, we need to take extra care on the mouse enter & mouse leave messages.
+In textCombo mode, we need to check the mouse pointer is inside the combo's rect.
+==========================================================================================*/
 extern(Windows)
 private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                     UINT_PTR scID, DWORD_PTR refData)
 { // @suppress(dscanner.style.long_line)
     try {
-        ComboBox cmb = getControl!ComboBox(refData);
-        //print("ComboBox Messages", message);
         switch (message) {
-            case WM_DESTROY: RemoveWindowSubclass(hWnd, &cmbEditWndProc, scID); break;
+            case WM_DESTROY: 
+                // print("Combo Edit window proc destroyed");
+                RemoveWindowSubclass(hWnd, &cmbEditWndProc, scID); 
+            break;
             case WM_KEYDOWN:
+                ComboBox cmb = getControl!ComboBox(refData);
                 if (cmb.onTextKeyDown) {
                     auto kea = new KeyEventArgs(wParam);
                     cmb.onTextKeyDown(cmb, kea);
                 }
             break;
-
-            case WM_KEYUP :
+            case WM_KEYUP:
+                ComboBox cmb = getControl!ComboBox(refData);
                 if (cmb.onTextKeyUp) {
                     auto kea = new KeyEventArgs(wParam);
                     cmb.onTextKeyUp(cmb, kea);
                 }
             break;
-
-            case WM_LBUTTONDOWN :
+            case WM_LBUTTONDOWN:
+                ComboBox cmb = getControl!ComboBox(refData);
                 if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    cmb.tbMLDownHappened = true;
+                    // cmb.tbMLDownHappened = true;
                     if (cmb.onTextMouseDown) {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
                        cmb.onTextMouseDown(cmb, mea);
@@ -450,30 +487,19 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                     }
                 }
             break;
-
-            case WM_LBUTTONUP :
+            case WM_LBUTTONUP:
+                ComboBox cmb = getControl!ComboBox(refData);
                 if (cmb.dropDownStyle == DropDownStyle.textCombo) {
                     if (cmb.onTextMouseUp) {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
                        cmb.onTextMouseUp(cmb, mea);
                     }
                 }
-                if (cmb.tbMLDownHappened) {
-                    cmb.tbMLDownHappened = false;
-                    sendMsg(cmb.mHandle, CM_LEFTCLICK, 0, 0);
-                }
+                if (cmb.onTextMouseClick) cmb.onTextMouseClick(cmb, new EventArgs());                
             break;
-
-            case CM_LEFTCLICK :
-                if (cmb.onTextMouseClick) {
-                    auto ea = new EventArgs();
-                    cmb.onMouseClick(cmb, ea);
-                }
-            break;
-
-            case WM_RBUTTONDOWN :
+            case WM_RBUTTONDOWN:
+                ComboBox cmb = getControl!ComboBox(refData);
                 if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    cmb.tbMRDownHappened = true;
                     if (cmb.onTextRightDown) {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
                        cmb.onTextRightDown(cmb, mea);
@@ -481,28 +507,18 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                     }
                 }
             break;
-
-            case WM_RBUTTONUP :
+            case WM_RBUTTONUP:
+                ComboBox cmb = getControl!ComboBox(refData);
                 if (cmb.dropDownStyle == DropDownStyle.textCombo) {
                     if (cmb.onTextRightUp) {
                        auto mea = new MouseEventArgs(message, wParam, lParam);
                        cmb.onTextRightUp(cmb, mea);
                     }
                 }
-                if (cmb.tbMRDownHappened) {
-                    cmb.tbMRDownHappened = false;
-                    sendMsg(cmb.mHandle, CM_RIGHTCLICK, 0, 0);
-                }
+                if (cmb.onTextRightClick) cmb.onTextRightClick(cmb, new EventArgs()); 
             break;
-
-            case CM_RIGHTCLICK :
-                if (cmb.onTextRightClick) {
-                    auto ea = new EventArgs();
-                    cmb.onTextRightClick(cmb, ea);
-                }
-            break;
-
             case CM_COLOR_EDIT:
+                ComboBox cmb = getControl!ComboBox(refData);
                 // Here, we receive color changing message for text box of combo.
                 // NOTE: this is only work for text typing combo box.
                 if (cmb.mDrawFlag) {
@@ -513,12 +529,13 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                 }
                 return cast(LRESULT) cmb.mBkBrush;
             break;
-
             case WM_MOUSEMOVE:
+                ComboBox cmb = getControl!ComboBox(refData);
                 cmb.mouseMoveHandler(message, wParam, lParam);
             break;
-
-            default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
+            default: 
+                return DefSubclassProc(hWnd, message, wParam, lParam); 
+            break;
         }
     }
     catch (Exception e) {}

@@ -1,12 +1,12 @@
 module wings;
 
-
+private import wings.application;
 public import wings.controls;
 public import wings.events;
-public import wings.window;
+public import wings.form;
 public import wings.commons;
 public import wings.contextmenu;
-
+public import wings.messagebox;
 public import wings.enums;
 public import wings.buttons;
 public import wings.fonts;
@@ -27,6 +27,7 @@ public import wings.textbox;
 public import wings.trackbar;
 public import wings.treeview;
 public import wings.dialogs;
+public import wings.timer;
 
 
 

@@ -3,19 +3,19 @@ module wings.treeview; // Created on 27-July-2022 02:25 PM
 import wings.d_essentials;
 import wings.wings_essentials;
 
-private int tvNumber = 1;
-private DWORD tvStyle = WS_BORDER | WS_CHILD | WS_VISIBLE | TVS_HASLINES | TVS_HASBUTTONS |
+enum DWORD tvStyle = WS_BORDER | WS_CHILD | WS_VISIBLE | TVS_HASLINES | TVS_HASBUTTONS |
                         TVS_LINESATROOT | TVS_DISABLEDRAGDROP;
 
 alias TreeNodeNotifyHandler = void delegate(TreeNode node, string prop, void* data);
 private wchar[] mClassName = ['S','y','s','T','r','e','e','V','i','e','w','3','2', 0];
 
-class TreeView : Control
+class TreeView: Control
 {
 
-    this (Window parent, int x, int y, int w, int h, bool autoc = false)
+    this (Form parent, int x, int y, int w, int h, bool autoc = false)
     {
         mixin(repeatingCode);
+        ++tvNumber;
         mControlType = ControlType.treeView;
         mStyle = tvStyle;
         mExStyle = 0;// | WS_EX_LEFT;
@@ -26,12 +26,11 @@ class TreeView : Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        ++tvNumber;
-        if (autoc) this.createHandle();
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this (Window parent, int x, int y, bool autoc = false) {this(parent, x, y, 250, 200, autoc);}
-   // this (Window parent, int x, int y) {this(parent, x, y, 250, 200);}
+    this (Form parent, int x, int y, bool autoc = false) {this(parent, x, y, 250, 200, autoc);}
+   // this (Form parent, int x, int y) {this(parent, x, y, 250, 200);}
 
     override void createHandle()
     {
@@ -77,11 +76,11 @@ class TreeView : Control
         bool mShowSel;
         bool mHotTrack;
         Color mLineClr;
-
         TreeNode mSelNode;
         TreeNode[] mNodes;
         int mNodeCount;
         int mUniqNodeID;
+        static int tvNumber;
 
         void setTvStyle()
         {
@@ -131,13 +130,13 @@ class TreeView : Control
             switch(nop) {
                 case NodeOps.addNode:
                     tis.hParent = TVI_ROOT;
-                    tis.hInsertAfter = this.mNodeCount > 0 ? this.mNodes[this.mNodeCount - 1].mHandle : TVI_FIRST;
+                    tis.hInsertAfter = this.mNodeCount > 0 ? this.mNodes[this.mNodeCount - 1].mHandle: TVI_FIRST;
                     isRootNode = true;
                 break;
 
                 case NodeOps.insertNode:
                     tis.hParent = TVI_ROOT;
-                    tis.hInsertAfter = pos == 0 ? TVI_FIRST : this.mNodes[pos - 1].mHandle;
+                    tis.hInsertAfter = pos == 0 ? TVI_FIRST: this.mNodes[pos - 1].mHandle;
                     isRootNode = true;
                     errMsg = "Can't Insert";
                 break;
@@ -149,7 +148,7 @@ class TreeView : Control
                 break;
                 case NodeOps.insertChild:
                     tis.hParent = pnode.mHandle;
-                    tis.hInsertAfter = pos == 0 ? TVI_FIRST : pnode.mNodes[pos - 1].mHandle;
+                    tis.hInsertAfter = pos == 0 ? TVI_FIRST: pnode.mNodes[pos - 1].mHandle;
                     node.mParentNode = &pnode;
                     errMsg = "Can't Insert Child";
                 break;
@@ -239,26 +238,52 @@ private LRESULT tvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        TreeView tv = getControl!TreeView(refData);
         switch (message) {
-            case WM_DESTROY : RemoveWindowSubclass(hWnd, &tvWndProc, scID); break;
-
-            case WM_PAINT : tv.paintHandler(); break;
-            case WM_SETFOCUS : tv.setFocusHandler(); break;
-            case WM_KILLFOCUS : tv.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : tv.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : tv.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : tv.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : tv.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : tv.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : tv.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : tv.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : tv.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE : tv.mouseLeaveHandler(); break;
-
-            default : return DefSubclassProc(hWnd, message, wParam, lParam);
+            case WM_DESTROY: 
+                RemoveWindowSubclass(hWnd, &tvWndProc, scID); 
+            break;
+            case WM_PAINT: 
+                TreeView tv = getControl!TreeView(refData);
+                tv.paintHandler(); 
+            break;
+            case WM_SETFOCUS: 
+                TreeView tv = getControl!TreeView(refData);
+                tv.setFocusHandler(); 
+            break;
+            case WM_KILLFOCUS: 
+                TreeView tv = getControl!TreeView(refData);
+                tv.killFocusHandler(); 
+            break;
+            case WM_LBUTTONDOWN: 
+                TreeView tv = getControl!TreeView(refData);
+                tv.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP: 
+                TreeView tv = getControl!TreeView(refData);
+                tv.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN: 
+                TreeView tv = getControl!TreeView(refData);
+                tv.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP: 
+                TreeView tv = getControl!TreeView(refData);
+                tv.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL: 
+                TreeView tv = getControl!TreeView(refData);
+                tv.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE: 
+                TreeView tv = getControl!TreeView(refData);
+                tv.mouseMoveHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSELEAVE: 
+                TreeView tv = getControl!TreeView(refData);
+                tv.mouseLeaveHandler(); 
+            break;
+            default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }
-
     }
     catch (Exception e) {}
     return DefSubclassProc(hWnd, message, wParam, lParam);

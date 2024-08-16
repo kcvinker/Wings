@@ -1,22 +1,16 @@
 
-module wings.radiobutton; // Created on : 23-July-22 11:43:46 AM
-
+module wings.radiobutton; // Created on: 23-July-22 11:43:46 AM
 
 import wings.d_essentials;
 import wings.wings_essentials;
 import std.stdio;
 
-
-private int rbNumber = 1;
-private wchar[] mClassName = ['B','u','t','t','o','n', 0];
-/**
- * RadioButton : Control
- */
-class RadioButton : Control
+class RadioButton: Control
 {
-	this (Window parent, string txt, int x, int y, int w, int h, bool autoc = false, EventHandler checkFn = null)
+	this (Form parent, string txt, int x, int y, int w, int h, bool autoc = false, EventHandler checkFn = null)
     {
         mixin(repeatingCode);
+        ++rbNumber;
         mAutoSize = true;
         mControlType = ControlType.radioButton;
         mText = txt;
@@ -28,20 +22,20 @@ class RadioButton : Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        ++rbNumber;
-        if (checkFn) this.onMouseClick = checkFn;
-        if (autoc) this.createHandle();
+        if (checkFn) this.onClick = checkFn;
+        if (autoc || parent.mAutoCreate) this.createHandle();
     }
 
-    this (Window parent, string txt, int x, int y, bool autoc = false, EventHandler checkFn = null)
+    this (Form parent, string txt, int x, int y, bool autoc = false, EventHandler checkFn = null)
     {
         this(parent, txt, x, y, 0, 0, autoc, checkFn);
     }
 
     override void createHandle()
     {
+        import wings.buttons: btnClassName;
     	this.setRbStyle();
-    	this.createHandleInternal(mClassName.ptr);
+    	this.createHandleInternal(btnClassName.ptr);
     	if (this.mHandle) {
             this.setSubClass(&rbWndProc);
             this.setRbSize();
@@ -51,14 +45,13 @@ class RadioButton : Control
 
     EventHandler onStateChanged;
 
-
-    private :
+    private:
     bool mChecked;
 	bool mAutoSize;
 	bool mChkOnClk;
 	uint mTxtStyle;
-	HBRUSH mBkBrush;
     bool mRightAlign;
+    static int rbNumber;
 
     void setRbStyle()
     {
@@ -95,25 +88,27 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        RadioButton rb = getControl!RadioButton(refData);
         switch (message) {
-            case WM_DESTROY : rb.finalize(scID); break;
-            case CM_COLOR_STATIC :
+            case WM_DESTROY: 
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.finalize(scID); 
+            break;
+            case CM_COLOR_STATIC:
+                RadioButton rb = getControl!RadioButton(refData);
             	auto hdc = cast(HDC) wParam;
                 SetBkMode(hdc, TRANSPARENT);
                 return toLresult(CreateSolidBrush(rb.mBackColor.cref));
             break;
 
-            case CM_CTLCOMMAND :
+            case CM_CTLCOMMAND:
+                RadioButton rb = getControl!RadioButton(refData);
             	if (HIWORD(wParam) == 0) {
             		rb.mChecked = cast(bool) rb.sendMsg(BM_GETCHECK, 0, 0);
             		if (rb.onStateChanged) rb.onStateChanged(rb, new EventArgs());
             	}
             break;
-            //case WM_SETFONT :
-            //    print("WM_SETFONT rcvd"); break;
-
             case CM_NOTIFY:
+                RadioButton rb = getControl!RadioButton(refData);
                 auto nmcd = getNmcdPtr(lParam);
                 switch (nmcd.dwDrawStage) {
                     case CDDS_PREERASE:
@@ -129,23 +124,48 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     default: break;
                 }
             break;
-
-            case WM_PAINT : rb.paintHandler(); break;
-            case WM_SETFOCUS : rb.setFocusHandler(); break;
-            case WM_KILLFOCUS : rb.killFocusHandler(); break;
-            case WM_LBUTTONDOWN : rb.mouseDownHandler(message, wParam, lParam); break;
-            case WM_LBUTTONUP : rb.mouseUpHandler(message, wParam, lParam); break;
-            case CM_LEFTCLICK : rb.mouseClickHandler(); break;
-            case WM_RBUTTONDOWN : rb.mouseRDownHandler(message, wParam, lParam); break;
-            case WM_RBUTTONUP : rb.mouseRUpHandler(message, wParam, lParam); break;
-            case CM_RIGHTCLICK : rb.mouseRClickHandler(); break;
-            case WM_MOUSEWHEEL : rb.mouseWheelHandler(message, wParam, lParam); break;
-            case WM_MOUSEMOVE : rb.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE : rb.mouseLeaveHandler(); break;
-
-            default : return DefSubclassProc(hWnd, message, wParam, lParam);
+            case WM_PAINT: 
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.paintHandler(); 
+            break;
+            case WM_SETFOCUS: 
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.setFocusHandler(); 
+            break;
+            case WM_KILLFOCUS: 
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.killFocusHandler(); 
+            break;
+            case WM_LBUTTONDOWN: 
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.mouseDownHandler(message, wParam, lParam); 
+            break;
+            case WM_LBUTTONUP: 
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.mouseUpHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONDOWN: 
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.mouseRDownHandler(message, wParam, lParam); 
+            break;
+            case WM_RBUTTONUP: 
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.mouseRUpHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEWHEEL: 
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.mouseWheelHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSEMOVE: 
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.mouseMoveHandler(message, wParam, lParam); 
+            break;
+            case WM_MOUSELEAVE: 
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.mouseLeaveHandler(); 
+            break;
+            default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }
-
     }
     catch (Exception e) {}
     return DefSubclassProc(hWnd, message, wParam, lParam);

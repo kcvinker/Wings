@@ -1,5 +1,5 @@
 module wings.commons;
-pragma(lib, "UxTheme.lib");
+
 import std.stdio;
 import std.conv;
 import std.utf;
@@ -37,35 +37,7 @@ package {
     alias intArray = int[];
     alias wsArray = wstring[];
 
-    class ApplicationData
-    {
-        HWND mainWinHandle;
-        bool isMainLoopOn;
-        bool isDtpInit;
-        wstring className;
-        static HINSTANCE hInstance;
-        int screenWidth;
-        int screenHeight;
-        int windowCount;
-        Color appColor;
-        //WindowState winState;
-        Font mainFont;
-        INITCOMMONCONTROLSEX iccEx;
-
-        this(string fontName, int fontSize, FontWeight fw = FontWeight.normal)
-        {
-            this.className = "Wing_window";
-            this.mainFont = new Font(fontName, fontSize, fw);
-            this.appColor = Color(gBkColor);
-            this.hInstance = GetModuleHandleW(null);
-            this.screenWidth = GetSystemMetrics(0);
-            this.screenHeight = GetSystemMetrics(1);
-            this.iccEx.dwSize = INITCOMMONCONTROLSEX.sizeof;
-            this.iccEx.dwICC = ICC_STANDARD_CLASSES;
-            InitCommonControlsEx(&this.iccEx);
-
-        }
-    }
+    
 
     union StringOrInt
     {
@@ -93,7 +65,7 @@ package {
     }
 
 
-    ApplicationData appData;
+    
     //alias Wstring = const(wchar)*;
     enum uint defBackColor = 0xFFFFFF;
     enum uint defForeColor = 0x000000;
@@ -106,7 +78,7 @@ package {
     // to remove sub classing.
     //struct SubClassData {SUBCLASSPROC fnPtr; int clsId;}
 
-    // Window & Button are the control which supports gradient back colors.
+    // Form & Button are the control which supports gradient back colors.
     // So this struct will be helpful to store the required info.
     struct GradientColor
     {
@@ -228,11 +200,6 @@ package {
 } // End of package block
 
 
-wstring com_ttl = "Wing Message";
-void msgBox(wstring value) {MessageBoxW(null, value.ptr, com_ttl.ptr, 0 );}
-void msgBox1(wstring value) {MessageBoxW(null, value.ptr, com_ttl.ptr, 0 );}
-void msgBox(string value) {MessageBoxW(null, value.toUTF16z, com_ttl.ptr, 0 );}
-void msgBox(string value, string title, HWND hwnd = null) {MessageBoxW(hwnd, value.toUTF16z, title.toUTF16z, 0 );}
 
 HWND getActiveWindow() {return GetActiveWindow();}
 void setActiveWindow(HWND wind) {SetForegroundWindow(wind);}

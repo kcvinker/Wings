@@ -7,11 +7,12 @@ import std.utf;
 import core.sys.windows.commctrl;
 import std.conv;
 
+import wings.application: appData;
 import wings.fonts;
 import wings.events;
 import wings.enums;
 import wings.commons;
-import wings.window;
+import wings.form;
 import wings.colors;
 import wings.contextmenu;
 
@@ -36,7 +37,7 @@ class Control {
         void text(string value)
         {
             this.mText = value;
-            if (this.mIsCreated) {
+            if (this.mIsCreated && this.mTextable) {
                 SetWindowTextW(this.mHandle, this.mText.toUTF16z);
             }
         }
@@ -92,8 +93,6 @@ class Control {
                 SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, this.mWidth, this.mHeight, SWP_NOSIZE);
             }
         }
-
-
 
         int width() {return this.mWidth;}
         int height() {return this.mHeight;}
@@ -157,32 +156,33 @@ class Control {
 
         int right() 
         {
-            if (this.mIsCreated) {
-                return this.mRect.right;
-            } else {
-                return this.mXpos + this.mWidth;
-            }
+            // if (this.mIsCreated) {
+            //     return this.mRect.right;
+            // } else {
+            //     return this.mXpos + this.mWidth;
+            // }
+            return this.mIsCreated ? this.mRect.right : this.mXpos + this.mWidth;
             
         }
         int bottom() {return this.mRect.bottom;}
 
 
-        void printNotifs()
-        {
-            enum TRBN_FIRST = -1501U;
-            enum TRBN_THUMBPOSCHANGING = TRBN_FIRST-1;
-            writefln("NM_CUSTOMDRAW %d", TRBN_THUMBPOSCHANGING);
-            writefln("CDDS_ITEM %d", CDDS_ITEM);
-            writefln("MCN_LAST %d", CDDS_ITEM );
-            writefln("DTN_FIRST %d", DTN_FIRST);
-            writefln("DTN_DATETIMECHANGE %d", DTN_DATETIMECHANGE);
-        }
+        // void printNotifs()
+        // {
+        //     enum TRBN_FIRST = -1501U;
+        //     enum TRBN_THUMBPOSCHANGING = TRBN_FIRST-1;
+        //     writefln("NM_CUSTOMDRAW %d", TRBN_THUMBPOSCHANGING);
+        //     writefln("CDDS_ITEM %d", CDDS_ITEM);
+        //     writefln("MCN_LAST %d", CDDS_ITEM );
+        //     writefln("DTN_FIRST %d", DTN_FIRST);
+        //     writefln("DTN_DATETIMECHANGE %d", DTN_DATETIMECHANGE);
+        // }
 
         /// Returns true if control is created
         final bool isHandleCreated() {return this.mIsCreated;}
 
-        /// Returns the parent object(Window) of this control.
-        final Window parent() {return this.mParent;}
+        /// Returns the parent object(Form) of this control.
+        final Form parent() {return this.mParent;}
 
         final int rightX() {return this.mXpos + this.mWidth + 10;}
         final int downY() {return this.mYpos + this.mHeight + 10;}
@@ -241,7 +241,7 @@ class Control {
     //-------------------------------------------------------------------
 
     ///EventHandler onLeftDown;
-    EventHandler onMouseEnter, onMouseClick, onMouseLeave, onRightClick, onDoubleClick;
+    EventHandler onMouseEnter, onClick, onMouseLeave, onRightClick, onDoubleClick;
     MouseEventHandler onMouseWheel, onMouseHover, onMouseMove, onMouseDown, onMouseUp;
     MouseEventHandler onRightMouseDown, onRightMouseUp;
     KeyEventHandler onKeyDown, onKeyUp;
@@ -281,6 +281,7 @@ class Control {
         bool mIsCreated;
         bool mBaseFontChanged;
         bool mVisible = true;
+        bool mTextable;
 
 
 
@@ -306,10 +307,9 @@ class Control {
         Color mForeColor;
         uint mDrawFlag;
         RECT mRect;
-        // SUBCLASSPROC wndProcPtr;
         HWND mHandle;
         HBRUSH mBkBrush;
-        Window mParent;
+        Form mParent;
         ContextMenu mCmenu;
         static int mSubClassId = 1000;
         int mRight, mBottom;
@@ -338,7 +338,6 @@ class Control {
                 if (!this.mBaseFontChanged) this.mFont = this.mParent.font;
                 this.createLogFontInternal();
                 this.getRightAndBottom();
-
             }
         }
 
@@ -489,7 +488,6 @@ class Control {
 
             void mouseDownHandler(UINT msg, WPARAM wp, LPARAM lp)
             {
-                this.lDownHappened = true;
                 if (this.onMouseDown) {
                     auto mea = new MouseEventArgs(msg, wp, lp);
                     this.onMouseDown(this, mea);
@@ -502,20 +500,11 @@ class Control {
                     auto mea = new MouseEventArgs(msg, wp, lp);
                     this.onMouseUp(this, mea);
                 }
-                if (this.lDownHappened) {
-                    this.lDownHappened = false;
-                    this.sendMsg(CM_LEFTCLICK, 0, 0);
-                }
-            }
-
-            void mouseClickHandler()
-            {
-                if (this.onMouseClick) this.onMouseClick(this, new EventArgs());
+                if (this.onClick) this.onClick(this, new EventArgs());
             }
 
             void mouseRDownHandler(UINT msg, WPARAM wp, LPARAM lp)
             {
-                this.rDownHappened = true;
                 if (this.onRightMouseDown) {
                     auto mea = new MouseEventArgs(msg, wp, lp);
                     this.onRightMouseDown(this, mea);
@@ -528,16 +517,10 @@ class Control {
                     auto mea = new MouseEventArgs(msg, wp, lp);
                     this.onRightMouseUp(this, mea);
                 }
-                if (this.rDownHappened) {
-                    this.rDownHappened = false;
-                    this.sendMsg(CM_RIGHTCLICK, 0, 0);
-                }
-            }
-
-            void mouseRClickHandler()
-            {
                 if (this.onRightClick) this.onRightClick(this, new EventArgs());
             }
+
+            
 
             void mouseWheelHandler(UINT msg, WPARAM wp, LPARAM lp)
             {
