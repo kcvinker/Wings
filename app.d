@@ -1,5 +1,5 @@
 #!rdmd
-// import std.stdio;
+import std.stdio;
 import wings;
 
 // Since, Wings use delegates for event handling and D is an OOP language...
@@ -9,8 +9,7 @@ class App {
 	this() 
 	{
 		this.createControls();
-		this.setControlProps();
-		
+		this.setControlProps();		
 	}
 
 	void createControls()
@@ -18,6 +17,13 @@ class App {
 		// First of all, create the form aka window.
 		frm = new Form("Wing window in D Lang", 920, 500);
 		frm.createHandle();
+
+		// Let's create a tray icon for this program.
+		tic = new TrayIcon("Wings tray icon!", "wings_icon.ico");
+
+		// Now, add a context menu to our tray.
+		tic.addContextMenu(TrayMenuTrigger.rightClick, "Windows_ti", "Linux_ti", "MacOS_ti");
+
 
 		// If this set to true, all control handles will be
 		// created right after the class ctor finished.
@@ -78,6 +84,7 @@ class App {
 		btn1.onClick = &this.btn1OnClick;
 		btn2.backColor = 0x83c5be;
 		btn3.setGradientColors(0xeeef20, 0x70e000);
+		btn3.onClick = &this.btn3Click;
 		cmb.addRange("Form", "Button", "Calendar", "CheckBox", "ComboBox", "DateTimePicker", "GroupBox", 4500);
 		cmb.dropDownStyle = DropDownStyle.labelCombo;
 		cmb.selectedIndex = 4;
@@ -118,6 +125,12 @@ class App {
 		mb.menus["Windows"].addItems("Windows 8", "Windows 10", "Windows 11");
 		mb.menus["Linux"].addItems("Ubuntu", "Debian", "Kali");
 		mb.menus["MacOS"].addItems("Mavericks", "Catalina", "Big Sur");
+
+		// Add menu click event handler for tray icon context menu.
+		tic.contextMenu["Windows_ti"].onClick = &this.onContextMenuClick;
+
+		// Add handler for listview's context menu.
+		lv.contextMenu["Linux"].onClick = &this.onLVContextMenuClick;
 	}
 
 	void display() {this.frm.show();}
@@ -133,6 +146,20 @@ class App {
 	// ProgressBar will show the track bar values.
 	void onTrackValueChanged(Control c, EventArgs e) {
 		pgb.value = tkb1.value;
+	}
+
+	void onContextMenuClick(MenuItem m, EventArgs e) {
+		// delay(3000);
+		writeln("Windows menu clicked");
+	}
+
+	void onLVContextMenuClick(MenuItem m, EventArgs e) {
+		// delay(3000);
+		writeln("Linux menu clicked");
+	}
+
+	void btn3Click(Control c, EventArgs e) {
+		this.tic.showBalloon("Wings Balloon", "This is Wings Balloon Text", 3000);
 	}
 
 	private:
@@ -154,6 +181,7 @@ class App {
 		TrackBar tkb1, tkb2;
 		TreeView tv;
 		Timer tmr;	
+		TrayIcon tic;
 }
 
 

@@ -99,6 +99,8 @@ class MenuBar : MenuBase
 
     final MenuItem[string] menus() {return this.mMenus;}
 
+    
+
     package:
         bool mIsCreated;
         HBRUSH mMenuDefBgBrush;

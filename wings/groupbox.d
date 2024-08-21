@@ -149,6 +149,7 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 {
     try {
         switch (message) {
+            
             case WM_DESTROY: 
                 GroupBox gb = getControl!GroupBox(refData);
                 gb.finalize(scID); 

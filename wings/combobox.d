@@ -278,8 +278,9 @@ class ComboBox: Control
         int isInComboRect(HWND hw) // Private
         { 
             RECT rc;
+            POINT pts;
             GetWindowRect(hw, &rc);
-            auto pts = getMousePoints();
+            getMousePoints(pts);
             return PtInRect(&rc, pts);
         }
 

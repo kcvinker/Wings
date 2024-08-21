@@ -11,6 +11,8 @@ import wings.date_and_time;
 import wings.commons;
 import wings.menubar : MenuItem;
 import wings.form : Form;
+import wings.trayicon: TrayIcon;
+
 
 import std.stdio;
 
@@ -28,6 +30,7 @@ alias MenuEventHandler = void delegate(MenuItem sender, EventArgs e);
 alias ThreadMsgHandler = void delegate(WPARAM wpm, LPARAM lpm);
 alias TimerTickHandler = void delegate(Form win, EventArgs e);
 alias SampleHandler = void delegate(Control sender, EventArgs e);
+alias TrayIconEventHandler = void delegate(TrayIcon sender, EventArgs e);
 
 
 

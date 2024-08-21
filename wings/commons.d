@@ -97,7 +97,24 @@ package {
     auto getXFromLp(LPARAM lp) {return cast(int) cast(short) LOWORD(lp);}
     auto getYFromLp(LPARAM lp) {return cast(int) cast(short) HIWORD(lp);}
     auto getNmcdPtr(LPARAM lp) {return cast(NMCUSTOMDRAW*) lp;}
-    POINT getMousePos(LPARAM lpm) {return POINT(cast(int) (cast(short) LOWORD(lpm)), cast(int) (cast(short) HIWORD(lpm)));}
+
+    void getMousePos(ref POINT pt, LPARAM lpm) 
+    {
+        if (lpm) {
+            pt.x = cast(int)(cast(short) LOWORD(lpm));
+            pt.y = cast(int)(cast(short) HIWORD(lpm));
+        } else {
+            GetCursorPos(&pt);
+        }
+    }
+
+    POINT getMousePos(LPARAM lpm) 
+    {
+        POINT pt;
+        pt.x = cast(int)(cast(short) LOWORD(lpm));
+        pt.y = cast(int)(cast(short) HIWORD(lpm));
+        return pt;
+    }
 
     enum trueLresult = cast(LRESULT) true;
     enum falseLresult = cast(LRESULT) false;
@@ -180,20 +197,24 @@ package {
     }
 
     // Message Constants - Wing's own messages
-        enum uint CM_LEFTCLICK = 9000;
-        enum uint CM_RIGHTCLICK = 9001;
-        enum uint CM_NOTIFY = 9002;
-        enum uint CM_CTLCOMMAND = 9003;
-        enum uint CM_COLOR_EDIT = 9004;
-        enum uint CM_COLOR_STATIC = 9005;
-        enum uint CM_COLOR_CMB_LIST = 9006;
-        enum uint CM_COMBOTBCOLOR = 9007;
-        enum uint CM_TBTXTCHANGED = 9008;
-        enum uint CM_HSCROLL = 9009;
-        enum uint CM_VSCROLL = 9010;
-        enum uint CM_BUDDY_RESIZE = 9011;
-        enum uint CM_MENU_ADDED = 9012;
-        enum uint CM_WIN_THREAD_MSG = WM_USER + 5;
+        enum uint MSG_BASE = WM_USER + 1;
+        enum uint CM_LEFTCLICK = MSG_BASE;
+        enum uint CM_RIGHTCLICK = MSG_BASE + 1;
+        enum uint CM_NOTIFY = MSG_BASE + 2;
+        enum uint CM_CTLCOMMAND = MSG_BASE + 3;
+        enum uint CM_COLOR_EDIT = MSG_BASE + 4;
+        enum uint CM_COLOR_STATIC = MSG_BASE + 5;
+        enum uint CM_COLOR_CMB_LIST = MSG_BASE + 6;
+        enum uint CM_COMBOTBCOLOR = MSG_BASE + 7;
+        enum uint CM_TBTXTCHANGED = MSG_BASE + 8;
+        enum uint CM_HSCROLL = MSG_BASE + 9;
+        enum uint CM_VSCROLL = MSG_BASE + 10;
+        enum uint CM_BUDDY_RESIZE = MSG_BASE + 11;
+        enum uint CM_MENU_ADDED = MSG_BASE + 12;
+        enum uint CM_WIN_THREAD_MSG = MSG_BASE + 13;
+        enum uint CM_TRAY_MSG = MSG_BASE + 14;
+        enum uint CM_CMENU_DESTROY = MSG_BASE + 15;
+
 
 
 
@@ -205,14 +226,15 @@ package {
 HWND getActiveWindow() {return GetActiveWindow();}
 void setActiveWindow(HWND wind) {SetForegroundWindow(wind);}
 
+void delay(int msv) {Sleep(msv);}
 
 
-POINT getMousePoints()
+// Get mouse pos from current message and fill it in a POINT struct.
+void getMousePoints(ref POINT pt)
 {
     auto value = GetMessagePos();
-    auto x = cast(int) (cast(short) LOWORD(value));
-    auto y = cast(int) (cast(short) HIWORD(value));
-    return POINT(x, y);
+    pt.x = cast(int) (cast(short) LOWORD(value));
+    pt.y = cast(int) (cast(short) HIWORD(value));
 }
 
 string getCurrentExeFullName()

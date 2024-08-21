@@ -28,6 +28,7 @@ public import wings.trackbar;
 public import wings.treeview;
 public import wings.dialogs;
 public import wings.timer;
+public import wings.trayicon;     
 
 
 

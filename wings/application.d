@@ -91,7 +91,7 @@ class ApplicationData
         wcEx.lpszMenuName  = null;
         wcEx.lpszClassName = this.className.ptr;
         auto x = RegisterClassExW(&wcEx);
-        writefln("window register result %d", x);
+        // writefln("window register result %d", x);
     }
 
     void registerMsgOnlyWindow(LPCWSTR clsName, WNDPROC pFunc)
@@ -101,7 +101,7 @@ class ApplicationData
         wc.hInstance     = this.hInstance;
         wc.lpszClassName = clsName;
         auto x = RegisterClassExW(&wc);
-        writefln("Message Only window register result %d", x);
+        // writefln("Message Only window register result %d", x);
     }
 
     void prepareAppIcon()
@@ -116,22 +116,25 @@ class ApplicationData
         this.appIcon = LoadImageW(null, icopath.toUTF16z(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
     }
 
-    void finaize()
+    void finalize()
     {
         DestroyIcon(appData.appIcon);
-        writeln("App Icon destroyed in appdata finalize");
+        if (this.trayHwnd) DestroyWindow(this.trayHwnd);
+        // writeln("App Icon destroyed in appdata finalize");
     }
 
     void mainLoop()
     {
+        import wings.commons: CM_CMENU_DESTROY;
+        
         this.isMainLoopOn = true;
         MSG uMsg;
         while (GetMessage(&uMsg, null, 0, 0) != 0) {
             TranslateMessage(&uMsg);
             DispatchMessage(&uMsg);
         }
-        writeln("Main loop returned");
-        scope(exit) this.finaize();        
+        // writeln("Main loop returned");
+        scope(exit) this.finalize();        
     }
 
     //~this()
