@@ -7,7 +7,7 @@ import std.stdio;
 class MenuBase 
 {
     HMENU mHandle;
-	MenuItem[string] mMenus;
+	MenuItem[] mMenus;
 	Font mFont;
 	HWND mWinHwnd;
 	uint mMenuCount;
@@ -47,7 +47,7 @@ class MenuBar : MenuBase
         mi.mParentKind = ParentKind.mainMenu;
         mi.mBar = this;
         this.mMenuCount += 1;
-        this.mMenus[txt] = mi;
+        this.mMenus ~= mi;
         this.mWindow.mMenuItemDict[mi.mId] = mi;
 
     }
@@ -60,7 +60,7 @@ class MenuBar : MenuBase
             mi.mParentKind = ParentKind.mainMenu;
             mi.mBar = this;
             this.mMenuCount += 1;
-            this.mMenus[name] = mi;
+            this.mMenus ~= mi;
             this.mWindow.mMenuItemDict[mi.mId] = mi;
         }
     }
@@ -90,15 +90,24 @@ class MenuBar : MenuBase
         this.mMenuFrameBrush = makeHBRUSH(0x0077b6);
         if (this.mFont.mHandle == null) this.mFont.createFontHandle(this.mWindow.mHandle);
         if (this.mMenus.length > 0) {
-            foreach (string key; this.mMenus.byKey) this.mMenus[key].createHandle();
+            foreach (menu; this.mMenus) menu.createHandle();
         }
         SetMenu(this.mWindow.mHandle, this.mHandle);
         this.mWindow.mMenubarCreated = true;
         this.mIsCreated = true;
     }
 
-    final MenuItem[string] menus() {return this.mMenus;}
+    final MenuItem[] menus() {return this.mMenus;}
 
+    MenuItem opIndex(string name) 
+    { 
+        if (this.mMenus.length > 0) {
+            foreach (menu; this.mMenus) {
+                if (menu.mText == name) return menu;
+            }
+        }
+        return null;
+    }
     
 
     package:
@@ -128,7 +137,7 @@ class MenuItem : MenuBase
         this.mPopup = mtyp == MenuType.baseMenu || mtyp == MenuType.popumMenu;
         this.mHandle = this.mPopup ? CreatePopupMenu() : CreateMenu();
         this.mIndex = indexNum;
-        if (txt == "_") txt = format("sep_%d", this.mIndex);
+        if (txt == "|") txt = format("sep_%d", this.mIndex);
         this.mId = staticIdNum;
         this.mText = txt;
         this.mWideText = this.mText.toUTF16z();
@@ -152,7 +161,7 @@ class MenuItem : MenuBase
         mi.mParentKind = this.mParentKind;
         if (this.mType != MenuType.baseMenu) this.mType = MenuType.popumMenu;
         this.mMenuCount += 1;
-        this.mMenus[txt] = mi;
+        this.mMenus ~= mi;
         if (this.mParentKind == ParentKind.mainMenu) {
             mi.mBar = this.mBar;
             this.mBar.mWindow.mMenuItemDict[mi.mId] = mi;
@@ -160,8 +169,8 @@ class MenuItem : MenuBase
         return mi;
     }
 
-    final void addItems(string[] menuNames ...) {
-
+    final void addItems(string[] menuNames ...) 
+    {
         if (this.mType == MenuType.normalMenu) {
             this.mHandle = CreatePopupMenu();
             this.mPopup = true;
@@ -173,7 +182,7 @@ class MenuItem : MenuBase
             auto mi = new MenuItem(name, mtyp, this.mHandle, this.mMenuCount);
             mi.mParentKind = this.mParentKind;
             this.mMenuCount += 1;
-            this.mMenus[name] = mi;
+            this.mMenus ~= mi;
             if (this.mParentKind == ParentKind.mainMenu) {
                 mi.mBar = this.mBar;
                 this.mBar.mWindow.mMenuItemDict[mi.mId] = mi;
@@ -193,7 +202,10 @@ class MenuItem : MenuBase
         switch (this.mType) {
             case MenuType.baseMenu, MenuType.popumMenu:
                 if (this.mMenus.length > 0) {
-                    foreach (string key; this.mMenus.byKey) this.mMenus[key].createHandle();
+                    foreach (menu; this.mMenus) {
+                        // writefln("parent: %s, menu: %s, type: %s", this.mText, this.mMenus[key].mText, this.mMenus[key].mType);
+                        menu.createHandle();
+                    }
                 }
                 this.insertMenuInternal(this.mParentHandle);
             break;
@@ -203,7 +215,7 @@ class MenuItem : MenuBase
         }
     }
 
-    final MenuItem[string] menus() {return this.mMenus;}
+    final MenuItem[] menus() {return this.mMenus;}
 
 
     final string text() {return this.mText;}
@@ -243,6 +255,7 @@ class MenuItem : MenuBase
         ParentKind mParentKind;
 
 
+        // Using to insert menu items in a MenuBar
         void insertMenuInternal(HMENU parentHmenu)
         {
             MENUITEMINFOW mii;
@@ -259,28 +272,27 @@ class MenuItem : MenuBase
         }
 
         MenuItem getChildFromIndex(int index) {
-            foreach (key, menu; this.mMenus) {if (menu.mIndex == index) return menu;}
+            foreach (menu; this.mMenus) {if (menu.mIndex == index) return menu;}
             return null;
         }
 
+        // Using to insert menu items in a Context menu. 
         void insertCmenuInternal()
         {
             if (this.mMenus.length > 0) {
-                foreach (string key; this.mMenus.byKey()) this.mMenus[key].insertCmenuInternal();
+                foreach (menu; this.mMenus) menu.insertCmenuInternal();
             }
             if (this.mType == MenuType.normalMenu) {
                 this.insertMenuInternal(this.mParentHandle);
             } else if (this.mType == MenuType.separator) {
-                AppendMenuW(this.mHandle, MF_SEPARATOR, 0, null);
+                AppendMenuW(this.mParentHandle, MF_SEPARATOR, 0, null);
             }
         }
 
         void finalize() 
         {
             if (this.mMenus.length > 0) {
-                foreach (string key; this.mMenus.byKey()) {
-                    this.mMenus[key].finalize();
-                }
+                foreach (menu; this.mMenus) menu.finalize();
             }
             DestroyMenu(this.mHandle);
             print("MenuItem %s destroyed", this.mText);

@@ -37,8 +37,8 @@ class App {
 		// Let's create a tray icon for this program.
 		tic = new TrayIcon("Wings tray icon!", "wings_icon.ico");
 
-		// Now, add a context menu to our tray.
-		tic.addContextMenu(TrayMenuTrigger.rightClick, "Windows_ti", "Linux_ti", "MacOS_ti");
+		// Now, add a context menu to our tray. '|' is for separator.
+		tic.addContextMenu(TrayMenuTrigger.rightClick, "Windows_ti", "Linux_ti", "|", "MacOS_ti");
 
 
 		// If this set to true, all control handles will be
@@ -100,7 +100,7 @@ class App {
 		btn1.onClick = &this.btn1OnClick;
 		btn2.backColor = 0x83c5be;
 		btn3.setGradientColors(0xeeef20, 0x70e000);
-		btn3.onClick = &this.btn3Click; // Show a balloon text
+		btn3.onClick = &this.btn3Click;
 		cmb.addRange("Form", "Button", "Calendar", "CheckBox", "ComboBox", "DateTimePicker", "GroupBox", 4500);
 		cmb.dropDownStyle = DropDownStyle.labelCombo;
 		cmb.selectedIndex = 4;
@@ -117,7 +117,7 @@ class App {
 		lv.addRow("Win7", "Mavericks", "Ubuntu");
 		lv.addRow("Win8", "Catalina", "Debian");
 		lv.addRow("Win10", "Big Sur", "Kali");
-		lv.addContextMenu("Windows", "Linux", "MacOS");
+		lv.addContextMenu("Windows", "Linux", "|", "MacOS");
 		tv.backColor = 0xddddbb;
 		auto n1 = new TreeNode("Windows");
 		auto n2 = new TreeNode("Linux");
@@ -138,9 +138,9 @@ class App {
 		tv.addChildNodes(n3, mn1, mn2, mn3);
 
 		// Add menu items for our main menus.
-		mb.menus["Windows"].addItems("Windows 8", "Windows 10", "Windows 11");
-		mb.menus["Linux"].addItems("Ubuntu", "Debian", "Kali");
-		mb.menus["MacOS"].addItems("Mavericks", "Catalina", "Big Sur");
+		mb["Windows"].addItems("Windows 8", "|", "Windows 10",  "Windows 11");
+		mb["Linux"].addItems("Ubuntu", "Debian", "Kali");
+		mb["MacOS"].addItems("Mavericks", "Catalina", "Big Sur");
 
 		// Add menu click event handler for tray icon context menu.
 		tic.contextMenu["Windows_ti"].onClick = &this.onContextMenuClick;
@@ -170,6 +170,7 @@ class App {
 	}
 
 	void onLVContextMenuClick(MenuItem m, EventArgs e) {
+		// delay(3000);
 		writeln("Linux menu clicked");
 	}
 
@@ -198,6 +199,7 @@ class App {
 		Timer tmr;	
 		TrayIcon tic;
 }
+
 
 
 void main() {

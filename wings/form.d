@@ -479,10 +479,8 @@ extern(Windows)
 LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothrow
 {
     try {
-         //writefln("[%d] wndproc message %d", x, message);
-         //x += 1;
         // print("Main wndproc message", message);
-        switch (message) {
+        switch (message) {            
             case WM_DESTROY: 
                 auto win = getAs!Form(hWnd);                
                 if (win.onClosed) win.onClosed(win, new EventArgs());              
@@ -532,6 +530,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
             break;
             case WM_NOTIFY:
                 auto nm = cast(NMHDR*) lParam;
+                // writefln("WM_NOTIFY nmhdr.hwndFrom: %d, nmhdr.idFrom: %d, nmhdr.code: %d", nm.hwndFrom, nm.idFrom, nm.code);
                 return SendMessageW(nm.hwndFrom, CM_NOTIFY, wParam, lParam);
             break;
             case WM_CTLCOLOREDIT:
