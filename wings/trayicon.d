@@ -238,37 +238,22 @@ private LRESULT trayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
                 print("Tray icon Message only window got WM_DESTROY");
                 // return 0;
             break;
-            // case WM_KEYDOWN:
-            //     print("cmenu key down in msg only window");
-            // break;
             case CM_TRAY_MSG:	
-                // print("cm tray msg");
-                // writefln("GET_X_LPARAM: %d, yFromWparam %d", xFromWparam(wParam), yFromWparam(wParam));		
                 switch(lParam) {
                     case NIN_BALLOONSHOW:                    
                         auto tray = getAs!TrayIcon(hWnd);
                         if (tray.onBalloonShow) tray.onBalloonShow(tray, new EventArgs());
                     break;
-                        
-                    // case NIN_BALLOONHIDE:
-                    //     print("NIN_BALLOONHIDE");
-
                     case NIN_BALLOONTIMEOUT:                    
                         auto tray = getAs!TrayIcon(hWnd);
                         if (tray.onBalloonClose) tray.onBalloonClose(tray, new EventArgs());
                         if (tray.mResetIcon) tray.resetIconInternal(); // Need to revert the default icon
                     break;
                     case NIN_BALLOONUSERCLICK:
-                        // print("NIN_BALLOONUSERCLICK");
                         auto tray = getAs!TrayIcon(hWnd);
                         if (tray.onBalloonClick) tray.onBalloonClick(tray, new EventArgs());
                         if (tray.mResetIcon) tray.resetIconInternal(); // Need to revert the default icon
                     break;
-                    // case NIN_POPUPOPEN:
-                    //     print("NIN_POPUPOPEN");
-                    // case NIN_POPUPCLOSE:
-                    //     print("NIN_POPUPCLOSE");
-
                     case WM_LBUTTONDOWN:
                         auto tray = getAs!TrayIcon(hWnd);
                         if (tray.onLeftMouseDown) tray.onLeftMouseDown(tray, new EventArgs());                    
@@ -277,13 +262,13 @@ private LRESULT trayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
                     auto tray = getAs!TrayIcon(hWnd);
                         if (tray.onLeftMouseUp) tray.onLeftMouseUp(tray, new EventArgs());
                         if (tray.onLeftClick) tray.onLeftClick(tray, new EventArgs());
-                        if (tray.mCmenuUsed && tray.mMenuTrigger == TrayMenuTrigger.leftClick) 
+                        if (tray.mCmenuUsed && (tray.mMenuTrigger & TrayMenuTrigger.leftClick))
                             tray.mCmenu.showMenu(0);
                     break;
                     case WM_LBUTTONDBLCLK:
                         auto tray = getAs!TrayIcon(hWnd);
                         if (tray.onLeftDoubleClick) tray.onLeftDoubleClick(tray, new EventArgs());
-                        if (tray.mCmenuUsed && tray.mMenuTrigger == TrayMenuTrigger.leftDoubleClick) 
+                        if (tray.mCmenuUsed && (tray.mMenuTrigger & TrayMenuTrigger.leftDoubleClick)) 
                             tray.mCmenu.showMenu(0);
                     break;
                     case WM_RBUTTONDOWN:
@@ -294,7 +279,7 @@ private LRESULT trayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
                         auto tray = getAs!TrayIcon(hWnd);
                         if (tray.onRightMouseUp) tray.onRightMouseUp(tray, new EventArgs());
                         if (tray.onRightClick) tray.onRightClick(tray, new EventArgs());
-                        if (tray.mCmenuUsed && tray.mMenuTrigger == TrayMenuTrigger.rightClick) 
+                        if (tray.mCmenuUsed && (tray.mMenuTrigger & TrayMenuTrigger.rightClick)) 
                             tray.mCmenu.showMenu(0);
                     break;
                     case WM_MOUSEMOVE:

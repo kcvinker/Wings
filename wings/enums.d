@@ -111,7 +111,7 @@ enum ModifierKeys { altKey = 1, ctrlKey = 2, shiftKey = 4, winKey = 8 } // ,,
 
 enum MenuType { baseMenu, normalMenu, popumMenu, separator }
 
-enum TrayMenuTrigger {none, leftClick, leftDoubleClick, rightClick}
+enum TrayMenuTrigger : ubyte {none, leftClick, leftDoubleClick, rightClick = 4, anyClick = 7}
 enum BalloonIcon {none, info, warning, error, custom}
 
 

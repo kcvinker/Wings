@@ -22,7 +22,7 @@ class App {
 		tic = new TrayIcon("Wings tray icon!", "wings_icon.ico");
 
 		// Now, add a context menu to our tray. '|' is for separator.
-		tic.addContextMenu(TrayMenuTrigger.rightClick, "Windows_ti", "Linux_ti", "|", "MacOS_ti");
+		tic.addContextMenu(TrayMenuTrigger.anyClick, "Windows_ti", "Linux_ti", "|", "MacOS_ti");
 
 
 		// If this set to true, all control handles will be
