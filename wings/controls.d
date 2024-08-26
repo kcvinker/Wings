@@ -149,7 +149,7 @@ class Control {
             this.mFont = new Font(fName, fSize, fWeight, fItal, fUnder);
             this.mBaseFontChanged = true;
             if (this.mIsCreated) {
-                this.mFont.createFontHandle(this.mHandle);
+                this.mFont.createFontHandle();
                 this.sendMsg(WM_SETFONT, this.mFont.handle, 1);
             }
         }
@@ -318,7 +318,6 @@ class Control {
         {  // protected
             // This function works for almost all controls except combo box.
             // This will save us 150+ lines of code.
-            // this.mCtlId = Control.stCtlId;
             if (this.mDisabled) this.mStyle |= WS_DISABLED;
             this.mHandle = CreateWindowEx(  this.mExStyle,
                                             clsname,
@@ -333,7 +332,6 @@ class Control {
                                             appData.hInstance,
                                             null);
             if (this.mHandle) {
-                // ++Control.stCtlId; // Increasing protected static member for next control iD
                 this.mIsCreated = true;
                 if (!this.mBaseFontChanged) this.mFont = this.mParent.font;
                 this.createLogFontInternal();
@@ -341,29 +339,25 @@ class Control {
             }
         }
 
-        final void setFontInternal()
-        {   // Package
+        final void setFontInternal() // Protected
+        {   
             // This function is used for setting font for a control right after it created
-            if (!this.mFont.isCreated) {this.mFont.createFontHandle(this.mHandle); }
+            if (!this.mFont.isCreated) {this.mFont.createFontHandle(); }
             this.sendMsg(WM_SETFONT, this.mFont.handle, 1);
         }
 
-        final void setSubClass(SUBCLASSPROC ctlWndProc)
-        {    // Protected
-            /*  We need to implement a special WndProc function for each control.
+        final void setSubClass(SUBCLASSPROC ctlWndProc) // Protected
+        {    
+            /*------------------------------------------------------------------------  
+            We need to implement a special WndProc function for each control.
             In order to do that, we need to subclass a control. Here, subclassing means...
-            just replacing the parent's own WndProc with our function. */
+            just replacing the parent's own WndProc with our function. 
+            -----------------------------------------------------------------------------*/
             SetWindowSubclass(this.mHandle, ctlWndProc, UINT_PTR(mSubClassId), this.toDwPtr);
             ++mSubClassId;
         }
 
-        // final void remSubClass(UINT_PTR subClsId) { // Package
-        //     // We must remove the subclass when a control destroyed
-        //     auto res = RemoveWindowSubclass(this.mHandle, this.wndProcPtr, subClsId);
-        //     writefln("Removing subclass of %s and result - %d ", this.mName, res);
-        // }
-
-        final auto sendMsg(wpt, lpt)(uint uMsg, wpt wp, lpt lp)
+        final auto sendMsg(wpt, lpt)(uint uMsg, wpt wp, lpt lp) 
         { // Package
             // A helper function for sending messages to controls & window.
             return SendMessage(this.mHandle, uMsg, cast(WPARAM) wp, cast(LPARAM) lp);
@@ -371,7 +365,7 @@ class Control {
 
         void createLogFontInternal()
         { // Package
-            if (!this.mFont.isCreated) this.mFont.createFontHandle(this.mHandle);
+            if (!this.mFont.isCreated) this.mFont.createFontHandle();
             this.sendMsg(WM_SETFONT, this.mFont.handle, 1);
         }
 
@@ -439,8 +433,8 @@ class Control {
                 GetClientRect(this.mHandle, &rct);
             } else {
                 fhw = this.mParent.mHandle;
-                rct = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
-
+                rct = RECT(this.mXpos, this.mYpos, 
+                            (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
             }
             MapWindowPoints(fhw, this.mParent.mHandle, cast(LPPOINT)&rct, 2);
             return rct;
@@ -448,7 +442,6 @@ class Control {
 
 		void calculateAutoSize()
         { // private
-            //auto wtxt = this.mText.toUTF16z;
             auto hdc = GetDC(this.mHandle);
             SIZE ss;
             SelectObject(hdc, this.font.handle);

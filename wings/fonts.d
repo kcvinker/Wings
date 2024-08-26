@@ -9,6 +9,8 @@ import wings.commons : print;
 //int num = 1;
 
 class Font {
+    import wings.application: appData;
+    
     final string name() {return this.mName;}
     final int size() {return this.mSize;}
     final bool underline() {return this.mUnderLine;}
@@ -44,19 +46,10 @@ class Font {
         writeln("Font handle destroyed");
     }
 
-    void createFontHandle(HWND wHandle = null) {
-        // import wings.wingdi : CreateFont;
-        HDC dcHandle = GetDC(wHandle);
-        immutable int iHeight = -MulDiv(this.size, GetDeviceCaps(dcHandle, LOGPIXELSY), 72);
-        ReleaseDC(wHandle, dcHandle);
-        //print("font name", this.mName);
-        // this.mHandle = CreateFont(iHeight, 0, 0, 0, this.mWeightIntern, DWORD(this.mItalis),
-        //                     DWORD(this.mUnderLine), DWORD(false), DWORD(1),
-        //                     OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-        //                     DEFAULT_QUALITY, DEFAULT_PITCH,
-        //                     this.mName.ptr);
-
-        // Changed to LOGFONT in 19-01-2023
+    void createFontHandle() {
+        double scale = appData.scaleF / 100;
+        auto fsiz = cast(int)(scale * cast(double)this.size);  
+        int iHeight = -MulDiv(fsiz , appData.sysDPI, 72);        
         LOGFONTW lf = LOGFONTW();
         lf.lfItalic = this.mItalis;
         lf.lfUnderline = this.mUnderLine;
@@ -69,7 +62,6 @@ class Font {
         lf.lfQuality = DEFAULT_QUALITY;
         lf.lfPitchAndFamily = 1;
         this.mHandle = CreateFontIndirectW(&lf);
-
         this.mIsCreated = true;
         // print(iHeight);
     }

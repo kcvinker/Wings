@@ -12,14 +12,11 @@ pragma(lib, "user32.lib");
 pragma(lib, "gdi32.lib");
 pragma(lib, "comctl32.lib");
 pragma(lib, "gdiplus.lib");
-pragma(lib, "UxTheme.lib");
+pragma(lib, "Shcore.lib");
 
-// import core.sys.windows.windef;
-// import core.sys.windows.winuser;
-// import core.sys.windows.winbase;
-
-// import winglib.events;
-
+extern(Windows) nothrow {
+    int GetScaleFactorForDevice(int);
+}
 
 
 package ApplicationData appData;
@@ -70,10 +67,12 @@ class ApplicationData
         this.screenHeight = GetSystemMetrics(1);
         this.iccEx.dwSize = INITCOMMONCONTROLSEX.sizeof;
         this.iccEx.dwICC = ICC_STANDARD_CLASSES;
-        
+        this.scaleF = cast(double) GetScaleFactorForDevice(0);
         this.prepareAppIcon();
         this.regWindowClass();
+        this.getSystemDPI();
         InitCommonControlsEx(&this.iccEx);
+        
 
     }
 
@@ -114,6 +113,13 @@ class ApplicationData
         auto modulebase = dirName(__FILE_FULL_PATH__);
         auto icopath = format("%s\\wings_icon.ico", modulebase);
         this.appIcon = LoadImageW(null, icopath.toUTF16z(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
+    }
+
+    void getSystemDPI()
+    {
+        HDC hdc = GetDC(null);
+        scope(exit) ReleaseDC(null, hdc);
+        this.sysDPI = GetDeviceCaps(hdc, LOGPIXELSY);        
     }
 
     void finalize()

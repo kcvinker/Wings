@@ -136,7 +136,7 @@ class ContextMenu : MenuBase
                 DestroyWindow(this.mDummyHwnd);
                 this.mDummyHwnd = null; 
             }
-            if (!this.mFont.handle) this.mFont.createFontHandle(this.mDummyHwnd);
+            if (!this.mFont.handle) this.mFont.createFontHandle();
             if (this.mMenus.length) {
                 POINT pt;
                 getMousePos(pt, lpm);
@@ -184,12 +184,10 @@ class ContextMenu : MenuBase
                 if (menu.mId == idNum) return menu;
             }
             return null;
-        }
+        }        
 
-        
-
-    EventHandler onMenuShown, onMenuClose;
- 
+    EventHandler onMenuShown;
+    EventHandler onMenuClose; 
         
     private:
         int mWidth, mHeight, mMenuCount;
@@ -197,7 +195,6 @@ class ContextMenu : MenuBase
         static bool mMsgWinRegistered;
         COLORREF mGrayCref;
         HBRUSH mDefBgBrush, mHotBgBrush, mBorderBrush, mGrayBrush;
-
 
         void setMenuInternal(string[] menuNames) {
             if (menuNames.length > 0) {
@@ -228,7 +225,6 @@ class ContextMenu : MenuBase
                 SetWindowLongPtrW(this.mDummyHwnd, GWLP_USERDATA, (cast(LONG_PTR) cast(void*) this));
                 // writeln("Context menu message-only window created");
             } 
-
         }
 
 } // End of ContextMenu class
@@ -273,9 +269,6 @@ private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 auto dis = cast(LPDRAWITEMSTRUCT) lParam;
                 auto mi = getMenuItem(dis.itemData);
                 COLORREF txtClrRef = mi.mFgColor.cref;
-                // print("dis item state ", dis.itemState);
-
-                /* If menu item is selected we will draw a selection effect*/
                 if (dis.itemState & 1) {
                     if (mi.mEnabled) {
                         auto rc = RECT(dis.rcItem.left + 4, dis.rcItem.top + 2, 
@@ -303,12 +296,6 @@ private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 if (cm.onMenuShown) cm.onMenuShown(cm.mParent, new EventArgs()); 
                 // print("Cmenu Wndproc WM_ENTERMENULOOP");
             break;
-            // case WM_INITMENUPOPUP:
-            //     print("WM_INITMENUPOPUP rcvd");
-            // break;
-            // case WM_UNINITMENUPOPUP:
-            //     print("WM_UNINITMENUPOPUP rcvd");
-            // break;
             case WM_EXITMENULOOP: 
                 auto cm = getAs!ContextMenu(hWnd);
                 if (cm.onMenuClose) cm.onMenuClose(cm.mParent, new EventArgs()); 
@@ -324,7 +311,6 @@ private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                         if (menu.onFocus) menu.onFocus(menu, new EventArgs());
                     }
                 }
-                // print("Cmenu Wndproc WM_MENUSELECT");
             break;         
             default: break;
         }

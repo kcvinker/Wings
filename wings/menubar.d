@@ -65,30 +65,11 @@ class MenuBar : MenuBase
         }
     }
 
-    // final void addMenu(string mnu, wstring[] subMenus) {
-    //     auto m = new MenuItem(&this.mParent, mnu, null, MenuType.baseMenu);
-    //     m.addMenu(subMenus);
-    //     this.mMenus ~= m;
-    // }
-
-    // final void addMenu(MenuItem mi) { this.mMenus ~= mi;}
-
-    // final MenuItem addMenu(string txt, uint txtColor = 0x000000) {
-    //     auto result = new MenuItem(txt, this.mHmenubar, MenuType.baseMenu, this.mMenuCount);
-    //     result.mWinHwnd = this.mParent.mHandle;
-    //     result.mFgColor = Color(txtColor);
-    //     result.mBarmenu = true;
-    //     this.mMenuCount += 1;
-    //     this.mMenus[txt] = result;
-    //     this.mParent.mMenuItemDict[result.mId] = result;
-    //     return result;
-    // }
-
     final void createHandle() {
         this.mMenuDefBgBrush = makeHBRUSH(0xe9ecef);
         this.mMenuHotBgBrush = makeHBRUSH(0x90e0ef);
         this.mMenuFrameBrush = makeHBRUSH(0x0077b6);
-        if (this.mFont.mHandle == null) this.mFont.createFontHandle(this.mWindow.mHandle);
+        if (this.mFont.mHandle == null) this.mFont.createFontHandle();
         if (this.mMenus.length > 0) {
             foreach (menu; this.mMenus) menu.createHandle();
         }
