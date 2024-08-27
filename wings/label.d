@@ -9,7 +9,7 @@ enum DWORD lbStyle = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS |
 
 class Label: Control
 {
-    this(Form parent, string txt, int x, int y, int w, int h, bool autoc = false)
+    this(Form parent, string txt, int x, int y, int w, int h)
     {
         mixin(repeatingCode);
         mText = txt;
@@ -25,19 +25,19 @@ class Label: Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
         //mBorder = LabelBorder.singleLine;
     }
 
     this(Form parent) { this(parent, format("Label_", lblNumber), 20, 20, 0, 0); }
-    this(Form parent, int x, int y, bool autoc = false)
+    this(Form parent, int x, int y)
     {
-        this(parent, format("Label_", lblNumber), x, y, 0, 0, autoc);
+        this(parent, format("Label_", lblNumber), x, y, 0, 0);
     }
-    this(Form parent, string txt, bool autoc = false) { this(parent, txt, 20, 20, 0, 0, autoc); }
-    this(Form parent, string txt, int x, int y, bool autoc = false)
+    this(Form parent, string txt) { this(parent, txt, 20, 20, 0, 0); }
+    this(Form parent, string txt, int x, int y)
     {
-        this(parent, txt, x, y, 0, 0, autoc);
+        this(parent, txt, x, y, 0, 0);
     }
 
     override void createHandle()

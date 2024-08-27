@@ -105,32 +105,32 @@ class Button : Control
 
     }
 
-    this(Form parent, bool autoc = false)
+    this(Form parent)
     {
         string btxt = format("%s_%d", "Button", btnNumber);
         this(parent, btxt, 20, 20, 120, 35);
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, string txt, bool autoc = false)
+    this(Form parent, string txt)
     {
         this(parent, txt, 20, 20, 120, 35);
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, string txt, int x, int y, bool autoc = false, EventHandler clickFn = null)
+    this(Form parent, string txt, int x, int y, EventHandler clickFn = null)
     {
         this(parent, txt, x, y, 120, 35);
         if (clickFn) this.onClick = clickFn;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, int x, int y, int w, int h, bool autoc = false, EventHandler clickFn = null)
+    this(Form parent, int x, int y, int w, int h, EventHandler clickFn = null)
     {
         string btxt = format("%s_%d", "Button", btnNumber);
         this(parent, btxt, x, y, w, h);
         if (clickFn) this.onClick = clickFn;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 // End of Ctors
 

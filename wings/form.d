@@ -42,6 +42,7 @@ class Form : Control
     mixin finalProperty!("maximizeBox", this.mMaxBox);
     mixin finalProperty!("minimizeBox", this.mMinBox);
     mixin finalProperty!("createChildHandles", this.mAutoCreate);
+    
 
     //final override uint backColor() const {return this.mBackColor;}
     final override void backColor(uint clr) {propBackColorSetter(clr);}

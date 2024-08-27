@@ -13,7 +13,7 @@ enum DWORD tbExStyle = WS_EX_LEFT|WS_EX_LTRREADING|WS_EX_CLIENTEDGE;
 class TextBox: Control
 {
     EventHandler onTextChanged;
-    this (Form parent, int x, int y, int w, int h, bool autoc = false)
+    this (Form parent, int x, int y, int w, int h)
     {
         mixin(repeatingCode);
         ++tbNumber;
@@ -27,13 +27,10 @@ class TextBox: Control
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this (Form parent, int x, int y, bool autoc = false)
-    {
-        this(parent, x, y, 120, 25, autoc);
-    }
+    this (Form parent, int x, int y) {this(parent, x, y, 120, 25); }
     //this (Form parent, int x, int y, int w, int h) {this(parent, "", x, y, w, h);}
 
     override void createHandle()

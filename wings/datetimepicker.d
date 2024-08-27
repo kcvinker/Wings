@@ -57,7 +57,7 @@ class DateTimePicker: Control
 	EventHandler onCalendarClosed;
 	DateTimeEventHandler onTextChanged;
 
-	this(Form parent, int x, int y, int w, int h, bool autoc = false)
+	this(Form parent, int x, int y, int w, int h)
     {
         if (!appData.isDtpInit) {
             appData.isDtpInit = true;
@@ -74,11 +74,11 @@ class DateTimePicker: Control
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++dtpNumber;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
     this(Form p ) { this(p, 20, 20, 140, 25); }
-    this(Form p, int x, int y,bool autoc = false ) { this(p, x, y, 140, 25, autoc); }
+    this(Form p, int x, int y ) { this(p, x, y, 140, 25); }
 
     override void createHandle()
     {

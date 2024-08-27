@@ -22,7 +22,7 @@ class CheckBox : Control
 
     EventHandler onCheckedChanged;
 
-	this(Form parent, string txt, int x, int y, int w, int h, bool autoc = false, EventHandler checkFn = null)
+	this(Form parent, string txt, int x, int y, int w, int h, EventHandler checkFn = null)
     {
         mixin(repeatingCode);
         ++cbNumber;
@@ -39,22 +39,22 @@ class CheckBox : Control
         this.mTextable = true;
         ++Control.stCtlId;        
         if (checkFn) this.onClick = checkFn;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, bool autoc = false, EventHandler checkFn = null) {
+    this(Form parent, EventHandler checkFn = null) {
     	string txt = format("CheckBox_%s", cbNumber);
-    	this(parent, txt, 20, 20, 50, 20, autoc, checkFn);
+    	this(parent, txt, 20, 20, 50, 20, checkFn);
     }
 
-    this(Form parent, string txt, bool autoc = false, EventHandler checkFn = null)
+    this(Form parent, string txt, EventHandler checkFn = null)
     {
-        this(parent, txt, 20, 20, 50, 20, autoc, checkFn);
+        this(parent, txt, 20, 20, 50, 20, checkFn);
     }
 
-    this (Form parent, string txt, int x, int y, bool autoc = false, EventHandler checkFn = null)
+    this (Form parent, string txt, int x, int y, EventHandler checkFn = null)
     {
-        this(parent, txt, x, y, 50, 20, autoc, checkFn);
+        this(parent, txt, x, y, 50, 20, checkFn);
     }
 
     /// Create the handle of CheckBox

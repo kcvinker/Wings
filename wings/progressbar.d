@@ -17,7 +17,7 @@ enum ProgressBarStyle {blockStyle, marqueeStyle}
 
 class ProgressBar : Control
 {
-    this(Form parent, int x, int y, int w, int h, bool autoc = false)
+    this(Form parent, int x, int y, int w, int h)
     {
         mixin(repeatingCode);
         ++pgbNumber;
@@ -37,10 +37,10 @@ class ProgressBar : Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, int x, int y, bool autoc = false) { this(parent, x, y, 180, 25, autoc);}
+    this(Form parent, int x, int y) { this(parent, x, y, 180, 25);}
     this(Form parent) { this(parent, 20, 20, 180, 25);}
 
     override void createHandle()

@@ -12,7 +12,7 @@ private wchar[] mClassName = ['S','y','s','T','r','e','e','V','i','e','w','3','2
 class TreeView: Control
 {
 
-    this (Form parent, int x, int y, int w, int h, bool autoc = false)
+    this (Form parent, int x, int y, int w, int h)
     {
         mixin(repeatingCode);
         ++tvNumber;
@@ -26,10 +26,10 @@ class TreeView: Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this (Form parent, int x, int y, bool autoc = false) {this(parent, x, y, 250, 200, autoc);}
+    this (Form parent, int x, int y) {this(parent, x, y, 250, 200);}
    // this (Form parent, int x, int y) {this(parent, x, y, 250, 200);}
 
     override void createHandle()

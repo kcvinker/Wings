@@ -7,7 +7,7 @@ import std.stdio;
 
 class RadioButton: Control
 {
-	this (Form parent, string txt, int x, int y, int w, int h, bool autoc = false, EventHandler checkFn = null)
+	this (Form parent, string txt, int x, int y, int w, int h, EventHandler evtFn = null)
     {
         mixin(repeatingCode);
         ++rbNumber;
@@ -22,13 +22,13 @@ class RadioButton: Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        if (checkFn) this.onClick = checkFn;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (evtFn) this.onClick = evtFn;
+        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this (Form parent, string txt, int x, int y, bool autoc = false, EventHandler checkFn = null)
+    this (Form parent, string txt, int x, int y, EventHandler evtFn = null)
     {
-        this(parent, txt, x, y, 0, 0, autoc, checkFn);
+        this(parent, txt, x, y, 0, 0, evtFn);
     }
 
     override void createHandle()

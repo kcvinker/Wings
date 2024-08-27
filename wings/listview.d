@@ -32,7 +32,7 @@ bool lvCreated = false;
 
 class ListView: Control
 {
-    this(Form parent, int x, int y, int w, int h, bool autoc = false, string[] colnames = null, int[] widths = null)
+    this(Form parent, int x, int y, int w, int h, string[] colnames = null, int[] widths = null)
     {
         if (!lvCreated) {
             lvCreated = true;
@@ -56,7 +56,7 @@ class ListView: Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
         if ((colnames != null && widths != null) && (colnames.length == widths.length)) {
            foreach (i, name; colnames) {
                 auto col = new ListViewColumn(name, widths[i]);

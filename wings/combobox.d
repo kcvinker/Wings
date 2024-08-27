@@ -17,7 +17,7 @@ private int editSubClsID = 4000;
  */
 class ComboBox: Control
 {
-    this(Form parent, int x, int y, int w, int h, bool autoc = false)
+    this(Form parent, int x, int y, int w, int h)
     {
         mixin(repeatingCode);
         ++cmbNumber;
@@ -31,11 +31,11 @@ class ComboBox: Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;        
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, bool autoc = false) { this(parent, 20, 20, 150, 30, autoc); }
-    this (Form parent, int x, int y, bool autoc = false) { this(parent, x, y, 150, 30, autoc); }
+    this(Form parent) { this(parent, 20, 20, 150, 30); }
+    this (Form parent, int x, int y) { this(parent, x, y, 150, 30); }
 
     /// Returns the items collection of ComboBox
 	final string[] items() {return this.mItems;}
@@ -332,7 +332,6 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 ComboBox cmb = getControl!ComboBox(refData);
                 cmb.mouseMoveHandler(message, wParam, lParam); 
             break;
-
             case WM_MOUSELEAVE:
                 ComboBox cmb = getControl!ComboBox(refData);
                 /*-----------------------------------------------------------------
@@ -356,7 +355,6 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     if (cmb.onMouseLeave) cmb.onMouseLeave(cmb, new EventArgs());
                 }
             break;
-
             case WM_KEYDOWN:
                 ComboBox cmb = getControl!ComboBox(refData);
                 // To get this message here, cmb's drop down style must be labelCombo.
@@ -374,7 +372,6 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     cmb.onKeyUp(cmb, kea);
                 }
             break;
-
             case CM_COLOR_CMB_LIST:
                 ComboBox cmb = getControl!ComboBox(refData);
                 /*---------------------------------------------------------------
@@ -393,7 +390,6 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 }
                 return cast(LRESULT)cmb.mBkBrush;
             break;
-
             case CM_CTLCOMMAND:
                 ComboBox cmb = getControl!ComboBox(refData);
                 auto nCode = HIWORD(wParam);

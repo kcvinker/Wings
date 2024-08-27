@@ -68,20 +68,20 @@ class App {
 
 		// NumberPicker aka NumericUpdown in .NET
 		np1 = new NumberPicker(frm, lb1.right!33, gb2.top!25);	
-		np2 = new NumberPicker(frm, lb2.right!10, gb2.top!57, btnLeft: true);
+		np2 = new NumberPicker(frm, lb2.right!10, gb2.top!57, btnLeft : true);
 
-		pgb = new ProgressBar(frm, 10, gb2.bottom!10, 204, 25, true);
+		pgb = new ProgressBar(frm, 10, gb2.bottom!10, 204, 25);
 		tb = new TextBox(frm, 10, pgb.bottom!10, pgb.width, 30);
 		lbx = new ListBox(frm, gb1.right!10, btn1.bottom!15, 120, 160);
 
 		// ListView ctor takes an array for items and another for col widths.
-		lv = new ListView(frm, lbx.right!10, btn1.bottom!15, 300, 180, true,
+		lv = new ListView(frm, lbx.right!10, btn1.bottom!15, 300, 180,
  					 ["Windows", "Linux", "MacOS"], [80, 120, 100] );
 
 		// Trackbar ctor takes a delegate for onValueChanged event.
-		tkb1 = new TrackBar(frm, dtp.right!10, 10, 150, 40, true, true, &this.onTrackValueChanged);
+		tkb1 = new TrackBar(frm, dtp.right!10, 10, 150, 40, true, &this.onTrackValueChanged);
 
-		tv = new TreeView(frm, lv.right!10, lv.ypos, 200, 200, true);
+		tv = new TreeView(frm, lv.right!10, lv.ypos, 200, 200);
 
 		// Calendar aka MonthCalendar in .NET
 		cal = new Calendar(frm, gb2.right!10, lv.bottom!15);
@@ -199,8 +199,6 @@ class App {
 		Timer tmr;	
 		TrayIcon tic;
 }
-
-
 
 void main() {
 	auto app = new App();	

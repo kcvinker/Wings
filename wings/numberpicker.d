@@ -17,8 +17,7 @@ DWORD swp_flag = SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER;
 
 class NumberPicker: Control
 {
-    this(Form parent, int x, int y, int w, int h, 
-            bool autoc = false, EventHandler evtFn = null, bool btnLeft = false)
+    this(Form parent, int x, int y, int w, int h, bool btnLeft = false, EventHandler evtFn = null)
     {
         if (!isNpCreated) {
             isNpCreated = true;
@@ -47,13 +46,17 @@ class NumberPicker: Control
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         if (evtFn != null) this.onValueChanged = evtFn;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
     this(Form parent) {this(parent, 10, 10, 100, 27);}
-    this(Form parent, int x, int y, bool autoc = false, EventHandler evntFn = null, bool btnLeft = false )
+    this(Form parent, int x, int y, EventHandler evntFn = null )
     {
-        this(parent, x, y, 70, 27, autoc, evntFn, btnLeft);
+        this(parent, x, y, 70, 27, false, evntFn);
+    }
+    this(Form parent, int x, int y, bool btnLeft)
+    {
+         this(parent, x, y, 70, 27, btnLeft);
     }
 
     override void createHandle()

@@ -33,7 +33,7 @@ class TicData
 class TrackBar: Control
 {
     this (Form parent, int x, int y, int w, int h, bool cdraw = false, 
-                bool autoc = false, EventHandler evtFn = null, bool vertical = false )
+                EventHandler evtFn = null, bool vertical = false )
     {
         mixin(repeatingCode); // Setting size, position, parent & font
         ++tkbNumber;
@@ -62,10 +62,10 @@ class TrackBar: Control
         ++Control.stCtlId;
         if (vertical) this.mTicPos = TicPosition.leftSide;
         if (evtFn != null) this.onValueChanged = evtFn;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this (Form parent, int x, int y, bool autoc = false) {this(parent, x, y, 150, 24, autoc);}
+    this (Form parent, int x, int y) {this(parent, x, y, 150, 24);}
 
     // Events
     EventHandler onValueChanged,onDragging,onDragged;

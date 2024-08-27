@@ -66,7 +66,7 @@ class Calendar : Control
 
     EventHandler valueChanged, selectionChanged, viewChanged;
 
-	 this(Form parent, int x, int y, int w, int h, bool autoc = false)
+	 this(Form parent, int x, int y, int w, int h)
      {
         if (!appData.isDtpInit) {
             appData.isDtpInit = true;
@@ -83,14 +83,11 @@ class Calendar : Control
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         ++calNumber;
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
         // writefln("mcn first %d, mcn sel changed %d, mcn vew changed %d", MCN_FIRST, MCN_SELCHANGE, MCN_VIEWCHANGE);
     }
 
-    this(Form p, int x, int y, bool autoc = false)
-    {
-        this(p, x, y, 0, 0, autoc);
-    }
+    this(Form p, int x, int y) { this(p, x, y, 0, 0); }
 
     override void createHandle()
     {

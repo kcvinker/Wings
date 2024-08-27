@@ -11,7 +11,7 @@ enum DWORD gb_exstyle = WS_EX_RIGHTSCROLLBAR| WS_EX_TRANSPARENT| WS_EX_CONTROLPA
 
 class GroupBox: Control
 {
-    this(Form parent, string txt, int x, int y, int w, int h, bool autoc = false)
+    this(Form parent, string txt, int x, int y, int w, int h)
     {
         mixin(repeatingCode);
         ++gbNumber;
@@ -24,17 +24,17 @@ class GroupBox: Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;        
-        if (autoc || parent.mAutoCreate) this.createHandle();
+        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, string txt, int x, int y, bool autoc = false)
+    this(Form parent, string txt, int x, int y)
     {
-        this(parent, txt, x, y, 150, 150, autoc);
+        this(parent, txt, x, y, 150, 150);
     }
 
-    this(Form parent, string txt, bool autoc = false)
+    this(Form parent, string txt)
     {
-        this(parent, txt, 20, 20, 150, 150, autoc);
+        this(parent, txt, 20, 20, 150, 150);
     }
 
     override void createHandle()
