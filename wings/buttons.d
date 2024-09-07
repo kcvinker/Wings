@@ -1,3 +1,21 @@
+/*==============================================Button Docs=====================================
+Constructor:
+    this(Form parent)
+    this(Form parent, string txt)
+    this(Form parent, string txt, int x, int y, EventHandler clickFn = null)
+    this(Form parent, int x, int y, int w, int h, EventHandler clickFn = null)
+
+	Properties:
+		Button inheriting all Control class properties		
+			
+    Methods:
+        createHandle
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+       
+=============================================================================================*/
+
 module wings.buttons;
 //---------------------------------------------------
 

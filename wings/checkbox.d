@@ -1,3 +1,21 @@
+/*==============================================CheckBox Docs=====================================
+Constructor:
+    this(Form parent, EventHandler checkFn = null)
+    this(Form parent, string txt, EventHandler checkFn = null)
+    this (Form parent, string txt, int x, int y, EventHandler checkFn = null)
+    this(Form parent, string txt, int x, int y, int w, int h, EventHandler checkFn = null)
+
+	Properties:
+		CheckBox inheriting all Control class properties		
+		checked     : bool
+        
+    Methods:
+        createHandle
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+        EventHandler - void delegate(Control, EventArgs)
+=============================================================================================*/
 
 module wings.checkbox;
 

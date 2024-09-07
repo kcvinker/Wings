@@ -1,5 +1,47 @@
 
+/*==============================================ComboBox Docs=====================================
+Constructor:
+    this(Form parent)
+    this (Form parent, int x, int y)
+    this(Form parent, int x, int y, int w, int h)
 
+	Properties:
+		ComboBox inheriting all Control class properties
+        items               : string[]
+        selectedIndex       : int
+        selectedItem        : string
+        dropDownStyle		: DropDownStyle enum [See enums.d]
+		itemCount           : int
+
+    Methods:
+        createHandle
+        addItem
+        addRange
+        removeItem
+        clearItems        
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+        EventHandler - void delegate(Control, EventArgs)
+            onSelectionChanged
+            onSelectionCommitted
+            onSelectionCancelled
+            onTextChanged
+            onTextUpdated
+            onListOpened
+            onListClosed
+            onTextMouseClick
+            onTextRightClick
+        MouseEventHandler - void delegate(Control, MouseEventArgs)
+            onTextMouseDown
+            onTextMouseUp
+            onTextRightDown
+            onTextRightUp
+        KeyEventHandler - void delegate(Control, KeyEventArgs)
+            onTextKeyDown
+            onTextKeyUp
+        
+=============================================================================================*/
 module wings.combobox; // Created on 02-May-2022 15:02:41
 
 import wings.d_essentials;

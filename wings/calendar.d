@@ -1,4 +1,30 @@
 
+/*==============================================Calendar Docs=====================================
+Constructor:
+    this(Form parent, int x, int y, int w, int h)
+    this(Form p, int x, int y) 
+
+	Properties:
+		Calendar inheriting all Control class properties		
+		value               : DateTime
+        viewMode            : ViewMode enum [See enums.d]
+        oldViewMode         : ViewMode enum
+        showWeekNumber      : bool
+        noTodayCircle       : bool
+        noToday             : bool
+        noTrailingDates     : bool
+        shortDateNames      : bool
+
+    Methods:
+        createHandle
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+        EventHandler type events - void delegate(Control, EventArgs)
+            valueChanged
+            selectionChanged
+            viewChanged
+=============================================================================================*/
 module wings.calendar;
 
 // import core.sys.windows.windows;
