@@ -1,4 +1,52 @@
 
+/*==============================================Form Docs=====================================
+    Constructor : Control 
+        this ()
+        this(string title)
+        this(string title, int w, int h)
+
+	Properties:
+		Form inheriting all Control class properties	
+        startPos
+        style
+        topMost
+        formState
+        maximizeBox
+        minimizeBox
+        createChildHandles
+			
+    Methods:
+        createHandle
+        show
+        setGradientColors
+        close
+        enablePrintPoint
+        registerHotKey
+        unRegisterHotKey
+        addMenuBar
+        addTimer
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+        EventHandler - void delegate(Control, EventArgs)
+            onMinimized
+            onMaximized
+            onRestored
+            onClosing
+            onClosed
+            onLoad
+            onActivate
+            onDeActivate
+            onMoving
+            onMoved
+	    SizeEventHandler - void delegate(Control, SizeEventArgs)
+            onSized
+            onSizing
+        HotKeyEventHandler - void delegate(Control, HotKeyEventArgs)
+            onHotKeyPress
+        ThreadMsgHandler - void delegate(WPARAM, LPARAM)
+            onThreadMsg        
+=============================================================================================*/
 module wings.form;
 
 
@@ -38,7 +86,7 @@ class Form : Control
     mixin finalProperty!("startPos", this.mStartPos);
     mixin finalProperty!("style", this.mWinStyle);
     mixin finalProperty!("topMost", this.mTopMost);
-    mixin finalProperty!("winState", this.mWinState);
+    mixin finalProperty!("formState", this.mWinState);
     mixin finalProperty!("maximizeBox", this.mMaxBox);
     mixin finalProperty!("minimizeBox", this.mMinBox);
     mixin finalProperty!("createChildHandles", this.mAutoCreate);

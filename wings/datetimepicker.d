@@ -1,13 +1,45 @@
 
 // Created on 08-May-2022 10:48:00
+/*==============================================DateTimePicker Docs=====================================
+Constructor:
+    this(Form p )
+    this(Form p, int x, int y ) 
+    this(Form parent, int x, int y, int w, int h)
+
+	Properties:
+		DateTimePicker inheriting all Control class properties	
+        formatString        : string
+        format              : DtpFormat enum [See enums.d]
+        rightAligned        : bool
+        fourDigitYear       : bool
+        showWeekNumber      : bool
+        noTodayCircle       : bool
+        noToday             : bool
+        noTrailingDates     : bool
+        shortDateNames      : bool
+        showUpDown          : bool
+        value	            : DateTime
+			
+    Methods:
+        createHandle
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+        EventHandler - void delegate(Control, EventArgs)
+            onCalendarOpened
+            onValueChanged
+            onCalendarClosed
+	    DateTimeEventHandler - void delegate(Control, DateTimeEventArgs)
+            onTextChanged
+       
+=============================================================================================*/
+
 module wings.datetimepicker; // Change the wndproc code - 09-feb-2023
 
 import wings.d_essentials;
 import std.conv: to;
 import wings.wings_essentials;
 import wings.date_and_time;
-
-
 
 int dtpNumber = 1;
 bool isDtpInit = false;
@@ -27,7 +59,6 @@ struct NMDATETIMESTRINGW
     SYSTEMTIME st;
     DWORD dwFlags;
 }
-
 
 
 /**

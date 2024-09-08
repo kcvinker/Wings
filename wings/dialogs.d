@@ -1,4 +1,43 @@
 // dialogs module - Created on 18-May-2023 23:22
+/*==============================================Common Dialogs Docs=====================================
+    (1) DialogBase
+            Abstract base class. 
+            Properties:
+                title               : string
+                initialFolder       : string
+                selectedPath        : string
+                allowAllFiles       : bool
+            Funcctions:
+                setFilter
+                setFilters
+
+    (2) FileOpenDialog : DialogBase
+            Constructor:
+                this(string title = "Open File", string initDir = "")
+            Properties:
+                multiSelection      : bool   
+                showHiddenFiles     : bool
+                fileNames           : string[] in case of multiSelection == true
+            Functions:
+                showDialog
+    
+    (3) FileSaveDialog : DialogBase
+            Constructor:
+                this(string title = "Save File", string initDir = "") 
+            Properties:
+                defaultExtension    : string
+            Functions:
+                showDialog
+
+    (4) FolderBrowserDialog : DialogBase
+            Constructor:
+                this(string title = "Select folder", string initialFolder = "") 
+            Properties:
+                newFolderButton     : bool
+                showFiles           : bool
+            Functions:
+                showDialog       
+=============================================================================================*/
 module wings.dialogs;
 
 import core.sys.windows.windows;

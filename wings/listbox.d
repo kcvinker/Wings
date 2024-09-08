@@ -1,6 +1,41 @@
-module wings.listbox;
-// Created on: 27-May-22 02:42:52 PM
 
+// Created on: 27-May-22 02:42:52 PM
+/*==============================================ListBox Docs=====================================
+    Constructor:
+        this(Form parent)
+        this(Form parent, int x, int y)
+        this(Form parent, int x, int y, int w, int h)
+
+	Properties:
+		ListBox inheriting all Control class properties	
+        hasHScroll          : bool
+        hasVScroll          : bool
+        selectedIndex       : int
+        selectedIndices     : int[]
+        selectedItem        : string
+        selectedItems       : string[]
+			
+    Methods:
+        createHandle
+        selectAll
+        clearSelection
+        insertItem
+        getIndex
+        getHotIndex
+        getHotItem
+        getItem
+        removeItem
+        removeAll
+        addItem
+        addRange
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+        EventHandler - void delegate(Control, EventArgs)
+            onSelectionChanged       
+=============================================================================================*/
+
+module wings.listbox;
 import wings.d_essentials;
 import std.conv;
 import std.array;

@@ -1,6 +1,23 @@
-module wings.groupbox;
-// GroupBox class -  Created on: 24-May-22 10:59:01 AM
 
+// GroupBox class -  Created on: 24-May-22 10:59:01 AM
+/*==============================================GroupBox Docs=====================================
+    Constructor:
+        this(Form parent, string txt)
+        this(Form parent, string txt, int x, int y)
+        this(Form parent, string txt, int x, int y, int w, int h)
+
+	Properties:
+		GroupBox inheriting all Control class properties	
+        getYpos : int
+			
+    Methods:
+        createHandle
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)       
+=============================================================================================*/
+
+module wings.groupbox;
 import wings.d_essentials;
 import wings.wings_essentials;
 

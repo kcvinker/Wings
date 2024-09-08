@@ -1,5 +1,24 @@
-module wings.label; // Created on: 24-May-2022 05:53:28 PM
+// Created on: 24-May-2022 05:53:28 PM
+/*==============================================Label Docs=====================================
+    Constructor:        
+        this(Form parent)
+        this(Form parent, string txt)
+        this(Form parent, int x, int y)
+        this(Form parent, string txt, int x, int y)
+        this(Form parent, string txt, int x, int y, int w, int h)
 
+	Properties:
+		Label inheriting all Control class properties	
+        autoSize        : bool
+        borderStyle     : LabelBorder enum [See enums.d]
+			
+    Methods:
+        createHandle
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)       
+=============================================================================================*/
+module wings.label; 
 import std.algorithm;
 import wings.d_essentials;
 import wings.wings_essentials;
