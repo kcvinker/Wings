@@ -1,6 +1,6 @@
+// ProbgressBar class -  Created on : 21-Jan-23 02:30:01 AM
 
 module wings.progressbar;
-// ProbgressBar class -  Created on : 21-Jan-23 02:30:01 AM
 
 import wings.d_essentials;
 import wings.wings_essentials;

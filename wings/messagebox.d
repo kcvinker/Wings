@@ -1,4 +1,19 @@
 // messagebox.d - Created on 15-Aug-2024 04:32
+/*====================================MessageBox Docs======================================
+Functions:
+    Void functions:
+        msgBox(string msg)
+        msgBox(HWND hw, string msg)
+        msgBox(string msg, string title)
+        msgBox(HWND hw, string msg, string title)
+
+    MsgBoxResult functions:
+        msgBox(string msg, string title, MsgBoxButton mbutton = MsgBoxButton.okOnly)
+        msgBox(HWND hw, string msg, string title, MsgBoxButton mbutton = MsgBoxButton.okOnly)
+        msgBox(string msg, string title, MsgBoxButton mbutton, MsgBoxIcon micon = MsgBoxIcon.info )
+        msgBox(HWND hw, string msg, string title, MsgBoxButton mbutton, MsgBoxIcon micon = MsgBoxIcon.info )
+
+============================================================================================*/
 
 module wings.messagebox;
 

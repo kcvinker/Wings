@@ -1,5 +1,43 @@
-module wings.menubar; // Created on 30-July-2022 06:56 PM
+ // Created on 30-July-2022 06:56 PM
+/*==============================================Menu Docs=====================================
+    (1) MenuBase:
+            Abstract class. A base class for menubar and menuitem & contextmenu
+    
+    (2) MenuBar:
+            Constructor:
+                this (Form parent)
+                this(Form parent, string[] menuNames ...)
 
+            Properties:
+                menus   : MenuItem[]
+            
+            Functions:
+                addItem
+                addItems
+                createHandle
+
+    (3) MenuItem:
+            Constructor:
+                this (string txt, MenuType mtyp, HMENU parentmenuHandle, int indexNum)
+            
+            Properties:
+                text        : string
+                menus       : MenuItem[]
+
+            Methods:
+                addItem
+                addItems
+                createHandle
+            
+            Events:                
+                MenuEventHandler - void delegate(MenuItem, EventArgs)
+                    onClick
+                    onPopup
+                    onCloseup
+                    onFocus       
+=============================================================================================*/
+
+module wings.menubar;
 import wings.d_essentials;
 import wings.wings_essentials;
 import std.stdio;

@@ -1,15 +1,62 @@
-module wings.listview; // Created on: 01-Jun-22 11:26:46 AM
+// Created on: 01-Jun-22 11:26:46 AM
 
-/* Usage Manual.
-    Constructor = auto lv = new ListView(frm, 100, 50, 200, 300); // frm is the form class instance
-    Create handle = lv.create();
-    Add column = addColumn(text [width [image_index]]);
-                addColumns(names);
-                addColumns(names_array, width_array);
-    Add item =
+/*==============================================ListView Docs=====================================
+    Constructor:
+        this(Form parent)
+        this(Form parent, int x, int y)
+        this(Form parent, int x, int y, int w, int h, string[] colnames = null, int[] widths = null)
 
-*/
+	Properties:
+		ListView inheriting all Control class properties	
+        checked                     : bool    
+        headerBackColor             : Color
+        headerForeColor             : Color
+        headerFont                  : Font
+        checkBoxColumnLast          : bool
+        enableHeaderVisualStyle     : bool
+        headerHeight                : int
+        hasCheckBox                 : bool
+        selectedIndex               : int
+        alignItemTop                : bool
+        hideSelection               : bool
+        multiSelection              : bool
+        fullRowSelection            : bool
+        hasCheckBox                 : bool
+        showGridLines               : bool
+        oneClickActivate            : bool
+        hotTrackSelection           : bool
+        editLabel                   : bool
+        noHeaders                   : bool
+        viewStyle                   : ListViewStyle
+        headerHeight                : int
+        columns                     : ListViewColumn[]
+        items                       : ListViewItem[]
+			
+    Methods:
+        createHandle
+        addColumn
+        addColumns
+        addRow
+        addItems
+        addItem
+        addSubItems
+        addSubItem
+        deleteItem
+        setImageList
+        setColumnOrder
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+        EventHandler - void delegate(Control, EventArgs)
+            onSelectionChanged
+            onCheckedChanged
+            onItemClicked
+            onItemDblClicked
+            onItemHover       
+=============================================================================================*/
 
+
+module wings.listview;
 import std.stdio;
 import std.conv;
 import std.algorithm;

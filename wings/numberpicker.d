@@ -1,5 +1,37 @@
-module wings.numberpicker; // Created on: 10-Jun-22 05:24:04 PM
+// Created on: 10-Jun-22 05:24:04 PM
+/*==============================================NumberPicker Docs=====================================
+    Constructor:        
+        this(Form parent)
+        this(Form parent, int x, int y, bool btnLeft)
+        this(Form parent, int x, int y, EventHandler evntFn = null )
+        this(Form parent, int x, int y, int w, int h, bool btnLeft = false, EventHandler evtFn = null)
 
+	Properties:
+		NumberPicker inheriting all Control class properties	
+        minRange            : double
+        maxRange            : double
+        value               : double
+        step                : double
+        hideSelection       : bool
+        buttonOnLeft        : bool
+        textAlign           : bool
+        hasSeperator        : bool
+        rotateValue         : bool        
+        formatString        : string
+        decimalPrecision    : int
+			
+    Methods:
+        createHandle        
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+        EventHandler - void delegate(Control, EventArgs)
+            onValueChanged
+        PaintEventHandler - void delegate(Control, PaintEventArgs)
+            onTextPaint       
+=============================================================================================*/
+
+module wings.numberpicker;
 import wings.d_essentials;
 import wings.wings_essentials;
 import std.conv;
