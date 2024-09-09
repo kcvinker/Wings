@@ -1,5 +1,26 @@
 
-module wings.radiobutton; // Created on: 23-July-22 11:43:46 AM
+// Created on: 23-July-22 11:43:46 AM
+/*==============================================RadioButton Docs=====================================
+    Constructor:
+        this (Form parent, string txt, int x, int y, EventHandler evtFn = null)
+        this (Form parent, string txt, int x, int y, int w, int h, EventHandler evtFn = null)
+
+	Properties:
+		RadioButton inheriting all Control class properties	
+        checked     : bool
+			
+    Methods:
+        createHandle
+        
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+        EventHandler - void delegate(Control, EventArgs)
+            onStateChanged       
+=============================================================================================*/
+
+
+module wings.radiobutton; 
 
 import wings.d_essentials;
 import wings.wings_essentials;
@@ -31,6 +52,7 @@ class RadioButton: Control
         this(parent, txt, x, y, 0, 0, evtFn);
     }
 
+
     override void createHandle()
     {
         import wings.buttons: btnClassName;
@@ -40,6 +62,15 @@ class RadioButton: Control
             this.setSubClass(&rbWndProc);
             this.setRbSize();
             if (this.mChecked) this.sendMsg(BM_SETCHECK, 0x0001, 0);
+        }
+    }
+
+    final bool checked() {return this.mChecked;}
+    final void checked(bool value) 
+    {
+        this.mChecked = value;
+        if (this.mIsCreated) {
+            this.sendMsg(BM_SETCHECK, cast(int)value, 0);
         }
     }
 

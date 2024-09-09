@@ -1,4 +1,31 @@
 // ProbgressBar class -  Created on : 21-Jan-23 02:30:01 AM
+/*==============================================ProgressBar Docs=====================================
+    Constructor:            
+        this(Form parent) 
+        this(Form parent, int x, int y)   
+        this(Form parent, int x, int y, int w, int h)
+
+    Properties:
+        ProgressBar inheriting all Control class properties    
+        minValue
+        maxValue
+        step
+        value
+        state
+        style
+        decimalPrecision
+        showPercentage
+            
+    Methods:
+        createHandle    
+        increment
+        step
+        startMarquee
+        stopMarquee    
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)     
+=============================================================================================*/
 
 module wings.progressbar;
 

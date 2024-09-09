@@ -1,5 +1,23 @@
-module wings.textbox; // Created on - 27-July-2022 07:41 AM
+// Created on - 27-July-2022 07:41 AM
+/*==============================================TextBox Docs=====================================
+    Constructor:
+        this (Form parent, int x, int y)
+        this (Form parent, int x, int y, int w, int h)
 
+	Properties:
+		TextBox inheriting all Control class properties	
+        readOnly    : bool
+			
+    Methods:
+        createHandle        
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+        EventHandler - void delegate(Control, EventArgs)
+            onTextChanged       
+=============================================================================================*/
+
+module wings.textbox; 
 
 import wings.d_essentials;
 import wings.wings_essentials;
