@@ -1,4 +1,20 @@
 module wings.timer; // Created - Unknown date: Modified on 16-Aug-2024 02:24
+/*==============================================Timer Docs=====================================
+    Constructor:
+        this(HWND parentHwnd, UINT interval, EventHandler handler)
+        You can use Form's addTimer method.
+
+	Properties:
+        interval    : uint
+			
+    Methods:
+        start
+        stop        
+        
+    Events:
+        EventHandler - void delegate(Control, EventArgs)
+            onTick       
+=============================================================================================*/
 
 import core.sys.windows.windows;
 

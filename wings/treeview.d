@@ -1,4 +1,50 @@
 module wings.treeview; // Created on 27-July-2022 02:25 PM
+/*==============================================TreeView Docs=====================================
+    TreeView Class
+        Constructor:
+            this (Form parent, int x, int y)
+            this (Form parent, int x, int y, int w, int h)
+
+        Properties:
+            TreeView inheriting all Control class properties	
+            noLine              : bool
+            noButton            : bool
+            hasCheckBox         : bool
+            fullRowSelect       : bool
+            editableLabel       : bool
+            showSelection       : bool
+            lineColor           : Color
+            selectedNode        : TreeNode
+            nodes               : TreeNode[]
+                
+        Methods:
+            createHandle  
+            addNode
+            addNodes
+            insertNode
+            addChildNode
+            addChildNodes
+            insertChildNode      
+            
+        Events:
+            All public events inherited from Control class. (See controls.d)
+            EventHandler - void delegate(Control, EventArgs)
+    ------------------------------------------------------------------------------------
+    TreeNode Class
+        Constructor:
+            this (string txt)
+        Properties:
+            text                : string
+            imageIndex          : int
+            selectedImageIndex  : int
+            childCount          : int
+            backColor           : Color
+            foreColor           : Color
+        Functions:
+            NA
+        Events:
+            NA                   
+=============================================================================================*/
 
 import wings.d_essentials;
 import wings.wings_essentials;
@@ -66,6 +112,18 @@ class TreeView: Control
         this.addNodeInternal(NodeOps.insertChild, node, parent, index);
     }
 
+    // Properties============================= 
+        mixin finalProperty!("noLine", this.mNoLine);
+        mixin finalProperty!("noButton", this.mNoButton);
+        mixin finalProperty!("hasCheckBox", this.mHasCheckBox);
+        mixin finalProperty!("fullRowSelect", this.mFullRowSel);
+        mixin finalProperty!("editableLabel", this.mEditable);
+        mixin finalProperty!("showSelection", this.mShowSel);
+        mixin finalProperty!("lineColor", this.mLineClr);
+        TreeNode selectedNode() {return this.mSelNode;}
+        TreeNode[] nodes() {return this.mNodes;}        
+    // End of Properties================================
+    
 
     private:
         bool mNoLine;

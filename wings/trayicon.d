@@ -1,4 +1,32 @@
 module wings.trayicon; // Created on 30-July-2022 06:45 PM
+/*==============================================TrayIcon Docs=====================================
+    Constructor:
+        this(string tooltip, string iconpath = "")
+
+	Properties:	
+        contextMenu     : ContextMenu
+        menuTrigger     : TrayMenuTrigger
+        tooltip         : string
+        iconPath        : string
+			
+    Methods:
+        addContextMenu
+        showBalloon
+        
+    Events:
+        TrayIconEventHandler - void delegate(TrayIcon, EventArgs)
+            onBalloonShow
+            onBalloonClose
+            onBalloonClick    
+            onMouseMove    
+            onLeftMouseDown
+            onLeftMouseUp    
+            onRightMouseDown
+            onRightMouseUp
+            onLeftClick
+            onRightClick
+            onLeftDoubleClick       
+=============================================================================================*/
 
 import core.sys.windows.windows;
 import std.utf;

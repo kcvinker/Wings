@@ -1,4 +1,44 @@
 module wings.trackbar;
+/*==============================================TrackBar Docs=====================================
+    Constructor:
+        this (Form parent, int x, int y)
+        this (Form parent, int x, int y, int w, int h, bool cdraw = false, 
+                EventHandler evtFn = null, bool vertical = false )
+
+	Properties:
+		TrackBar inheriting all Control class properties	
+        vertical            : bool
+        showSelection       : bool
+        noTics              : bool
+        customDraw          : bool
+        toolTip             : bool
+        reverse             : bool
+        freeMove            : bool
+        value               : int
+        ticLength           : int
+        largeChange         : int
+        smallChange         : int
+        frequency           : int
+        minimum             : int
+        maximum             : int        
+        selectionColor      : Color
+        ticColor            : Color
+        channelColor        : Color        
+        ticWidth            : int
+        ticPosition         : TicPosition enum [See enums.d]        
+        channelStyle        : ChannelStyle enum [See enums.d]
+			
+    Methods:
+        createHandle    
+        setTicPos    
+        
+    Events:
+        All public events inherited from Control class. (See controls.d)
+        EventHandler - void delegate(Control, EventArgs)
+            onValueChanged
+            onDragging
+            onDragged       
+=============================================================================================*/
 
 import std.stdio;
 import wings.d_essentials;
