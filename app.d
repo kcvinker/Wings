@@ -24,7 +24,6 @@ class App {
 		// Now, add a context menu to our tray. '|' is for separator.
 		tic.addContextMenu(TrayMenuTrigger.anyClick, "Windows_ti", "Linux_ti", "|", "MacOS_ti");
 
-
 		// If this set to true, all control handles will be
 		// created right after the class ctor finished.
 		frm.createChildHandles = true; 
