@@ -45,7 +45,8 @@
         HotKeyEventHandler - void delegate(Control, HotKeyEventArgs)
             onHotKeyPress
         ThreadMsgHandler - void delegate(WPARAM, LPARAM)
-            onThreadMsg        
+            onThreadMsg  
+                  
 =============================================================================================*/
 module wings.form;
 

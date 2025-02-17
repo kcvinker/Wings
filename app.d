@@ -74,7 +74,6 @@ class App {
 
 		// Add a timer with a delegate to handle the onTick event.
 		tmr = frm.addTimer(800, &this.timerTickHandler);
-
 	}
 
 	void setControlProps()
