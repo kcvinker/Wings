@@ -55,7 +55,7 @@ struct Gradient {
 
 package HBRUSH createGradientBrush(HDC dc, RECT rct, Color c1, Color c2, bool t2b = true )
 {
-    HBRUSH tBrush;
+    
     HDC memHDC = CreateCompatibleDC(dc);
     HBITMAP hBmp = CreateCompatibleBitmap(dc, rct.right, rct.bottom);
     const int loopEnd = t2b ? rct.bottom : rct.right;
@@ -76,7 +76,7 @@ package HBRUSH createGradientBrush(HDC dc, RECT rct, Color c1, Color c2, bool t2
         g = c1.green + (i * cast(int) (c2.green - c1.green) / loopEnd);
         b = c1.blue + (i * cast(int) (c2.blue - c1.blue) / loopEnd);
 
-        tBrush = CreateSolidBrush(getClrRef(r, g, b));
+        HBRUSH tBrush = CreateSolidBrush(getClrRef(r, g, b));
         scope(exit) DeleteObject(tBrush);
 
         tRct.left = t2b ? 0 : i;
