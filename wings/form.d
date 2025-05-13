@@ -141,14 +141,14 @@ class Form : Control
         this(title, 0, 0, w, h);
     }
 
-    ~this() 
-    {
-        if (this.callDtor) {
-            this.finalize();
-        } else {
-            writeln("Form class dtor worked");
-        }
-    }
+    // ~this() 
+    // {
+    //     // if (this.callDtor) {
+    //     //     this.finalize();
+    //     // } else {
+    //     //     // writeln("Form class dtor worked");
+    //     // }
+    // }
 
     /// Creates the window
     override void createHandle()
@@ -480,7 +480,7 @@ class Form : Control
                 this.mHotKeyIDList.length = 0;
             }
             this.callDtor = false;
-            writeln("Form finalize worked");
+            // writeln("Form finalize worked");
         }
 
 }

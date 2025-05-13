@@ -114,6 +114,7 @@ class Button : Control
         mText = txt;
         mStyle = WS_CHILD | BS_NOTIFY | WS_TABSTOP | WS_VISIBLE | BS_PUSHBUTTON;
         mExStyle = 0;
+        this.mFont = new Font(parent.font);
         SetRect(&this.mRect, x, y, w, h);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
@@ -311,7 +312,7 @@ struct FlatDraw
 	    if (this.hotPen) DeleteObject(this.hotPen);
 	    if (this.dFrmBrush) DeleteObject(this.dFrmBrush);
 	    if (this.hFrmBrush) DeleteObject(this.hFrmBrush);
-        print("FlatDraw resources freed");
+        // print("FlatDraw resources freed");
     }
 
     void setData(Color c)

@@ -60,6 +60,7 @@ class NumberPicker: Control
         mixin(repeatingCode);
         ++npNumber;
         mControlType = ControlType.numberPicker;
+        this.mFont = new Font(parent.font);
         mBtnLeft = btnLeft;
         mMaxRange = 100;
         mMinRange = 0;

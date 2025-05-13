@@ -314,7 +314,7 @@ class MenuItem : MenuBase
                 foreach (menu; this.mMenus) menu.finalize();
             }
             DestroyMenu(this.mHandle);
-            print("MenuItem %s destroyed", this.mText);
+            // print("MenuItem %s destroyed", this.mText);
         }
 
     private:

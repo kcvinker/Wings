@@ -51,6 +51,7 @@ class CheckBox : Control
         mExStyle = WS_EX_LTRREADING | WS_EX_LEFT;
         mTxtStyle = DT_SINGLELINE | DT_VCENTER;
         mBackColor = parent.mBackColor;
+        this.mFont = new Font(parent.font);
         this.mName = format("%s_%d", "CheckBox_", cbNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;

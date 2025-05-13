@@ -17,12 +17,13 @@ import wings.colors;
 import wings.contextmenu;
 
 
+
+
 enum repeatingCode = "  mWidth = w;
                         mHeight = h;
                         mXpos = x;
                         mYpos = y;
-                        mParent = parent;
-                        mFont = parent.font;"; /// Setting size, position, and parent font.
+                        mParent = parent;"; /// Setting size, position.
 
 mixin template finalProperty(string pName, alias obj) {
     mixin(`final typeof(obj) `, pName, `() { return obj; }`);
@@ -32,6 +33,7 @@ mixin template finalProperty(string pName, alias obj) {
 
 /// A base class for all controls
 class Control {
+    import wings.graphics : WideString;
 
     /// Set the text of control
         void text(string value)
@@ -273,10 +275,6 @@ class Control {
         DWORD mExStyle;
         string mText;
         string mName;
-        int mWidth;
-        int mHeight;
-        int mXpos;
-        int mYpos;
         int mCtlId;
         bool mIsCreated;
         bool mBaseFontChanged;
@@ -303,6 +301,10 @@ class Control {
         bool rDownHappened;
         bool isMouseEntered;
         bool mDisabled;
+        int mWidth;
+        int mHeight;
+        int mXpos;
+        int mYpos;
         Color mBackColor;
         Color mForeColor;
         uint mDrawFlag;
@@ -311,6 +313,7 @@ class Control {
         HBRUSH mBkBrush;
         Form mParent;
         ContextMenu mCmenu;
+        WideString wtext;
         static int mSubClassId = 1000;
         int mRight, mBottom;
 

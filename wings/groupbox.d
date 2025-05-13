@@ -18,13 +18,16 @@
 =============================================================================================*/
 
 module wings.groupbox;
+
 import wings.d_essentials;
 import wings.wings_essentials;
+import wings.graphics;
+
 
 
 enum DWORD gb_style = WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP |
                 WS_OVERLAPPED| WS_CLIPCHILDREN| WS_CLIPSIBLINGS;
-enum DWORD gb_exstyle = WS_EX_RIGHTSCROLLBAR| WS_EX_TRANSPARENT| WS_EX_CONTROLPARENT;
+enum DWORD gb_exstyle = WS_EX_RIGHTSCROLLBAR| WS_EX_CONTROLPARENT;
 
 class GroupBox: Control
 {
@@ -33,10 +36,12 @@ class GroupBox: Control
         mixin(repeatingCode);
         ++gbNumber;
         mControlType = ControlType.groupBox;
+        this.mFont = new Font(parent.font);
         mText = txt;
         mStyle = gb_style; 
         mExStyle = gb_exstyle; 
         mBackColor = parent.mBackColor;
+        wtext = new WideString(txt);
         this.mName = format("%s_%d", "GroupBox_", gbNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
@@ -60,10 +65,13 @@ class GroupBox: Control
         
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref );
+        this.mRect.right = this.mWidth;
+        this.mRect.bottom = this.mHeight;
         this.createHandleInternal(btnClassName.ptr);
         if (this.mHandle) {
             this.setSubClass(&gbWndProc);
-            this.getTextBounds();
+            // this.getTextBounds();
+            this.doubleBufferFill();
         }
     }
 
@@ -87,6 +95,8 @@ class GroupBox: Control
 
     private:
         HPEN mPen;
+        HDC _memDc;
+        RECT mRect;
         bool isPaintBkg;
         int mTxtWidth;
         static int gbNumber;
@@ -101,19 +111,17 @@ class GroupBox: Control
             this.mTxtWidth = ss.cx + 8;
         }
 
-        void drawText() {
+        void doubleBufferFill() {
             HDC hdc = GetDC(this.mHandle);
             scope(exit) ReleaseDC(this.mHandle, hdc);
-            int yp = 11;
-            SetBkMode(hdc, TRANSPARENT);
-
-            SelectObject(hdc, this.mPen);
-            MoveToEx(hdc, 10, yp, null);
-            LineTo(hdc, this.mTxtWidth, yp);
-
-            SelectObject(hdc, this.font.handle);
-            SetTextColor(hdc, this.mForeColor.cref);
-            TextOutW(hdc, 10, 0, this.mText.toUTF16z, cast(int)this.mText.length);
+            SIZE sz;
+            SelectObject(hdc, this.mFont.mHandle);
+            GetTextExtentPoint32(hdc, this.wtext.constPtr, this.wtext.inputLen, &sz);
+            this._memDc = CreateCompatibleDC(hdc);
+            HBITMAP _hBitmap = CreateCompatibleBitmap(hdc, this.mWidth, this.mHeight);
+            SelectObject(this._memDc, _hBitmap);
+            FillRect(this._memDc, &this.mRect, this.mBkBrush);
+            this.mTxtWidth = sz.cx + 10;
         }
 
         /*void drawTextDblBuff() {
@@ -210,17 +218,22 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_GETTEXTLENGTH: return 0;
             case WM_ERASEBKGND:
                 GroupBox gb = getControl!GroupBox(refData);
-                if (gb.mDrawFlag ) {
-                    auto hdc = cast(HDC) wParam;
-                    RECT rc = gb.clientRect();
-                    FillRect(hdc, &rc, gb.mBkBrush);
-                    return 1;
-                }
+                auto dc = cast(HDC)wParam;
+                BitBlt(dc, 0, 0, gb.mWidth, gb.mHeight, gb._memDc, 0, 0, SRCCOPY);
+                return 1;
+                // if (gb.mDrawFlag ) {
+                //     auto hdc = cast(HDC) wParam;
+                //     RECT rc = gb.clientRect();
+                //     FillRect(hdc, &rc, gb.mBkBrush);
+                //     return 1;
+                // }
             break;
             case WM_PAINT:
                 GroupBox gb = getControl!GroupBox(refData);
                 auto ret = DefSubclassProc(hWnd, message, wParam, lParam);
-                gb.drawText();
+                auto gfx = new Graphics(hWnd);
+                gfx.drawHLine(gb.mPen, 10, 12, gb.mTxtWidth);
+                gfx.drawText(gb, 12, 0);
                 return ret;
             break;
             default: 

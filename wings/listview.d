@@ -89,6 +89,7 @@ class ListView: Control
         mixin(repeatingCode);
         ++lvNumber;
         mControlType = ControlType.listView;
+        this.mFont = new Font(parent.font);
         mLvStyle = ListViewStyle.report;
         mShowGridLines = true;
         mFullRowSel = true;

@@ -34,6 +34,7 @@ class RadioButton: Control
         ++rbNumber;
         mAutoSize = true;
         mControlType = ControlType.radioButton;
+        this.mFont = new Font(parent.font);
         mText = txt;
         mStyle = WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON;
         mExStyle = WS_EX_LTRREADING | WS_EX_LEFT;

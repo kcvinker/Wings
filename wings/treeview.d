@@ -63,6 +63,7 @@ class TreeView: Control
         mixin(repeatingCode);
         ++tvNumber;
         mControlType = ControlType.treeView;
+        this.mFont = new Font(parent.font);
         mStyle = tvStyle;
         mExStyle = 0;// | WS_EX_LEFT;
         mBackColor(0xFFFFFF);

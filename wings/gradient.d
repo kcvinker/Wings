@@ -26,7 +26,7 @@ struct Gradient {
     { // Destructor
         if (this.defPen) DeleteObject(this.defPen);
         if (this.hotPen) DeleteObject(this.hotPen);
-        print("GradDraw resources freed");
+        // print("GradDraw resources freed");
     }
 
     void setData(uint c1, uint c2, bool r2l = false)
@@ -60,8 +60,6 @@ package HBRUSH createGradientBrush(HDC dc, RECT rct, Color c1, Color c2, bool t2
     HBITMAP hBmp = CreateCompatibleBitmap(dc, rct.right, rct.bottom);
     const int loopEnd = t2b ? rct.bottom : rct.right;
     scope(exit) {
-
-        DeleteObject(tBrush);
         DeleteObject(hBmp);
         DeleteDC(memHDC);
     }
@@ -85,6 +83,7 @@ package HBRUSH createGradientBrush(HDC dc, RECT rct, Color c1, Color c2, bool t2
         tRct.bottom = t2b ? i + 1 : loopEnd;
 
         FillRect(memHDC, &tRct, tBrush);
+        DeleteObject(tBrush);
     }
 
     auto grBrush = CreatePatternBrush(hBmp);

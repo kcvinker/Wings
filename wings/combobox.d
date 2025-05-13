@@ -68,6 +68,7 @@ class ComboBox: Control
         mExStyle = WS_EX_CLIENTEDGE;
         mBackColor(defBackColor);
         mForeColor(defForeColor);
+        this.mFont = new Font(parent.font);
         mSelIndex = -1;
         this.mName = format("%s_%d", "ComboBox_", cmbNumber);
         this.mParent.mControls ~= this;

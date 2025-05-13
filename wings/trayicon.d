@@ -96,7 +96,7 @@ class TrayIcon
         Shell_NotifyIconW(NIM_DELETE, &this.mNid);
         if (this.mDestroyIcon) DestroyIcon(this.mTrayHicon);
         if (this.mCmenuUsed) this.mCmenu.destroy(); 
-        print("TrayIcon ctor worked");  
+        // print("TrayIcon ctor worked");  
     }
     
     /// Add a context menu to tray icon with menu items. 
@@ -260,10 +260,10 @@ private LRESULT trayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
     try {
         // print("TrayIcon Wndproc rcvd", message);
         switch (message) {
-            case WM_DESTROY:
+            // case WM_DESTROY:
                 // auto tray = getAs!TrayIcon(hWnd);  
                    
-                print("Tray icon Message only window got WM_DESTROY");
+                // print("Tray icon Message only window got WM_DESTROY");
                 // return 0;
             break;
             case CM_TRAY_MSG:	

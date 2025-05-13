@@ -98,6 +98,7 @@ class DateTimePicker: Control
 
         mixin(repeatingCode);
         mControlType = ControlType.dateTimePicker;
+        this.mFont = new Font(parent.font);
         this.mExStyle = 0;
         this.mFormat = DtpFormat.custom;
         this.mFormatString = " dd-MMM-yyyy";

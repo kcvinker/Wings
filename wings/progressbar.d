@@ -49,6 +49,7 @@ class ProgressBar : Control
         mixin(repeatingCode);
         ++pgbNumber;
         mControlType = ControlType.progressBar;
+        this.mFont = new Font(parent.font);
         mStyle = pgbStyle; 
         mExStyle = pgbExStyle; 
 		mBarStyle = ProgressBarStyle.blockStyle;

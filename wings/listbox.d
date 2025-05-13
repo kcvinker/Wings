@@ -53,6 +53,7 @@ class ListBox: Control {
         mixin(repeatingCode);
         ++lbxNumber;
         mControlType = ControlType.listBox;
+        this.mFont = new Font(parent.font);
         mStyle = lbxStyle;
         mExStyle = 0;
         mBackColor(defBackColor);

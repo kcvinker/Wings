@@ -107,6 +107,7 @@ class Calendar : Control
         this.mName = format("%s_%d", "Calendar_", calNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
+        
         ++Control.stCtlId;
         ++calNumber;
         if (parent.mAutoCreate) this.createHandle();

@@ -36,6 +36,7 @@ class TextBox: Control
         mixin(repeatingCode);
         ++tbNumber;
         this.mControlType = ControlType.textBox;
+        this.mFont = new Font(parent.font);
         this.mName = format("%s_%d", "Textbox_", tbNumber);
         this.mStyle = tbStyle;  
         this.mExStyle = tbExStyle;

@@ -34,6 +34,7 @@ class Label: Control
         mText = txt;
         ++lblNumber;
         mControlType = ControlType.label;
+        this.mFont = new Font(parent.font);
         mTxtAlign = TextAlignment.midLeft;
         mStyle = lbStyle;
         mExStyle = 0;
