@@ -135,7 +135,7 @@ class App {
 
 	// When clicked on button, combo's drop down style will change. 
 	void btn1OnClick(Control s, EventArgs e) {
-		this.cmb.dropDownStyle = DropDownStyle.textCombo;
+		// this.cmb.dropDownStyle = DropDownStyle.textCombo;
 	}
 
 	// Timer tick event handler
@@ -143,7 +143,7 @@ class App {
 
 	// ProgressBar will show the track bar values.
 	void onTrackValueChanged(Control c, EventArgs e) {
-		pgb.value = tkb1.value;
+		// pgb.value = tkb1.value;
 	}
 
 	void onContextMenuClick(MenuItem m, EventArgs e) {
@@ -157,7 +157,7 @@ class App {
 	}
 
 	void btn3Click(Control c, EventArgs e) {
-		this.tic.showBalloon("Wings Balloon", "This is Wings Balloon Text", 3000);
+		// this.tic.showBalloon("Wings Balloon", "This is Wings Balloon Text", 3000);
 	}
 
 	private:

@@ -311,7 +311,7 @@ void print(T)(string msg, T value1, T value2)
     }
 }
 
-void printf(T...)(string fmt, T values)
+void ptf(T...)(string fmt, T values)
 {
     debug{
         import std.stdio;

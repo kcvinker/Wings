@@ -33,7 +33,7 @@ class Font {
         this.mWeight = fWeight;
         this.mItalis = fItalics;
         this.mUnderLine = fUnderline;
-        this.wtext = new WideString(fName);
+        this.mWtext = new WideString(fName);
     }
 
     this(bool createNow, string fName, int fSize,
@@ -64,8 +64,8 @@ class Font {
         lf.lfItalic = this.mItalis;
         lf.lfUnderline = this.mUnderLine;
         
-        // lf.lfFaceName[0..this.wtext.inputLen] = this.wtext.data; //this.mName.toUTF16; // This idea got from AndrejMitrovic's DWinProgramming repo.
-        foreach (i, wc; this.wtext.data) {
+        // lf.lfFaceName[0..this.mWtext.inputLen] = this.mWtext.data; //this.mName.toUTF16; // This idea got from AndrejMitrovic's DWinProgramming repo.
+        foreach (i, wc; this.mWtext.data) {
             if (i == lf.lfFaceName.length) break;
             lf.lfFaceName[i] = wc;
         }
@@ -89,7 +89,7 @@ class Font {
         this.mWeight = src.mWeight;
         this.mItalis = src.mItalis;
         this.mUnderLine = src.mUnderLine;
-        this.wtext = new WideString(src.wtext);
+        this.mWtext = new WideString(src.mWtext);
         if (src.mHandle) this.createFontHandle();
     }
 
@@ -104,7 +104,7 @@ class Font {
 
     package:
         HFONT mHandle;
-        WideString wtext;
+        WideString mWtext;
         string mFunc;
     private :
         string mName;

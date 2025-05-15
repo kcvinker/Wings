@@ -313,7 +313,7 @@ class Control {
         HBRUSH mBkBrush;
         Form mParent;
         ContextMenu mCmenu;
-        WideString wtext;
+        WideString mWtext;
         static int mSubClassId = 1000;
         int mRight, mBottom;
 
@@ -340,6 +340,11 @@ class Control {
                 this.createLogFontInternal();
                 this.getRightAndBottom();
             }
+        }
+
+        void ctlSetPos() {
+            SetWindowPos(this.mHandle, null, this.mXpos, this.mYpos, 
+                            this.mWidth, this.mHeight, SWP_NOZORDER);
         }
 
         final void setFontInternal() // Protected

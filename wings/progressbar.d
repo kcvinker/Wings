@@ -235,18 +235,18 @@ class ProgressBar : Control
                 string vtext = this.mDeciPrec > 0 ? format(this.percFmt, perc) : format(this.percFmt, cast(int)perc);
                 // writefln("perc %f, %s, %s", perc, this.mValue, this.mMaxValue);
 
-                auto wtext = vtext.toUTF16z;
+                auto wtxt = vtext.toUTF16z;
                 HDC hdc = GetDC(hWnd);
                 scope(exit) ReleaseDC(hWnd, hdc);
 
                 SelectObject(hdc, this.font.handle);
-                GetTextExtentPoint32(hdc, wtext, cast(int)vtext.length, &ss);
+                GetTextExtentPoint32(hdc, wtxt, cast(int)vtext.length, &ss);
 
                 int x = (this.mWidth - ss.cx) / 2;
                 int y = (this.mHeight - ss.cy) / 2;
                 SetBkMode(hdc, TRANSPARENT);
                 SetTextColor(hdc, this.mForeColor.cref);
-                TextOut(hdc, x, y, wtext, cast(int)vtext.length );
+                TextOut(hdc, x, y, wtxt, cast(int)vtext.length );
                 // return ret;
             } else {
                 // return DefSubclassProc(hw, msg, wp, lp);

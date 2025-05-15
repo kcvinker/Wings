@@ -41,7 +41,9 @@ class GroupBox: Control
         mStyle = gb_style; 
         mExStyle = gb_exstyle; 
         mBackColor = parent.mBackColor;
-        wtext = new WideString(txt);
+        mWtext = new WideString(txt);
+        this.mDBFill = true;
+        this.mGetWidth = true;
         this.mName = format("%s_%d", "GroupBox_", gbNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
@@ -61,8 +63,7 @@ class GroupBox: Control
 
     override void createHandle()
     {
-        import wings.buttons: btnClassName;
-        
+        import wings.buttons: btnClassName;        
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref );
         this.mRect.right = this.mWidth;
@@ -71,16 +72,56 @@ class GroupBox: Control
         if (this.mHandle) {
             this.setSubClass(&gbWndProc);
             // this.getTextBounds();
-            this.doubleBufferFill();
+            // this.doubleBufferFill();
         }
+    }
+
+    final override void backColor(uint value)
+    {
+        this.mBackColor(value);
+        this.resetGDIObjects(true);        
+        this.checkRedrawNeeded();
     }
 
     override final void text(string value)
     {
         this.mText = value;
-        if (this.mIsCreated) this.getTextBounds();
+        this.mWtext.updateBuffer(value);
+        this.mGetWidth = true;
+        if (this.mIsCreated) SetWindowTextW(this.mHandle, this.mWtext.ptr);
         this.checkRedrawNeeded();
     }
+
+    override final void width(int value)
+    {
+        this.mWidth = value;
+        this.resetGDIObjects(false);  
+        if (this.mIsCreated) this.ctlSetPos();
+    }
+
+    override final void height(int value)
+    {
+        this.mHeight = value;
+        this.resetGDIObjects(false);  
+        if (this.mIsCreated) this.ctlSetPos();
+    }
+
+    override final void font(Font value)
+    {
+        this.mFont = value;
+        this.mGetWidth = true; 
+        this.checkRedrawNeeded();
+    }
+
+    void changeFont(string fname, int fsize, FontWeight fweight = FontWeight.normal) 
+    {
+        auto fnt = new Font(fname, fsize, fweight);
+        this.mFont = new Font(fnt);
+        this.mGetWidth = true; 
+        this.checkRedrawNeeded();
+    }
+
+
 
     int getYpos()
     {
@@ -95,9 +136,12 @@ class GroupBox: Control
 
     private:
         HPEN mPen;
-        HDC _memDc;
+        HDC mMemDc;
+        HBITMAP mBmp;
         RECT mRect;
         bool isPaintBkg;
+        bool mDBFill;
+        bool mGetWidth;
         int mTxtWidth;
         static int gbNumber;
 
@@ -111,17 +155,16 @@ class GroupBox: Control
             this.mTxtWidth = ss.cx + 8;
         }
 
-        void doubleBufferFill() {
-            HDC hdc = GetDC(this.mHandle);
-            scope(exit) ReleaseDC(this.mHandle, hdc);
-            SIZE sz;
-            SelectObject(hdc, this.mFont.mHandle);
-            GetTextExtentPoint32(hdc, this.wtext.constPtr, this.wtext.inputLen, &sz);
-            this._memDc = CreateCompatibleDC(hdc);
-            HBITMAP _hBitmap = CreateCompatibleBitmap(hdc, this.mWidth, this.mHeight);
-            SelectObject(this._memDc, _hBitmap);
-            FillRect(this._memDc, &this.mRect, this.mBkBrush);
-            this.mTxtWidth = sz.cx + 10;
+        void resetGDIObjects(bool brpn) {
+            if (brpn) {
+                if (this.mBkBrush) DeleteObject(this.mBkBrush);
+                if (this.mPen) DeleteObject(this.mPen);
+                this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
+                this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref );
+            }
+            if (this.mMemDc) DeleteDC(this.mMemDc);
+            if (this.mBmp) DeleteObject(this.mBmp);
+            this.mDBFill = true;
         }
 
         /*void drawTextDblBuff() {
@@ -157,12 +200,13 @@ class GroupBox: Control
             BitBlt(hdc, 10, 0, ss.cx, ss.cy, dcMem, 0, 0, SRCCOPY);
         } */
 
-        void finalize(UINT_PTR scID)
+        void finalize()
         { 
             // This is our destructor. Clean all the dirty stuff
             DeleteObject(this.mBkBrush);
             DeleteObject(this.mPen);
-            RemoveWindowSubclass(this.mHandle, &gbWndProc, scID);
+            DeleteObject(this.mBmp);
+            DeleteDC(this.mMemDc);            
         }
 
 
@@ -176,8 +220,9 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
         switch (message) {
             
             case WM_DESTROY: 
+                RemoveWindowSubclass(hWnd, &gbWndProc, scID);
                 GroupBox gb = getControl!GroupBox(refData);
-                gb.finalize(scID); 
+                gb.finalize(); 
             break;
             case WM_SETFOCUS: 
                 GroupBox gb = getControl!GroupBox(refData);
@@ -218,21 +263,30 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_GETTEXTLENGTH: return 0;
             case WM_ERASEBKGND:
                 GroupBox gb = getControl!GroupBox(refData);
-                auto dc = cast(HDC)wParam;
-                BitBlt(dc, 0, 0, gb.mWidth, gb.mHeight, gb._memDc, 0, 0, SRCCOPY);
+                auto hdc = cast(HDC)wParam;
+                if (gb.mGetWidth) {
+                    SIZE sz;
+                    SelectObject(hdc, gb.mFont.mHandle);
+                    GetTextExtentPoint32(hdc, gb.mWtext.constPtr, gb.mWtext.inputLen, &sz);
+                    gb.mTxtWidth = sz.cx + 10;
+                    gb.mGetWidth = false;                    
+                }
+                if (gb.mDBFill) {
+                    gb.mMemDc = CreateCompatibleDC(hdc);
+                    gb.mBmp = CreateCompatibleBitmap(hdc, gb.mWidth, gb.mHeight);
+                    SelectObject(gb.mMemDc, gb.mBmp);
+                    FillRect(gb.mMemDc, &gb.mRect, gb.mBkBrush);
+                    gb.mDBFill = false;
+                }
+                BitBlt(hdc, 0, 0, gb.mWidth, gb.mHeight, gb.mMemDc, 0, 0, SRCCOPY);
                 return 1;
-                // if (gb.mDrawFlag ) {
-                //     auto hdc = cast(HDC) wParam;
-                //     RECT rc = gb.clientRect();
-                //     FillRect(hdc, &rc, gb.mBkBrush);
-                //     return 1;
-                // }
+                
             break;
             case WM_PAINT:
                 GroupBox gb = getControl!GroupBox(refData);
                 auto ret = DefSubclassProc(hWnd, message, wParam, lParam);
                 auto gfx = new Graphics(hWnd);
-                gfx.drawHLine(gb.mPen, 10, 12, gb.mTxtWidth);
+                gfx.drawHLine(gb.mPen, 10, 9, gb.mTxtWidth);
                 gfx.drawText(gb, 12, 0);
                 return ret;
             break;

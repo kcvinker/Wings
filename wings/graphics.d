@@ -29,7 +29,7 @@ class Graphics {
         scope(exit) ReleaseDC(pc.mHandle, dc);
         SIZE sz;    
         SelectObject(dc, pc.mFont.mHandle);
-        GetTextExtentPoint32(dc, pc.wtext.constPtr, pc.wtext.inputLen, &sz);  
+        GetTextExtentPoint32(dc, pc.mWtext.constPtr, pc.mWtext.inputLen, &sz);  
         return sz;      
     }
 
@@ -43,7 +43,7 @@ class Graphics {
         SetBkMode(this._hdc, 1);
         SelectObject(this._hdc, pc.font.mHandle);
         SetTextColor(this._hdc, pc.mForeColor.cref);
-        TextOut(this._hdc, x, y, pc.wtext.constPtr, pc.wtext.inputLen);
+        TextOut(this._hdc, x, y, pc.mWtext.constPtr, pc.mWtext.inputLen);
     }
     
 
@@ -58,9 +58,9 @@ class Graphics {
 
 class WideString {
     this(string txt) {
-        this._inputLen = cast(int)txt.length;
-        this._inputStr = txt;
-        if (this._inputLen) {
+        this.mInpLen = cast(int)txt.length;
+        this.mInpStr = txt;
+        if (this.mInpLen) {
             this.convertToWstring();
         } else {
             writeln("Can't create WideString, txt is empty");
@@ -72,38 +72,55 @@ class WideString {
     }
 
     void copyFrom(WideString src) {
-        this._inputLen = cast(int)src.inputLen;
-        this._inputStr = src.inputStr;
-        this._bytes = src.bytes;
-        if (this._inputLen < src.inputLen) {
-            this._data = new wchar[](this._bytes);
+        this.mInpLen = cast(int)src.inputLen;
+        this.mInpStr = src.inputStr;
+        this.mBytes = src.bytes;
+        this.mWlen = src.mWlen;
+        if (this.mInpLen < src.inputLen) {
+            this.mData = new wchar[](this.mWlen + 1);
         }
-        this._data = src.data;
+        this.mData = src.data;
     }
 
-    mixin finalProperty!("inputLen", this._inputLen);
-    mixin finalProperty!("inputStr", this._inputStr);
-    mixin finalProperty!("bytes", this._bytes);
-    mixin finalProperty!("data", this._data);
-    final const(wchar)* constPtr() {return cast(const(wchar)*)(this._data.ptr);}
-    final wchar* ptr() {return this._data.ptr;}
+    void updateBuffer(string txt) {
+        this.mInpStr = txt;
+        int slen = MultiByteToWideChar(CP_UTF8, 0, this.mInpStr.ptr, this.mInpLen, null, 0);
+        if (slen) {
+            if (slen > this.mWlen) {
+                this.mBytes = (slen + 1) * 2;
+                this.mWlen = slen;
+                this.mData.length = slen + 1;
+            }
+            MultiByteToWideChar(CP_UTF8, 0, this.mInpStr.ptr, 
+                                    this.mInpLen, this.mData.ptr, slen);
+        }
+    }
+
+    mixin finalProperty!("inputLen", this.mInpLen);
+    mixin finalProperty!("inputStr", this.mInpStr);
+    mixin finalProperty!("bytes", this.mBytes);
+    mixin finalProperty!("data", this.mData);
+    final const(wchar)* constPtr() {return cast(const(wchar)*)(this.mData.ptr);}
+    final wchar* ptr() {return this.mData.ptr;}
 
     private:
-        wchar[] _data;
-        int _inputLen;
-        int _bytes;
-        string _inputStr;
+        wchar[] mData;
+        int mInpLen;
+        int mBytes;
+        int mWlen;
+        string mInpStr;
 
 
         void convertToWstring() {
-            int slen = MultiByteToWideChar(CP_UTF8, 0, this._inputStr.ptr, 
-                                                this._inputLen, null, 0);
+            int slen = MultiByteToWideChar(CP_UTF8, 0, this.mInpStr.ptr, 
+                                                this.mInpLen, null, 0);
             if (slen) {
-                this._bytes = (slen + 1) * 2;
-                this._data = new wchar[](this._bytes);
-                MultiByteToWideChar(CP_UTF8, 0, this._inputStr.ptr, 
-                                    this._inputLen, this._data.ptr, slen);
-                this._data[slen] = 0;
+                this.mBytes = (slen + 1) * 2;
+                this.mData = new wchar[](slen + 1);
+                MultiByteToWideChar(CP_UTF8, 0, this.mInpStr.ptr, 
+                                    this.mInpLen, this.mData.ptr, slen);
+                this.mData[slen] = 0;
+                this.mWlen = slen;
             }
         }
 
