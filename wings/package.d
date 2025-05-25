@@ -2,6 +2,7 @@ module wings;
 
 private import wings.application;
 public import wings.controls;
+public import wings.widestring;
 public import wings.events;
 public import wings.form;
 public import wings.commons;

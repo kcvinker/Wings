@@ -8,7 +8,7 @@ import std.conv;
 import std.stdio;
 
 import wings.commons : print;
-import wings.graphics : WideString;
+import wings.widestring : WideString;
 
 //int num = 1;
 
@@ -33,7 +33,6 @@ class Font {
         this.mWeight = fWeight;
         this.mItalis = fItalics;
         this.mUnderLine = fUnderline;
-        this.mWtext = new WideString(fName);
     }
 
     this(bool createNow, string fName, int fSize,
@@ -51,36 +50,43 @@ class Font {
 
     ~this()
     {
-        import std.stdio;
+        //import std.stdio;
         if (this.mHandle) DeleteObject(this.mHandle);
         // print("Font handle destroyed for", this.mFunc);
     }
 
-    void createFontHandle() {
+    void createFontHandle(bool formFont = false) {
         double scale = appData.scaleF / 100;
         auto fsiz = cast(int)(scale * cast(double)this.size);  
-        int iHeight = -MulDiv(fsiz , appData.sysDPI, 72);        
-        LOGFONTW lf = LOGFONTW();
-        lf.lfItalic = this.mItalis;
-        lf.lfUnderline = this.mUnderLine;
-        
-        // lf.lfFaceName[0..this.mWtext.inputLen] = this.mWtext.data; //this.mName.toUTF16; // This idea got from AndrejMitrovic's DWinProgramming repo.
-        foreach (i, wc; this.mWtext.data) {
-            if (i == lf.lfFaceName.length) break;
-            lf.lfFaceName[i] = wc;
-        }
-        
-        lf.lfHeight = iHeight;
-        lf.lfWeight = this.mWeightIntern;
-        lf.lfCharSet = DEFAULT_CHARSET;
-        lf.lfOutPrecision = OUT_STRING_PRECIS;
-        lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
-        lf.lfQuality = DEFAULT_QUALITY;
-        lf.lfPitchAndFamily = 1;
-        this.mHandle = CreateFontIndirectW(&lf);
+        int iHeight = -MulDiv(fsiz , appData.sysDPI, 72); 
+        LOGFONTW lf = LOGFONTW(); 
+        LOGFONTW* plf;
+        plf = formFont ? &appData.logfont : &lf;
+        WideString.fillBuffer(&plf.lfFaceName[0], this.mName);
+        plf.lfItalic = this.mItalis;
+        plf.lfUnderline = this.mUnderLine;        
+        plf.lfHeight = iHeight;
+        plf.lfWeight = this.mWeightIntern;
+        plf.lfCharSet = DEFAULT_CHARSET;
+        plf.lfOutPrecision = OUT_STRING_PRECIS;
+        plf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
+        plf.lfQuality = DEFAULT_QUALITY;
+        plf.lfPitchAndFamily = 1;
+        this.mHandle = CreateFontIndirectW(plf);
         this.mIsCreated = true;
-        // print(iHeight);
     }
+
+    void cloneParentHandle(HFONT pHandle) {
+        if (pHandle) {
+            LOGFONTW lf;
+            if (GetObjectW(pHandle, LOGFONTW.sizeof, cast(LPVOID)&lf)) {
+                this.mHandle = CreateFontIndirectW(&lf);
+            }            
+        } else {
+            this.mHandle = CreateFontIndirectW(&appData.logfont);
+        }
+    }
+
 
     final void copyFrom(Font src) {
         this.mName = src.mName;
@@ -89,7 +95,6 @@ class Font {
         this.mWeight = src.mWeight;
         this.mItalis = src.mItalis;
         this.mUnderLine = src.mUnderLine;
-        this.mWtext = new WideString(src.mWtext);
         if (src.mHandle) this.createFontHandle();
     }
 
@@ -102,11 +107,12 @@ class Font {
         this.mIsCreated = value;
     }
 
+
+
     package:
         HFONT mHandle;
-        WideString mWtext;
+        //WideString mWtext;
         string mFunc;
-    private :
         string mName;
         int mSize;
         int mWeightIntern;
@@ -118,4 +124,11 @@ class Font {
 
 }
 
-
+//void testCopy(WCHAR* buffer, string txt) {
+//    int tlen = cast(int)txt.length;
+//    int slen = MultiByteToWideChar(CP_UTF8, 0, txt.ptr, tlen, null, 0);
+//    if (slen) {
+//        MultiByteToWideChar(CP_UTF8, 0, txt.ptr, tlen, buffer, slen);
+//    }
+//    buffer[slen] = 0;
+//} 

@@ -13,6 +13,7 @@ pragma(lib, "gdi32.lib");
 pragma(lib, "comctl32.lib");
 pragma(lib, "gdiplus.lib");
 pragma(lib, "Shcore.lib");
+pragma(lib, "UxTheme.lib");
 
 extern(Windows) nothrow {
     int GetScaleFactorForDevice(int);
@@ -56,6 +57,7 @@ class ApplicationData
     Color appColor;
     Font appFont;
     INITCOMMONCONTROLSEX iccEx;
+    LOGFONTW logfont;
 
     this()
     {
@@ -72,8 +74,6 @@ class ApplicationData
         this.regWindowClass();
         this.getSystemDPI();
         InitCommonControlsEx(&this.iccEx);
-        
-
     }
 
     void regWindowClass()

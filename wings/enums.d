@@ -114,6 +114,11 @@ enum MenuType { baseMenu, normalMenu, popumMenu, separator }
 enum TrayMenuTrigger : ubyte {none, leftClick, leftDoubleClick, rightClick = 4, anyClick = 7}
 enum BalloonIcon {none, info, warning, error, custom}
 
+enum GroupBoxStyle : ubyte {system, /* No extra drawing, just plain Group box from Windows*/
+                            classic, /* Turning off theme drawing. Group box will looks like Win7 */
+                            overriden /* Using system style but we will over write the text. */
+                            }
+
 
 enum Key {
     modifier = -65_536,

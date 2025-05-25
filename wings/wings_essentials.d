@@ -3,6 +3,7 @@ module wings.wings_essentials;
 
 public {
     import wings.application: appData;
+    import wings.widestring;    
     import wings.commons;
     import wings.events;
     import wings.fonts;

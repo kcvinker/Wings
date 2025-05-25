@@ -185,6 +185,8 @@ class App {
 
 void main()
 {
+	import core.sys.windows.windows;
 	auto app = new App();	
 	app.display();
+	
 }

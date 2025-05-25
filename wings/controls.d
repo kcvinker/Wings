@@ -33,7 +33,7 @@ mixin template finalProperty(string pName, alias obj) {
 
 /// A base class for all controls
 class Control {
-    import wings.graphics : WideString;
+    import wings.widestring : WideString;
 
     /// Set the text of control
         void text(string value)
@@ -352,6 +352,16 @@ class Control {
             // This function is used for setting font for a control right after it created
             if (!this.mFont.isCreated) {this.mFont.createFontHandle(); }
             this.sendMsg(WM_SETFONT, this.mFont.handle, 1);
+        }
+
+        void cloneParentFont() {
+            this.mFont.mName = this.mParent.mFont.mName;
+            this.mFont.mSize = this.mParent.mFont.mSize;
+            this.mFont.mWeightIntern = this.mParent.mFont.mWeightIntern;
+            this.mFont.mWeight = this.mParent.mFont.mWeight;
+            this.mFont.mItalis = this.mParent.mFont.mItalis;
+            this.mFont.mUnderLine = this.mParent.mFont.mUnderLine;
+            this.mFont.cloneParentHandle(null);
         }
 
         final void setSubClass(SUBCLASSPROC ctlWndProc) // Protected

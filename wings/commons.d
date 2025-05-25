@@ -23,6 +23,7 @@ extern (Windows) nothrow @nogc {
     HRESULT DrawThemeBackground(HTHEME, HDC, int, int, LPRECT, LPRECT);
     HRESULT SetWindowThemeAttribute(HWND, WINDOWTHEMEATTRIBUTETYPE, PVOID, DWORD);
     HRESULT CloseThemeData(HTHEME);
+    HRESULT SetWindowTheme(HWND, LPCWSTR, LPCWSTR);
 }
 
 //pragma(linkerDirective, mnf1 ~ mnf2) // run this if you want to create a manifest file

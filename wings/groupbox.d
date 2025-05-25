@@ -28,10 +28,13 @@ import wings.graphics;
 enum DWORD gb_style = WS_CHILD | WS_VISIBLE | BS_GROUPBOX | BS_NOTIFY | BS_TOP |
                 WS_OVERLAPPED| WS_CLIPCHILDREN| WS_CLIPSIBLINGS;
 enum DWORD gb_exstyle = WS_EX_RIGHTSCROLLBAR| WS_EX_CONTROLPARENT;
+enum UINT PEN_WIDTH = 4;
+enum WCHAR[1] EWSA = [0];
+enum WCHAR* EMP_WSTR_PTR = EWSA.ptr; 
 
 class GroupBox: Control
 {
-    this(Form parent, string txt, int x, int y, int w, int h)
+    this(Form parent, string txt, int x, int y, int w, int h, GroupBoxStyle style = GroupBoxStyle.system)
     {
         mixin(repeatingCode);
         ++gbNumber;
@@ -44,6 +47,7 @@ class GroupBox: Control
         mWtext = new WideString(txt);
         this.mDBFill = true;
         this.mGetWidth = true;
+        this.mGBStyle = GroupBoxStyle.system;
         this.mName = format("%s_%d", "GroupBox_", gbNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
@@ -65,14 +69,18 @@ class GroupBox: Control
     {
         import wings.buttons: btnClassName;        
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
-        this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref );
-        this.mRect.right = this.mWidth;
-        this.mRect.bottom = this.mHeight;
+        if (this.mGBStyle == GroupBoxStyle.overriden) {
+            this.mPen = CreatePen(PS_SOLID, PEN_WIDTH, this.mBackColor.cref );
+        }
+        SetRect(&this.mRect, 0, 0, this.mWidth, this.mHeight);
         this.createHandleInternal(btnClassName.ptr);
         if (this.mHandle) {
+            if (this.mGBStyle == GroupBoxStyle.classic) {
+				SetWindowTheme(this.mHandle, EMP_WSTR_PTR, EMP_WSTR_PTR);
+            	this.mThemeOff = true;
+			}
             this.setSubClass(&gbWndProc);
-            // this.getTextBounds();
-            // this.doubleBufferFill();
+            this.setFontInternal();
         }
     }
 
@@ -81,6 +89,24 @@ class GroupBox: Control
         this.mBackColor(value);
         this.resetGDIObjects(true);        
         this.checkRedrawNeeded();
+    }
+
+    /* To change Group box's fore color, we need either classic or overriden style.
+        Here in this property we choose classic if current style is system.*/
+    final override void foreColor(uint value) {
+        this.mForeColor(value);
+		if (this.mGBStyle == GroupBoxStyle.system) this,mGBStyle = GroupBoxStyle.classic;
+		if (this.mGBStyle == GroupBoxStyle.classic) {
+			if (!this.mThemeOff) {
+				SetWindowTheme(this.mHandle, EMP_WSTR_PTR, EMP_WSTR_PTR);
+            	this.mThemeOff = true;
+			}			
+		}
+		if (this.mGBStyle == GroupBoxStyle.overriden) {
+			this.mGetWidth = true;
+			if (!this.mPen) this.mPen = CreatePen(PS_SOLID, PEN_WIDTH, this.mBackColor.cref);
+		}
+		this.checkRedrawNeeded();
     }
 
     override final void text(string value)
@@ -142,25 +168,21 @@ class GroupBox: Control
         bool isPaintBkg;
         bool mDBFill;
         bool mGetWidth;
+        bool mThemeOff;
         int mTxtWidth;
         static int gbNumber;
+        GroupBoxStyle mGBStyle;
+        Control[] mControls;
 
-        void getTextBounds()
-        {
-            HDC hdc = GetDC(this.mHandle);
-            scope(exit) ReleaseDC(this.mHandle, hdc);
-            SIZE ss;
-            SelectObject(hdc, this.mFont.handle);
-            GetTextExtentPoint32(hdc, this.mText.toUTF16z, cast(int)this.mText.length, &ss );
-            this.mTxtWidth = ss.cx + 8;
-        }
 
         void resetGDIObjects(bool brpn) {
             if (brpn) {
                 if (this.mBkBrush) DeleteObject(this.mBkBrush);
-                if (this.mPen) DeleteObject(this.mPen);
                 this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
-                this.mPen = CreatePen(PS_SOLID, 2, this.mBackColor.cref );
+                if (this.mGBStyle == GroupBoxStyle.overriden) {
+                    if (this.mPen) DeleteObject(this.mPen);                
+                    this.mPen = CreatePen(PS_SOLID, PEN_WIDTH, this.mBackColor.cref );
+                }
             }
             if (this.mMemDc) DeleteDC(this.mMemDc);
             if (this.mBmp) DeleteObject(this.mBmp);
@@ -260,7 +282,19 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                 GroupBox gb = getControl!GroupBox(refData);
                 gb.mouseLeaveHandler(); 
             break;
-            case WM_GETTEXTLENGTH: return 0;
+            case WM_GETTEXTLENGTH: 
+                GroupBox gb = getControl!GroupBox(refData);
+                if (gb.mGBStyle == GroupBoxStyle.overriden) return 0;
+            break;
+            case CM_COLOR_STATIC:
+                GroupBox gb = getControl!GroupBox(refData);
+                if (gb.mGBStyle == GroupBoxStyle.classic) {
+                    HDC hdc = cast(HDC)wParam;
+                    SetBkMode(hdc, TRANSPARENT);
+                    SetTextColor(hdc, gb.mForeColor.cref);    
+                }
+        	    return cast(LRESULT)gb.mBkBrush;
+            break;
             case WM_ERASEBKGND:
                 GroupBox gb = getControl!GroupBox(refData);
                 auto hdc = cast(HDC)wParam;
@@ -284,11 +318,13 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             break;
             case WM_PAINT:
                 GroupBox gb = getControl!GroupBox(refData);
-                auto ret = DefSubclassProc(hWnd, message, wParam, lParam);
-                auto gfx = new Graphics(hWnd);
-                gfx.drawHLine(gb.mPen, 10, 9, gb.mTxtWidth);
-                gfx.drawText(gb, 12, 0);
-                return ret;
+                if (gb.mGBStyle == GroupBoxStyle.overriden) {
+                    auto ret = DefSubclassProc(hWnd, message, wParam, lParam);
+                    auto gfx = new Graphics(hWnd);
+                    gfx.drawHLine(gb.mPen, 10, 9, gb.mTxtWidth);
+                    gfx.drawText(gb, 12, 0);
+                    return ret;
+                }
             break;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 
