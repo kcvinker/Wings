@@ -62,7 +62,7 @@ class TrayIcon
     
     this(string tooltip, string iconpath = "")
     {
-        if (appData.trayHwnd) throw new Exception(exMsg);
+        // if (appData.trayHwnd) throw new Exception(exMsg);
         this.mTooltip = tooltip;
         this.mIcopath = iconpath;
         this.createMsgOnlyWindow();
@@ -92,11 +92,11 @@ class TrayIcon
     ~this()
     {
         DestroyWindow(this.mMsgHwnd);
-        appData.trayHwnd = null;
+        appData.removeTrayHwnd(this.mMsgHwnd);
         Shell_NotifyIconW(NIM_DELETE, &this.mNid);
         if (this.mDestroyIcon) DestroyIcon(this.mTrayHicon);
         if (this.mCmenuUsed) this.mCmenu.destroy(); 
-        // print("TrayIcon ctor worked");  
+        print("TrayIcon dtor worked");  
     }
     
     /// Add a context menu to tray icon with menu items. 
@@ -234,7 +234,7 @@ class TrayIcon
                                         null, appData.hInstance, null);
         if (this.mMsgHwnd) {
             SetWindowLongPtrW(this.mMsgHwnd, GWLP_USERDATA, (cast(LONG_PTR) cast(void*) this));
-            appData.trayHwnd = this.mMsgHwnd;
+            appData.trayHwnds ~= this.mMsgHwnd;
             // print("tray icon message-only window created");
         } else {
             print("Can't create messge-only window for tray icon. Error -", GetLastError());
@@ -260,10 +260,10 @@ private LRESULT trayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
     try {
         // print("TrayIcon Wndproc rcvd", message);
         switch (message) {
-            // case WM_DESTROY:
+            case WM_DESTROY:
                 // auto tray = getAs!TrayIcon(hWnd);  
                    
-                // print("Tray icon Message only window got WM_DESTROY");
+                print("Tray icon Message only window got WM_DESTROY");
                 // return 0;
             break;
             case CM_TRAY_MSG:	

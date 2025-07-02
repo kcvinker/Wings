@@ -43,7 +43,7 @@ class ApplicationData
     import wings.form : mainWndProc;
 
     HWND mainHwnd;
-    HWND trayHwnd;
+    HWND[] trayHwnds;
     bool isMainLoopOn;
     bool isDtpInit;
     wstring className;
@@ -115,6 +115,18 @@ class ApplicationData
         this.appIcon = LoadImageW(null, icopath.toUTF16z(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
     }
 
+    void removeTrayHwnd(HWND item) {
+        import std.algorithm.mutation: remove;
+        
+        foreach (index, hwnd; this.trayHwnds) {
+            if (hwnd == item) {
+                this.trayHwnds = this.trayHwnds.remove(index);
+                this.trayHwnds.assumeSafeAppend();
+                break;
+            }
+        }
+    }
+
     void getSystemDPI()
     {
         HDC hdc = GetDC(null);
@@ -125,7 +137,11 @@ class ApplicationData
     void finalize()
     {
         DestroyIcon(appData.appIcon);
-        if (this.trayHwnd) DestroyWindow(this.trayHwnd);
+        if (this.trayHwnds.length) {
+            foreach (hwnd; this.trayHwnds) {
+                if (IsWindow(hwnd)) DestroyWindow(hwnd);
+            }            
+        }
         // writeln("App Icon destroyed in appdata finalize");
     }
 
