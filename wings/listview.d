@@ -57,6 +57,7 @@
 
 
 module wings.listview;
+
 import std.stdio;
 import std.conv;
 import std.algorithm;
@@ -439,12 +440,14 @@ class ListView: Control
         final int headerHeight() {return this.mHdrHeight;}
 
     // Event section
-    EventHandler onSelectionChanged, onCheckedChanged;
-    EventHandler onItemClicked, onItemDblClicked, onItemHover;
+    LVSelChangeEventHandler onSelectionChanged;
+    LVCheckChangeEventHandler onItemCheckChanged;
+    LVItemClickEventHandler onItemClicked, onItemDoubleClicked, onItemHover;
 
     package:
         int mSelIndex = -1;
         ListViewItem mSelItem;
+        ListViewItem[] mSelItems;
         bool mEditLabel;
         bool mDrawHeader; // Need this to check in WM_NOTIFY msg // TODO - Rename this.
         HWND hwLabel;
@@ -649,6 +652,109 @@ class ListView: Control
             return CDRF_SKIPDEFAULT;
         }
 
+        LRESULT wmNotifyHandler(LPARAM lpm) 
+        {
+            auto nmhdr = cast(NMHDR*)lpm;
+            switch (nmhdr.code) {
+                case NM_CUSTOMDRAW:
+                    auto nmLvCd = cast(NMLVCUSTOMDRAW*)lpm;
+                    switch (nmLvCd.nmcd.dwDrawStage) {
+                        case CDDS_PREPAINT: return CDRF_NOTIFYITEMDRAW; break;
+                        case CDDS_ITEMPREPAINT:
+                            nmLvCd.clrTextBk = this.mBackColor.cref;
+                            nmLvCd.clrText = this.mForeColor.cref;
+                            return CDRF_NEWFONT | CDRF_DODEFAULT;
+                        break;
+                        default: break;
+                    }
+                break;
+                case LVN_ITEMCHANGING:
+                break;
+                case LVN_ITEMCHANGED:
+                    auto nmlv = cast(NMLISTVIEW*) lpm;
+                    if (nmlv.uNewState & LVIF_STATE) {
+                        int nowSelected = (nmlv.uNewState & LVIS_SELECTED);
+                        int wasSelected = (nmlv.uOldState & LVIS_SELECTED);
+                        if (nowSelected && !wasSelected) {
+                            auto sitem = this.mItems[nmlv.iItem];
+                            if (this.mMultiSel) {
+                                this.mSelItems ~= sitem;
+                            } else {
+                                this.mSelItem = sitem;
+                            }
+                            if (this.onSelectionChanged) {
+                                auto lsea = new LVSelChangeEventArgs(sitem, nmlv.iItem, nowSelected);
+                                this.onSelectionChanged(this, lsea);
+                            }
+                        } else if (!nowSelected && wasSelected) {
+                            auto sitem = this.mItems[nmlv.iItem];
+                            if (this.mMultiSel) {
+                                this.mSelItems ~= sitem;                                
+                                if (this.onSelectionChanged) {
+                                    auto lsea = new LVSelChangeEventArgs(sitem, nmlv.iItem, nowSelected);
+                                    this.onSelectionChanged(this, lsea);
+                                }
+                            }
+                        }
+                        // ✅ Check for checkbox state change
+                        auto state_index = (nmlv.uNewState & LVIS_STATEIMAGEMASK) >> 12;
+                        auto old_state_index = (nmlv.uOldState & LVIS_STATEIMAGEMASK) >> 12;
+                        if (state_index != old_state_index) {
+                            auto is_checked = (state_index == 2);
+                            if (this.mItems.length) {
+                                auto sitem = this.mItems[nmlv.iItem];                                
+                                sitem.mChecked = is_checked;
+                                if (this.onItemCheckChanged) {
+                                    auto licea = new LVCheckChangeEventArgs(sitem, nmlv.iItem, is_checked);
+                                    this.onItemCheckChanged(this, licea);
+                                }
+                            } 
+                        }
+                    }
+                break;
+                case NM_DBLCLK:
+                    goto case;
+                case NM_CLICK:                    
+                    auto nmia = cast(NMITEMACTIVATE *)lpm;
+                    auto lviea = new LVItemEventArgs(this.mItems[nmia.iItem],
+                                                     nmia.iItem);
+                    if (this.onItemClicked) this.onItemClicked(this, lviea);
+                    if (this.onItemDoubleClicked) this.onItemDoubleClicked(this, lviea);
+                break;
+                // case NM_HOVER:
+                //     // print("hover test");
+                //     if (this.onItemHover) this.onItemHover(this, GEA);
+                // break;
+                //case LVN_HOTTRACK: print("lvn hot track", 1); break;
+                case NM_RELEASEDCAPTURE:
+                //    print("LVN_ITEMCHANGED", 12); break;
+                //case NM_CLICK:
+                    // this.mSelIndex = this.sendMsg(LVM_GETNEXTITEM, -1, LVNI_SELECTED);
+                    // this.mSelItem = this.mItems[this.mSelIndex];
+                    // if (this.onSelectionChanged) {
+                    //     auto ea = new EventArgs();
+                    //     this.onSelectionChanged(this, ea);
+                    // }
+                break;
+                case LVN_BEGINLABELEDITW:
+                    this.hwLabel = ListView_GetEditControl(this.mHandle);
+                    //return cast(LRESULT) false;
+                break;
+
+                case LVN_COLUMNCLICK:
+                    // Implement column click event here.
+                break;
+                case LVN_ENDLABELEDITW:
+                    if (this.mEditLabel) {
+                        // print("label edit ok");
+                    }
+                    return trueLresult;
+                break;
+                default: break;
+                }
+            return CDRF_DODEFAULT;
+        }
+
         void setHdrMouseLeave() 
         {
             foreach (col1; mColumns) col1.mIsHotItem = false;
@@ -766,6 +872,7 @@ class ListViewItem
     private:
         int mIndex;
         int mImgIndex;
+        bool mChecked;
         Color mBkClr;
         Color mFrClr;
         Font mFont;
@@ -869,119 +976,11 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                 if (lv.mCmenu) lv.mCmenu.showMenu(lParam); 
             break;
 
-
-            //case WM_DRAWITEM:  // This is coming from child controls( aka Header)
-            //    auto pdi = cast(DRAWITEMSTRUCT*) lParam;
-            //    auto col = lv.mColumns[pdi.itemID];
-            //    SetBkMode(pdi.hDC, TRANSPARENT);
-            //    if (pdi.itemState == 1 ) {
-            //        //pdi.rcItem.top += 1;
-            //        pdi.rcItem.left += 1;
-            //        pdi.rcItem.bottom -= 1;
-            //        pdi.rcItem.right -= 1;
-            //    }  else {
-            //        if (col.mIsHotItem) {
-            //            lv.mHdrBkBrushTop = lv.mHdrColors.lightColorBrushTop;
-            //            lv.mHdrBkBrushBot = lv.mHdrColors.lightColorBrushBot;
-            //        } else {
-            //            lv.mHdrBkBrushTop = lv.mHdrColors.backColorBrushTop;
-            //            lv.mHdrBkBrushBot = lv.mHdrColors.backColorBrushBot;
-            //        }
-            //    }
-
-            //    if (lv.mFlatHdr) {
-            //        pdi.rcItem.left += 1;
-            //        FillRect(pdi.hDC, &pdi.rcItem, lv.mHdrBkBrushTop );
-            //    } else {
-            //        auto topRect = lv.makeHalfSizeRect(pdi.rcItem, true);
-            //        auto botRect = lv.makeHalfSizeRect(pdi.rcItem, false);
-            //        FillRect(pdi.hDC, &topRect, lv.mHdrBkBrushTop );
-            //        FillRect(pdi.hDC, &botRect, lv.mHdrBkBrushBot );
-            //    }
-
-            //    if (col.index > 0) {
-            //        drawVLine(pdi.hDC, pdi.rcItem.left, pdi.rcItem.top, pdi.rcItem.bottom, getClrRef(Colors.white));
-            //    }
-            //    if (lv.mHdrDrawFont)  SelectObject(pdi.hDC, lv.mHdrFont.handle);
-            //    SetTextColor(pdi.hDC, lv.mHdrColors.foreColorRef);
-            //    pdi.rcItem.left += 1;
-            //    DrawText(pdi.hDC, col.text.toUTF16z, -1, &pdi.rcItem, col.mHdrTxtFlag );
-            //    return trueLresult;
-            //break;
-
             case CM_NOTIFY:
                 // Windows will send this msg to parent window and parent window transfer this to here.
                 ListView lv = getControl!ListView(refData);
-                auto nmhdr = cast(NMHDR*) lParam;
-                //print("cm notify code", nmhdr.code);
-                switch (nmhdr.code) {
-                    case NM_CUSTOMDRAW:
-                        auto nmLvCd = cast(NMLVCUSTOMDRAW*) lParam;
-                        switch (nmLvCd.nmcd.dwDrawStage) {
-                            case CDDS_PREPAINT: return CDRF_NOTIFYITEMDRAW; break;
-                            case CDDS_ITEMPREPAINT:
-                                nmLvCd.clrTextBk = lv.mBackColor.cref;
-                                return CDRF_NEWFONT | CDRF_DODEFAULT;
-                            break;
-                            default: break;
-                        }
-                    break;
-                    case LVN_ITEMCHANGING:
-                    break;
-                    case LVN_ITEMCHANGED:
-                        auto nmlv = cast(NMLISTVIEW*) lParam;
-                        if (nmlv.uNewState == 8192 || nmlv.uNewState == 4096) {
-                            lv.mChecked = nmlv.uNewState == 8192 ? true: false;
-                            if (lv.onCheckedChanged) 
-                                lv.onCheckedChanged(lv, new EventArgs());
-                        } else {
-                            if (nmlv.uNewState == 3) {
-                                //print("this area oka");
-                                lv.mSelItemIndx = nmlv.iItem;
-                                lv.mSelSubIndx = nmlv.iSubItem;
-                                if (lv.onSelectionChanged) lv.onSelectionChanged(lv, new EventArgs());                                
-                            }
-                        }
-                    break;
-                    case NM_DBLCLK:
-                        if (lv.onItemDblClicked) lv.onItemDblClicked(lv, new EventArgs());
-                    break;
-                    case NM_CLICK:
-                        auto nmia = cast(NMITEMACTIVATE *) lParam;
-                        // lv.log(nmia.uOldState);
-                        if (lv.onItemClicked) lv.onItemClicked(lv, new EventArgs());
-                    break;
-                    case NM_HOVER:
-                        // print("hover test");
-                        if (lv.onItemHover) lv.onItemHover(lv, new EventArgs());
-                    break;
-                    //case LVN_HOTTRACK: print("lvn hot track", 1); break;
-                    case NM_RELEASEDCAPTURE:
-                    //    print("LVN_ITEMCHANGED", 12); break;
-                    //case NM_CLICK:
-                        // lv.mSelIndex = lv.sendMsg(LVM_GETNEXTITEM, -1, LVNI_SELECTED);
-                        // lv.mSelItem = lv.mItems[lv.mSelIndex];
-                        // if (lv.onSelectionChanged) {
-                        //     auto ea = new EventArgs();
-                        //     lv.onSelectionChanged(lv, ea);
-                        // }
-                    break;
-                    case LVN_BEGINLABELEDITW:
-                        lv.hwLabel = ListView_GetEditControl(lv.mHandle);
-                        //return cast(LRESULT) false;
-                    break;
-
-                    case LVN_COLUMNCLICK:
-                        // Implement column click event here.
-                    break;
-                    case LVN_ENDLABELEDITW:
-                        if (lv.mEditLabel) {
-                           // print("label edit ok");
-                        }
-                        return trueLresult;
-                    break;
-                    default: break;
-                } break; //dmd -i -debug -m64 "app.d" (in directory: C:\Users\kcvin\OneDrive\Programming\D_Lang\Wings)
+                return lv.wmNotifyHandler(lParam);
+            break;
 
             case WM_NOTIFY: // This msg is coming from Header control.
                 ListView lv = getControl!ListView(refData);

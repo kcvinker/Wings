@@ -2,7 +2,7 @@ module wings.wings_essentials;
 
 
 public {
-    import wings.application: appData;
+    import wings.application: appData, GEA;
     import wings.widestring;    
     import wings.commons;
     import wings.events;

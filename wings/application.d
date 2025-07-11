@@ -4,6 +4,8 @@ module wings.application;
 import std.stdio;
 import core.sys.windows.windows;
 import core.sys.windows.commctrl;
+
+import wings.events: EventArgs;
 // import core.runtime ;
 // import std.string;
 
@@ -21,11 +23,15 @@ extern(Windows) nothrow {
 
 
 package ApplicationData appData;
+package EventArgs GEA;
 
 static this() 
 {
+    
+    
     writeln("Application started");
     appData = new ApplicationData();
+    
 }
 
 static ~this()
@@ -41,6 +47,7 @@ class ApplicationData
     import wings.enums;
     import wings.fonts;
     import wings.form : mainWndProc;
+    
 
     HWND mainHwnd;
     HWND[] trayHwnds;
@@ -74,6 +81,7 @@ class ApplicationData
         this.regWindowClass();
         this.getSystemDPI();
         InitCommonControlsEx(&this.iccEx);
+        GEA = new EventArgs();
     }
 
     void regWindowClass()

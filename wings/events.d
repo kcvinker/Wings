@@ -12,6 +12,7 @@ import wings.commons;
 import wings.menubar : MenuItem;
 import wings.form : Form;
 import wings.trayicon: TrayIcon;
+import wings.listview: ListViewItem;
 
 
 import std.stdio;
@@ -31,13 +32,16 @@ alias ThreadMsgHandler = void delegate(WPARAM wpm, LPARAM lpm);
 alias TimerTickHandler = void delegate(Form win, EventArgs e);
 alias SampleHandler = void delegate(Control sender, EventArgs e);
 alias TrayIconEventHandler = void delegate(TrayIcon sender, EventArgs e);
-
+alias LVItemClickEventHandler = void delegate(Control sender, LVItemEventArgs e);
+alias LVSelChangeEventHandler = void delegate(Control sender, LVSelChangeEventArgs e);
+alias LVCheckChangeEventHandler = void delegate(Control sender, LVCheckChangeEventArgs e);
 
 
 WORD getKeyStateWparam(WPARAM wp) {return cast(WORD) LOWORD(wp);}
 
 /// A base class for all events
 class EventArgs { bool handled; bool cancel; }
+
 
 /// Special events for mouse related messages
 class MouseEventArgs : EventArgs
@@ -216,4 +220,42 @@ class HotKeyEventArgs : EventArgs
         bool mIsAlt, mIsCtrl, mIsShift, mIsWin;
 
 
+}
+
+class LVItemEventArgs : EventArgs
+{
+    this(ListViewItem lvItem, int indx)
+    {
+        this.mItem = lvItem;
+        this.mIndex = indx;
+    }
+    private:
+        ListViewItem mItem;
+        int mIndex;
+}
+
+class LVSelChangeEventArgs : LVItemEventArgs
+{
+    this(ListViewItem lvItem, int indx, int isSel)
+    {
+        super(lvItem, indx);
+        this.mItem = lvItem;
+        this.mIndex = indx;
+        this.mIsSel = cast(bool)isSel;
+    }
+    private:
+        bool mIsSel;
+}
+
+class LVCheckChangeEventArgs : LVItemEventArgs
+{
+    this(ListViewItem lvItem, int indx, bool isCheck)
+    {
+        super(lvItem, indx);
+        this.mItem = lvItem;
+        this.mIndex = indx;
+        this.mIsCheck = isCheck;
+    }
+    private:
+        bool mIsCheck;
 }
