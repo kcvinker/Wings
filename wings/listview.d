@@ -239,6 +239,7 @@ class ListView: Control
             if (this.mLvStyle != ListViewStyle.report || !this.mIsCreated) return;
             auto iLen = items.length;
             auto lvItem = new ListViewItem(items[0]);
+            lvItem.mPHwnd = this.mHandle;
             this.addItemInternal(lvItem);
             for (int i = 1; i < iLen; ++i) {
                 this.addSubItemInternal(items[i], lvItem.index, i);
@@ -657,12 +658,13 @@ class ListView: Control
             auto nmhdr = cast(NMHDR*)lpm;
             switch (nmhdr.code) {
                 case NM_CUSTOMDRAW:
-                    auto nmLvCd = cast(NMLVCUSTOMDRAW*)lpm;
-                    switch (nmLvCd.nmcd.dwDrawStage) {
+                    auto lvcd = cast(NMLVCUSTOMDRAW*)lpm;
+                    switch (lvcd.nmcd.dwDrawStage) {
                         case CDDS_PREPAINT: return CDRF_NOTIFYITEMDRAW; break;
                         case CDDS_ITEMPREPAINT:
-                            nmLvCd.clrTextBk = this.mBackColor.cref;
-                            nmLvCd.clrText = this.mForeColor.cref;
+                            auto lvitem = this.mItems[lvcd.nmcd.dwItemSpec];
+                            if (lvitem.mBgdraw) lvcd.clrTextBk = lvitem.mBkClr.cref;
+                            if (lvitem.mFgdraw) lvcd.clrText = lvitem.mFrClr.cref;
                             return CDRF_NEWFONT | CDRF_DODEFAULT;
                         break;
                         default: break;
@@ -751,7 +753,7 @@ class ListView: Control
                     return trueLresult;
                 break;
                 default: break;
-                }
+            }
             return CDRF_DODEFAULT;
         }
 
@@ -853,6 +855,8 @@ class ListViewItem
         this.mFrClr(fgc);
         this.mImgIndex = img;
         this.mIndex = mStIndex;
+        if (bgc != 0xFFFFFF) this.mBgdraw = true;
+        if (fgc != 0x000000) this.mFgdraw = true;
         ++mStIndex;
     }
 
@@ -865,6 +869,40 @@ class ListViewItem
     //mixin finalProperty!("foreColor", this.mFrClr.value);
     mixin finalProperty!("font", this.mFont);
 
+    void backColor(T)(T clr)
+    {
+        static if (is(T == uint)) {
+            this.mBkClr(clr);
+        } else static if (is(T == Color)) {
+            this.mBkClr = clr;
+        }
+        this.mBgdraw = true;
+    }
+    
+    Color backColor() {return this.mBkClr;}
+    Color foreColor() {return this.mFrClr;}
+
+    void foreColor(T)(T clr)
+    {
+        static if (is(T == uint)) {
+            this.mFrClr(clr);
+        } else static if (is(T == Color)) {
+            this.mFrClr = clr;
+        }
+        this.mFgdraw = true;
+    }
+
+    bool checked() {return this.mChecked;}
+    void checked(bool value) 
+    {
+        LVITEMW item;
+        item.mask = LVIF_STATE;
+        item.iItem = this.mIndex;
+        item.stateMask = LVIS_STATEIMAGEMASK;
+        item.state = value ? 2 : (1 << 12);  // 2 = checked, 1 = unchecked
+        SendMessageW(this.mPHwnd, LVM_SETITEMSTATE, cast(WPARAM)this.mIndex, cast(LPARAM)&item);
+    }
+
     final int index() {return this.mIndex;}
     final void addSubItem(string subItm) { this.mSubItems ~= subItm; }
     final string[] subItems() {return this.mSubItems;}
@@ -873,12 +911,15 @@ class ListViewItem
         int mIndex;
         int mImgIndex;
         bool mChecked;
+        bool mBgdraw;
+        bool mFgdraw;
         Color mBkClr;
         Color mFrClr;
         Font mFont;
         string mText;
         string[] mSubItems;
         static int mStIndex;
+        HWND mPHwnd;
 
 } // ListViewItem class
 

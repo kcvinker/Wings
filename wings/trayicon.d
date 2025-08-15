@@ -90,9 +90,8 @@ class TrayIcon
     }
 
     ~this()
-    {
+    {        
         DestroyWindow(this.mMsgHwnd);
-        appData.removeTrayHwnd(this.mMsgHwnd);
         Shell_NotifyIconW(NIM_DELETE, &this.mNid);
         if (this.mDestroyIcon) DestroyIcon(this.mTrayHicon);
         if (this.mCmenuUsed) this.mCmenu.destroy(); 
@@ -261,8 +260,8 @@ private LRESULT trayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
         // print("TrayIcon Wndproc rcvd", message);
         switch (message) {
             case WM_DESTROY:
-                // auto tray = getAs!TrayIcon(hWnd);  
-                   
+                auto tray = getAs!TrayIcon(hWnd);  
+                appData.removeTrayHwnd(tray.mMsgHwnd);
                 print("Tray icon Message only window got WM_DESTROY");
                 // return 0;
             break;

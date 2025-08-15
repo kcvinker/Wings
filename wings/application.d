@@ -125,13 +125,18 @@ class ApplicationData
 
     void removeTrayHwnd(HWND item) {
         import std.algorithm.mutation: remove;
-        
+        ulong tindex;
+        bool found = false;
         foreach (index, hwnd; this.trayHwnds) {
             if (hwnd == item) {
-                this.trayHwnds = this.trayHwnds.remove(index);
-                this.trayHwnds.assumeSafeAppend();
+                tindex = index;
+                found = true;
                 break;
             }
+        }
+        if (found) {
+            this.trayHwnds = this.trayHwnds.remove(tindex);
+            this.trayHwnds.assumeSafeAppend();
         }
     }
 
