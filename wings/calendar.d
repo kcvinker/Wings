@@ -20,7 +20,7 @@ Constructor:
         
     Events:
         All public events inherited from Control class. (See controls.d)
-        EventHandler type events - void delegate(Control, EventArgs)
+        EventHandler type events - void delegate(Object, EventArgs)
             valueChanged
             selectionChanged
             viewChanged

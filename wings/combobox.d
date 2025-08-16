@@ -22,7 +22,7 @@ Constructor:
         
     Events:
         All public events inherited from Control class. (See controls.d)
-        EventHandler - void delegate(Control, EventArgs)
+        EventHandler - void delegate(Object, EventArgs)
             onSelectionChanged
             onSelectionCommitted
             onSelectionCancelled
@@ -32,12 +32,12 @@ Constructor:
             onListClosed
             onTextMouseClick
             onTextRightClick
-        MouseEventHandler - void delegate(Control, MouseEventArgs)
+        MouseEventHandler - void delegate(Object, MouseEventArgs)
             onTextMouseDown
             onTextMouseUp
             onTextRightDown
             onTextRightUp
-        KeyEventHandler - void delegate(Control, KeyEventArgs)
+        KeyEventHandler - void delegate(Object, KeyEventArgs)
             onTextKeyDown
             onTextKeyUp
         

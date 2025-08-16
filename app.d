@@ -73,7 +73,7 @@ class App {
 		tkb2 = new TrackBar(frm, 500, 270, 60, 150, vertical: true, cdraw: true);
 
 		// Add a timer with a delegate to handle the onTick event.
-		tmr = frm.addTimer(800, &this.timerTickHandler);
+		tmr = frm.addTimer(&this.timerTickHandler, 800);
 	}
 
 	void setControlProps()

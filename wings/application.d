@@ -24,6 +24,8 @@ extern(Windows) nothrow {
 
 package ApplicationData appData;
 package EventArgs GEA;
+package wstring formClass = "Wings_Form_in_D";
+package wstring mowClass = "Wings_MsgForm_in_D";
 
 static this() 
 {
@@ -46,13 +48,15 @@ class ApplicationData
     import wings.colors;
     import wings.enums;
     import wings.fonts;
-    import wings.form : mainWndProc;
+    
     
 
     HWND mainHwnd;
     HWND[] trayHwnds;
     bool isMainLoopOn;
     bool isDtpInit;
+    bool isFormInit;
+    bool isMowInint;
     wstring className;
     HINSTANCE hInstance;
     HICON appIcon;
@@ -60,6 +64,7 @@ class ApplicationData
     int screenHeight;
     int frmCount;
     int sysDPI;
+    int globalHotKeyID;
     double scaleF;
     Color appColor;
     Font appFont;
@@ -67,25 +72,44 @@ class ApplicationData
     LOGFONTW logfont;
 
     this()
+    {        
+        this.hInstance = GetModuleHandleW(null);        
+        this.prepareAppIcon();
+        this.globalHotKeyID = 100;
+        GEA = new EventArgs();
+    }
+
+    void initWindowMode()
     {
-        this.className = "Wing_window";
+        // this.className = 
         this.appFont = new Font("Tahoma", 11);
         this.appColor = Color(0xF0F0F0);
-        this.hInstance = GetModuleHandleW(null);
         this.screenWidth = GetSystemMetrics(0);
         this.screenHeight = GetSystemMetrics(1);
         this.iccEx.dwSize = INITCOMMONCONTROLSEX.sizeof;
         this.iccEx.dwICC = ICC_STANDARD_CLASSES;
         this.scaleF = cast(double) GetScaleFactorForDevice(0);
-        this.prepareAppIcon();
         this.regWindowClass();
         this.getSystemDPI();
         InitCommonControlsEx(&this.iccEx);
-        GEA = new EventArgs();
+    }
+
+    void initMowMode() // Init Message-Only window mode.
+    {
+        import wings.msgform : msgFormWndProc;
+        
+        WNDCLASSEXW wc;
+        wc.lpfnWndProc   = &msgFormWndProc;
+        wc.hInstance     = this.hInstance;
+        wc.lpszClassName = mowClass.ptr;
+        auto x = RegisterClassExW(&wc);
+        if (x) this.isMowInint = true;
     }
 
     void regWindowClass()
     {
+        import wings.form : mainWndProc;
+
         WNDCLASSEXW wcEx;
         wcEx.style         = CS_HREDRAW | CS_VREDRAW  | CS_OWNDC;
         wcEx.lpfnWndProc   = &mainWndProc;
@@ -96,8 +120,9 @@ class ApplicationData
         wcEx.hCursor       = LoadCursorW(null, IDC_ARROW);
         wcEx.hbrBackground = CreateSolidBrush(this.appColor.cref);//COLOR_WINDOW;
         wcEx.lpszMenuName  = null;
-        wcEx.lpszClassName = this.className.ptr;
+        wcEx.lpszClassName = formClass.ptr;
         auto x = RegisterClassExW(&wcEx);
+        if (x) this.isFormInit = true;
         // writefln("window register result %d", x);
     }
 

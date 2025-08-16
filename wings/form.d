@@ -21,14 +21,14 @@
         setGradientColors
         close
         enablePrintPoint
-        registerHotKey
-        unRegisterHotKey
+        addHotKey
+        removeHotKey
         addMenuBar
         addTimer
         
     Events:
         All public events inherited from Control class. (See controls.d)
-        EventHandler - void delegate(Control, EventArgs)
+        EventHandler - void delegate(Object, EventArgs)
             onMinimized
             onMaximized
             onRestored
@@ -39,10 +39,10 @@
             onDeActivate
             onMoving
             onMoved
-	    SizeEventHandler - void delegate(Control, SizeEventArgs)
+	    SizeEventHandler - void delegate(Object, SizeEventArgs)
             onSized
             onSizing
-        HotKeyEventHandler - void delegate(Control, HotKeyEventArgs)
+        HotKeyEventHandler - void delegate(Object, HotKeyEventArgs)
             onHotKeyPress
         ThreadMsgHandler - void delegate(WPARAM, LPARAM)
             onThreadMsg  
@@ -61,7 +61,7 @@ import wings.fonts;
 import wings.enums;
 import wings.controls;
 import wings.commons;
-import wings.application: appData;
+import wings.application: appData, formClass, GEA;
 import wings.menubar : MenuBar, MenuItem, getMenuItem;
 import wings.timer;
 
@@ -107,6 +107,7 @@ class Form : Control
     ///the constructor of form class
     private this(string txt, int x, int y, int w, int h)
     {
+        if (!appData.isFormInit) appData.initWindowMode();
         appData.frmCount += 1;
         this.callDtor = true;
         this.mWindowID = mFormCount;
@@ -160,7 +161,7 @@ class Form : Control
         //sw.start();
 
         this.mHandle = CreateWindowExW( this.mExStyle,
-                                        appData.className.ptr,
+                                        formClass.ptr,
                                         this.mText.toUTF16z,
                                         this.mStyle,
                                         this.mXpos,
@@ -215,31 +216,30 @@ class Form : Control
         this.onMouseUp = toDelegate(&printFormPoints);
     }
 
-    final void registerHotKey(HotKeyStruct* hks)
+    final int addHotKey(Key[] keyList, EventHandler pFunc, bool noRepeat = false)
     {
+        int res = -1;
         if (this.mIsCreated) {
-            uint fsMod;
-            if (hks.altKey) fsMod |= 0x0001;
-            if (hks.ctrlKey) fsMod |= 0x0002;
-            if (hks.shiftKey) fsMod |= 0x0004;
-            if (hks.winKey) fsMod |= 0x0008;
-            if (!hks.repeat) fsMod |= 0x4000;
-            if (!hks.altKey && !hks.ctrlKey && !hks.shiftKey && !hks.winKey ) return;
-            uint vKey = cast(uint) hks.hotKey;
-            ++mGlobalHotKeyID; // A static variable of Form class.
-            if (RegisterHotKey(this.mHandle, mGlobalHotKeyID, fsMod, vKey)) {
-                this.mHotKeyIDList ~= mGlobalHotKeyID;
-                hks.hotKeyID = mGlobalHotKeyID;
-                hks.result = true;
-            }
+            int hkid = regNewHotKey(this.mHandle, keyList, noRepeat);
+            if (hkid > -1) {
+                this.mHkeyMap[hkid] = pFunc;
+                res = hkid;
+            }            
         }
+        return res;
     }
 
-    final bool unRegisterHotKey(int hkeyID)
+    final bool removeHotKey(int hkeyID)
     {
-        auto res = UnregisterHotKey(this.mHandle, hkeyID);
-        if (res != 0) remove!(a => a == hkeyID)(this.mHotKeyIDList);
-        return cast(bool) res;
+        bool res = false;
+        if (hkeyID in this.mHkeyMap) {
+            BOOL x = UnregisterHotKey(this.mHandle, hkeyID);
+            if (x != 0) {
+                this.mHkeyMap.remove(hkeyID);
+                res = true;
+            }
+        }
+        return res;
     }
 
     final MenuBar addMenuBar(string[] menuNames...)
@@ -250,10 +250,10 @@ class Form : Control
         return mbar;
     }
 
-    final Timer addTimer(UINT interval = 100, EventHandler tickHandler = null)
+    final Timer addTimer(EventHandler tickHandler, UINT interval = 100, )
     {
         auto timer = new Timer(this.mHandle, interval, tickHandler);
-        this.mTimerDic[timer.mIdNum] = timer;
+        this.mTimerMap[timer.mIdNum] = timer;
         return timer;
     }
 
@@ -316,14 +316,15 @@ class Form : Control
         static int screenHeight;
         static int mGlobalHotKeyID = 100;
         int iNumber;
-        int[] mHotKeyIDList;
+        EventHandler[int] mHkeyMap;
+        Timer[UINT_PTR] mTimerMap;
         bool callDtor;
         bool isLoaded;
         bool mTopMost;
         bool mMaxBox;
         bool mMinBox;
         bool mGDR2L; // Gradient draw right to left
-        Timer[UINT_PTR] mTimerDic;
+        
         HMENU menuHwnd;
         DWORD winStyle = WS_OVERLAPPEDWINDOW;
         FormPos mStartPos;
@@ -472,12 +473,12 @@ class Form : Control
             appData.frmCount -= 1;
             if (this.tbBrush) DeleteObject(this.tbBrush);
             if (this.menuHwnd) DestroyMenu(this.menuHwnd);
-            if (this.mHotKeyIDList.length > 0) {
-                foreach (int key; mHotKeyIDList) {
+            if (this.mHkeyMap.length > 0) {
+                foreach (int key; mHkeyMap.keys) {
                     UnregisterHotKey(this.mHandle, key);
                     print("hot key id un registered", key);
                 }
-                this.mHotKeyIDList.length = 0;
+                this.mHkeyMap.clear;
             }
             this.callDtor = false;
             // writeln("Form finalize worked");
@@ -552,10 +553,9 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
             break;
             case WM_TIMER:
                 auto win = getAs!Form(hWnd);
-                Timer timer = win.mTimerDic.get(cast(UINT_PTR) wParam, null);
-                if (timer && timer.onTick) {
-                    timer.onTick(win, new EventArgs());
-                }
+                Timer timer = win.mTimerMap.get(cast(UINT_PTR)wParam, null);
+                if (timer && timer.onTick) timer.onTick(win, GEA);
+                return 0;
             break;
             case WM_SHOWWINDOW:
                 auto win = getAs!Form(hWnd);
@@ -789,10 +789,10 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
             break;
             case WM_HOTKEY:
                 auto win = getAs!Form(hWnd);
-                if (win.onHotKeyPress) {
-                    auto hea = new HotKeyEventArgs(wParam, lParam);
-                    win.onHotKeyPress(win, hea);
-                }
+                int hkid = cast(int)wParam;
+                EventHandler pFunc = win.mHkeyMap.get(hkid, null);
+                if (pFunc) pFunc(win, GEA);
+                return 0;
             break;   
             case WM_MEASUREITEM:
                 auto pmi = cast(LPMEASUREITEMSTRUCT)lParam;

@@ -14,7 +14,7 @@ Constructor:
         
     Events:
         All public events inherited from Control class. (See controls.d)
-        EventHandler - void delegate(Control, EventArgs)
+        EventHandler - void delegate(Object, EventArgs)
 =============================================================================================*/
 
 module wings.checkbox;

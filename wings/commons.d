@@ -198,7 +198,7 @@ package {
     }
 
     // Message Constants - Wing's own messages
-        enum uint MSG_BASE = WM_USER + 1;
+        enum uint MSG_BASE = WM_APP + 1;
         enum uint CM_LEFTCLICK = MSG_BASE;
         enum uint CM_RIGHTCLICK = MSG_BASE + 1;
         enum uint CM_NOTIFY = MSG_BASE + 2;
@@ -215,6 +215,7 @@ package {
         enum uint CM_WIN_THREAD_MSG = MSG_BASE + 13;
         enum uint CM_TRAY_MSG = MSG_BASE + 14;
         enum uint CM_CMENU_DESTROY = MSG_BASE + 15;
+        enum uint CM_TIMER_DESTROY = MSG_BASE + 16;
 
 
 

@@ -1,4 +1,32 @@
-module wings.contextmenu; // Created on 30-July-2022 06:52 PM
+// Created on 30-July-2022 06:52 PM
+
+/* =========================================ContextMenu Docs=======================
+Constructor:
+    this()
+    this(Control parent)
+    this(TrayIcon tray)
+    this(Control parent, string[] menuNames ...)
+    this(TrayIcon tray, string[] menuNames ...)
+    this(TrayIcon tray, string[] menuNames ...) 
+
+Methods:
+    MenuItem addMenuItem(string item)
+    void addMenuItems(string[] menuNames ...)
+    MenuItem opIndex(string name)
+    MenuItem addMenuItem(string item, EventHandler evtFn)
+
+Events:
+    EventHandler onMenuShown; 
+    EventHandler onMenuClose;
+
+Properties:
+    TODO: write this.
+
+
+==================================================================================*/
+
+
+module wings.contextmenu; 
 
 import core.sys.windows.windows;
 

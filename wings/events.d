@@ -13,6 +13,8 @@ import wings.menubar : MenuItem;
 import wings.form : Form;
 import wings.trayicon: TrayIcon;
 import wings.listview: ListViewItem;
+import wings.msgform: MessageForm;
+
 
 
 import std.stdio;
@@ -31,7 +33,7 @@ alias ThreadMsgHandler = void delegate(WPARAM wpm, LPARAM lpm);
 alias LVItemClickEventHandler = void delegate(Object sender, LVItemEventArgs e);
 alias LVSelChangeEventHandler = void delegate(Object sender, LVSelChangeEventArgs e);
 alias LVCheckChangeEventHandler = void delegate(Object sender, LVCheckChangeEventArgs e);
-
+alias MessageHandler = bool delegate(MessageForm sender, UINT message, WPARAM wParam, LPARAM lParam);
 
 WORD getKeyStateWparam(WPARAM wp) {return cast(WORD) LOWORD(wp);}
 
