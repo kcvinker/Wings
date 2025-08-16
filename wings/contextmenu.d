@@ -4,7 +4,7 @@ import core.sys.windows.windows;
 
 import wings.controls: Control;
 import wings.menubar: MenuBase, MenuItem, getMenuItem, ParentKind;
-import wings.events: EventHandler, EventArgs, MenuEventHandler;
+import wings.events: EventHandler, EventArgs;
 import wings.commons: getMousePoints, getMousePos, getAs, print;
 
 enum wstring cmenuWndClass = "Wings_Cmenu_Msg_Window";
@@ -109,7 +109,7 @@ class ContextMenu : MenuBase
     }
 
     /// Add a menu item with event handler for onClick event.
-    MenuItem addMenuItem(string item, MenuEventHandler evtFn)
+    MenuItem addMenuItem(string item, EventHandler evtFn)
     {
         auto mi = this.addMenuItem(item);
         if (mi.mType != MenuType.separator) mi.onClick = evtFn;

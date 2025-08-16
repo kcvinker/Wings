@@ -40,7 +40,6 @@ package wchar[] btnClassName = ['B','u','t','t','o','n', 0];
 class Button : Control
 {
     import wings.gradient;
-    SampleHandler sampleClick;
 // Properties
 
     /// Set the forecolor of the button.

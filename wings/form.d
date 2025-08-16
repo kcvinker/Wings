@@ -486,7 +486,7 @@ class Form : Control
 }
 //==========================END of Form CLASS=====================
 
-void printFormPoints(Control sender, MouseEventArgs e)
+void printFormPoints(Object sender, MouseEventArgs e)
 {
     import std.stdio;
     static int x = 1;

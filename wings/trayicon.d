@@ -57,7 +57,7 @@ enum uint
 
 class TrayIcon 
 {
-    import wings.events: TrayIconEventHandler;
+    import wings.events: EventHandler;
     import wings.contextmenu: ContextMenu;        
     
     this(string tooltip, string iconpath = "")
@@ -191,17 +191,17 @@ class TrayIcon
     
 
     
-    TrayIconEventHandler onBalloonShow;
-    TrayIconEventHandler onBalloonClose;
-    TrayIconEventHandler onBalloonClick;    
-    TrayIconEventHandler onMouseMove;    
-    TrayIconEventHandler onLeftMouseDown;
-    TrayIconEventHandler onLeftMouseUp;    
-    TrayIconEventHandler onRightMouseDown;
-    TrayIconEventHandler onRightMouseUp;
-    TrayIconEventHandler onLeftClick;
-    TrayIconEventHandler onRightClick;
-    TrayIconEventHandler onLeftDoubleClick;
+    EventHandler onBalloonShow;
+    EventHandler onBalloonClose;
+    EventHandler onBalloonClick;    
+    EventHandler onMouseMove;    
+    EventHandler onLeftMouseDown;
+    EventHandler onLeftMouseUp;    
+    EventHandler onRightMouseDown;
+    EventHandler onRightMouseUp;
+    EventHandler onLeftClick;
+    EventHandler onRightClick;
+    EventHandler onLeftDoubleClick;
 
     /// Users can store a void pointer in this field.
     void* userData;

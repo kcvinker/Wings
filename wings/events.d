@@ -19,22 +19,18 @@ import std.stdio;
 
 immutable uint um_single_Click = WM_USER + 1;
 
-alias EventHandler = void delegate(Control sender, EventArgs e);
-alias KeyEventHandler = void delegate(Control sender, KeyEventArgs e);
-alias KeyPressEventHandler = void delegate(Control sender, KeyPressEventArgs e);
-alias MouseEventHandler = void delegate(Control sender, MouseEventArgs e);
-alias SizeEventHandler = void delegate(Control sender, SizeEventArgs e);
-alias PaintEventHandler = void delegate(Control sender, PaintEventArgs e);
-alias DateTimeEventHandler = void delegate(Control sender, DateTimeEventArgs e);
-alias HotKeyEventHandler = void delegate(Control sender, HotKeyEventArgs e);
-alias MenuEventHandler = void delegate(MenuItem sender, EventArgs e);
+alias EventHandler = void delegate(Object sender, EventArgs e);
+alias KeyEventHandler = void delegate(Object sender, KeyEventArgs e);
+alias KeyPressEventHandler = void delegate(Object sender, KeyPressEventArgs e);
+alias MouseEventHandler = void delegate(Object sender, MouseEventArgs e);
+alias SizeEventHandler = void delegate(Object sender, SizeEventArgs e);
+alias PaintEventHandler = void delegate(Object sender, PaintEventArgs e);
+alias DateTimeEventHandler = void delegate(Object sender, DateTimeEventArgs e);
+alias HotKeyEventHandler = void delegate(Object sender, HotKeyEventArgs e);
 alias ThreadMsgHandler = void delegate(WPARAM wpm, LPARAM lpm);
-alias TimerTickHandler = void delegate(Form win, EventArgs e);
-alias SampleHandler = void delegate(Control sender, EventArgs e);
-alias TrayIconEventHandler = void delegate(TrayIcon sender, EventArgs e);
-alias LVItemClickEventHandler = void delegate(Control sender, LVItemEventArgs e);
-alias LVSelChangeEventHandler = void delegate(Control sender, LVSelChangeEventArgs e);
-alias LVCheckChangeEventHandler = void delegate(Control sender, LVCheckChangeEventArgs e);
+alias LVItemClickEventHandler = void delegate(Object sender, LVItemEventArgs e);
+alias LVSelChangeEventHandler = void delegate(Object sender, LVSelChangeEventArgs e);
+alias LVCheckChangeEventHandler = void delegate(Object sender, LVCheckChangeEventArgs e);
 
 
 WORD getKeyStateWparam(WPARAM wp) {return cast(WORD) LOWORD(wp);}

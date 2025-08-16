@@ -256,10 +256,10 @@ class MenuItem : MenuBase
     // }
 
     // Events
-    MenuEventHandler onClick;
-    MenuEventHandler onPopup;
-    MenuEventHandler onCloseup;
-    MenuEventHandler onFocus;
+    EventHandler onClick;
+    EventHandler onPopup;
+    EventHandler onCloseup;
+    EventHandler onFocus;
 
 
     // package final void clickHandler(EventArgs e) {this.mClickHandler(this, e);}
