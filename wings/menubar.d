@@ -55,7 +55,7 @@ enum ParentKind {mainMenu, contextMenu}
 
 class MenuBar : MenuBase 
 {
-    this (Form parent)
+    this (Form parent, bool cdraw)
     {
         this.mHandle = CreateMenu();
         this.mWindow = parent;
@@ -63,12 +63,13 @@ class MenuBar : MenuBase
         this.mMenuCount = 0;
         this.mMenuGrayBrush = makeHBRUSH(0xced4da);
         this.mMenuGrayCref = getClrRef(0x979dac);
+        this.mCustDraw = cdraw;
         parent.mMenubar = this;
     }
 
-    this(Form parent, string[] menuNames ...)
+    this(Form parent, bool cdraw, string[] menuNames ...)
     {
-        this(parent);
+        this(parent, cdraw);
         this.addItems(menuNames);
     }
 
@@ -108,8 +109,29 @@ class MenuBar : MenuBase
         this.mMenuHotBgBrush = makeHBRUSH(0x90e0ef);
         this.mMenuFrameBrush = makeHBRUSH(0x0077b6);
         if (this.mFont.mHandle == null) this.mFont.createFontHandle();
+        UINT drawFlag = MF_STRING;
         if (this.mMenus.length > 0) {
-            foreach (menu; this.mMenus) menu.createHandle();
+            if (this.mCustDraw) {
+                drawFlag = MF_OWNERDRAW;
+                HDC hdcmem = CreateCompatibleDC(null);
+                scope(exit) DeleteDC(hdcmem);
+                HGDIOBJ oldfont = SelectObject(hdcmem, cast(HGDIOBJ)this.mFont.mHandle);
+                scope(exit) SelectObject(hdcmem, oldfont);
+                foreach (menu; this.mMenus) {
+                    GetTextExtentPoint32(hdcmem, menu.mWideText, 
+                                        cast(int)menu.text.length, 
+                                        &menu.mTxtSize);
+                    // Ensure minimum width for base menus
+                    if (menu.mType == MenuType.baseMenu) {
+                        if (menu.mTxtSize.cx < 100) {
+                            menu.mTxtSize.cx = 100; 
+                        } else {
+                            menu.mTxtSize.cx += 20;
+                        }
+                    } 
+                }
+            }
+            foreach (menu; this.mMenus) menu.createHandle(drawFlag);
         }
         SetMenu(this.mWindow.mHandle, this.mHandle);
         this.mWindow.mMenubarCreated = true;
@@ -131,6 +153,8 @@ class MenuBar : MenuBase
 
     package:
         bool mIsCreated;
+        bool mCustDraw;
+        Font mFont;
         HBRUSH mMenuDefBgBrush;
         HBRUSH mMenuHotBgBrush;
         HBRUSH mMenuFrameBrush;
@@ -141,6 +165,7 @@ class MenuBar : MenuBase
     private:
         Form mWindow;
         HWND mWinHwnd;
+        
 
 
         // MenuItemList _menuList;
@@ -216,20 +241,24 @@ class MenuItem : MenuBase
     //     this.mMenus[mi.mText] = mi;
     // }
 
-    final void createHandle()
+    final void createHandle(UINT drawFlag)
     {
         switch (this.mType) {
             case MenuType.baseMenu, MenuType.popumMenu:
+                this.insertMenuInternal(this.mParentHandle, drawFlag);
                 if (this.mMenus.length > 0) {
                     foreach (menu; this.mMenus) {
                         // writefln("parent: %s, menu: %s, type: %s", this.mText, this.mMenus[key].mText, this.mMenus[key].mType);
-                        menu.createHandle();
+                        menu.createHandle(drawFlag);
                     }
-                }
-                this.insertMenuInternal(this.mParentHandle);
+                }                
             break;
-            case MenuType.normalMenu: this.insertMenuInternal(this.mParentHandle); break;
-            case MenuType.separator: AppendMenuW(this.mParentHandle, MF_SEPARATOR, 0, null); break;
+            case MenuType.normalMenu: 
+                this.insertMenuInternal(this.mParentHandle, drawFlag); 
+            break;
+            case MenuType.separator: 
+                AppendMenuW(this.mParentHandle, MF_SEPARATOR, 0, null); 
+            break;
             default: break;
         }
     }
@@ -271,16 +300,18 @@ class MenuItem : MenuBase
         Color mFgColor;
         bool mEnabled;
         uint mId;
+        SIZE mTxtSize;
         ParentKind mParentKind;
 
 
         // Using to insert menu items in a MenuBar
-        void insertMenuInternal(HMENU parentHmenu)
+        void insertMenuInternal(HMENU parentHmenu, UINT drawFlag)
         {
             MENUITEMINFOW mii;
             mii.cbSize = cast(UINT)MENUITEMINFOW.sizeof;
-            mii.fMask = MIIM_ID | MIIM_TYPE | MIIM_DATA | MIIM_SUBMENU | MIIM_STATE;
-            mii.fType = MF_OWNERDRAW;
+            mii.fMask = MIIM_ID|MIIM_TYPE|MIIM_DATA|MIIM_SUBMENU|MIIM_STATE;
+            mii.fType = drawFlag;
+
             mii.dwTypeData = cast(wchar*) this.mWideText;
             mii.cch = cast(UINT) this.mText.length;
             mii.dwItemData = cast(ULONG_PTR)(cast(void*)this);
@@ -296,13 +327,13 @@ class MenuItem : MenuBase
         }
 
         // Using to insert menu items in a Context menu. 
-        void insertCmenuInternal()
+        void insertCmenuInternal(UINT drawFlag)
         {
             if (this.mMenus.length > 0) {
-                foreach (menu; this.mMenus) menu.insertCmenuInternal();
+                foreach (menu; this.mMenus) menu.insertCmenuInternal(drawFlag);
             }
             if (this.mType == MenuType.normalMenu) {
-                this.insertMenuInternal(this.mParentHandle);
+                this.insertMenuInternal(this.mParentHandle, drawFlag);
             } else if (this.mType == MenuType.separator) {
                 AppendMenuW(this.mParentHandle, MF_SEPARATOR, 0, null);
             }

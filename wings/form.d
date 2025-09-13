@@ -242,9 +242,10 @@ class Form : Control
         return res;
     }
 
-    final MenuBar addMenuBar(string[] menuNames...)
+    final MenuBar addMenuBar(bool cdraw, string[] menuNames...)
     {
-        auto mbar = new MenuBar(this);
+        auto mbar = new MenuBar(this, cdraw);
+        mbar.mFont = new Font(this.font);
         if (menuNames.length > 0) mbar.addItems(menuNames);
         this.mMenubarCreated = true;
         return mbar;

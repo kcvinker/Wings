@@ -73,10 +73,11 @@ class ContextMenu : MenuBase
         this.createCmenuHandle(); 
     }
 
-    this(TrayIcon tray, string[] menuNames ...) 
+    this(TrayIcon tray, bool cdraw, string[] menuNames ...) 
     {
         this();
         this.mTray = tray;
+        this.mCustDraw = cdraw;
         this.setMenuInternal(menuNames);
         this.createCmenuHandle();
     }
@@ -148,6 +149,8 @@ class ContextMenu : MenuBase
         Control mParent;
         TrayIcon mTray;
         bool mCmenuCreated;
+        bool mCustDraw;
+        Font mFont;
         HWND mDummyHwnd;
 
         // Display context menu on right click or short key press.
@@ -216,6 +219,7 @@ class ContextMenu : MenuBase
 
     EventHandler onMenuShown;
     EventHandler onMenuClose; 
+    
         
     private:
         int mWidth, mHeight, mMenuCount;
@@ -239,9 +243,30 @@ class ContextMenu : MenuBase
         void createCmenuHandle()
         {
             if (this.mMenus.length > 0) {
-                foreach (menu; this.mMenus) menu.insertCmenuInternal();
-            }
-            this.mCmenuCreated = true;
+                UINT drawFlag = MF_STRING;
+                if (this.mCustDraw) {
+                    drawFlag = MF_OWNERDRAW;
+                    HDC hdcmem = CreateCompatibleDC(null);
+                    scope(exit) DeleteDC(hdcmem);
+                    HGDIOBJ oldfont = SelectObject(hdcmem, cast(HGDIOBJ)this.mFont.mHandle);
+                    scope(exit) SelectObject(hdcmem, oldfont);
+                    foreach (menu; this.mMenus) {
+                        GetTextExtentPoint32(hdcmem, menu.mWideText, 
+                                            cast(int)menu.text.length, 
+                                            &menu.mTxtSize);
+                        // Ensure minimum width for base menus
+                        if (menu.mType == MenuType.baseMenu) {
+                            if (menu.mTxtSize.cx < 100) {
+                                menu.mTxtSize.cx = 100; 
+                            } else {
+                                menu.mTxtSize.cx =+ 20;
+                            }
+                        } 
+                    }
+                }
+                foreach (menu; this.mMenus) menu.insertCmenuInternal(drawFlag);
+                this.mCmenuCreated = true;
+            }            
         }
 
         void setDummyWindow() 

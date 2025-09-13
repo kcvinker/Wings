@@ -34,19 +34,18 @@ class App {
 		frm = new Form("Wing window in D Lang", 920, 500);
 		frm.createHandle();
 
-		// Let's create a tray icon for this program.
+		//Let's create a tray icon for this program.
 		tic = new TrayIcon("Wings tray icon!", "wings_icon.ico");
 
 		// Now, add a context menu to our tray. '|' is for separator.
-		tic.addContextMenu(TrayMenuTrigger.anyClick, "Windows_ti", "Linux_ti", "|", "MacOS_ti");
+		tic.addContextMenu(true, TrayMenuTrigger.anyClick, "Windows_ti", "Linux_ti", "|", "MacOS_ti");
 
-
-		// If this set to true, all control handles will be
-		// created right after the class ctor finished.
+		// // If this set to true, all control handles will be
+		// // created right after the class ctor finished.
 		frm.createChildHandles = true; 
 
 		//Let's add a menu bar and some menu items
-		mb = frm.addMenuBar("Windows", "Linux", "MacOS");
+		mb = frm.addMenuBar(true, "Windows", "Linux", "MacOS");
 		
 		// Add 3 buttons
 		btn1 = new Button(frm, "Normal", 10, 10);
@@ -90,8 +89,7 @@ class App {
 		tkb2 = new TrackBar(frm, 500, 270, 60, 150, vertical: true, cdraw: true);
 
 		// Add a timer with a delegate to handle the onTick event.
-		tmr = frm.addTimer(800, &this.timerTickHandler);
-
+		tmr = frm.addTimer(&this.timerTickHandler, 800);
 	}
 
 	void setControlProps()
@@ -152,30 +150,30 @@ class App {
 	void display() {this.frm.show();}
 
 	// When clicked on button, combo's drop down style will change. 
-	void btn1OnClick(Control s, EventArgs e) {
-		this.cmb.dropDownStyle = DropDownStyle.textCombo;
+	void btn1OnClick(Object s, EventArgs e) {
+		// this.cmb.dropDownStyle = DropDownStyle.textCombo;
 	}
 
 	// Timer tick event handler
-	void timerTickHandler(Control c, EventArgs e) {writeln("Timer ticked...");}
+	void timerTickHandler(Object c, EventArgs e) {writeln("Timer ticked...");}
 
 	// ProgressBar will show the track bar values.
-	void onTrackValueChanged(Control c, EventArgs e) {
-		pgb.value = tkb1.value;
+	void onTrackValueChanged(Object c, EventArgs e) {
+		// pgb.value = tkb1.value;
 	}
 
-	void onContextMenuClick(MenuItem m, EventArgs e) {
+	void onContextMenuClick(Object m, EventArgs e) {
 		// delay(3000);
 		writeln("Windows menu clicked");
 	}
 
-	void onLVContextMenuClick(MenuItem m, EventArgs e) {
+	void onLVContextMenuClick(Object m, EventArgs e) {
 		// delay(3000);
 		writeln("Linux menu clicked");
 	}
 
-	void btn3Click(Control c, EventArgs e) {
-		this.tic.showBalloon("Wings Balloon", "This is Wings Balloon Text", 3000);
+	void btn3Click(Object c, EventArgs e) {
+		// this.tic.showBalloon("Wings Balloon", "This is Wings Balloon Text", 3000);
 	}
 
 	private:

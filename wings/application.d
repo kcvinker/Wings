@@ -28,28 +28,22 @@ package wstring formClass = "Wings_Form_in_D";
 package wstring mowClass = "Wings_MsgForm_in_D";
 
 static this() 
-{
-    
-    
+{    
     writeln("Application started");
     appData = new ApplicationData();
     
 }
 
 static ~this()
-{
-    
-    writeln("Application end");
-    
+{    
+    writeln("Application closed");    
 }
 
 class ApplicationData
 {
     import wings.colors;
     import wings.enums;
-    import wings.fonts;
-    
-    
+    import wings.fonts;    
 
     HWND mainHwnd;
     HWND[] trayHwnds;

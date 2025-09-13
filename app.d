@@ -22,14 +22,14 @@ class App {
 		tic = new TrayIcon("Wings tray icon!", "wings_icon.ico");
 
 		// Now, add a context menu to our tray. '|' is for separator.
-		tic.addContextMenu(TrayMenuTrigger.anyClick, "Windows_ti", "Linux_ti", "|", "MacOS_ti");
+		tic.addContextMenu(true, TrayMenuTrigger.anyClick, "Windows_ti", "Linux_ti", "|", "MacOS_ti");
 
 		// // If this set to true, all control handles will be
 		// // created right after the class ctor finished.
 		frm.createChildHandles = true; 
 
 		//Let's add a menu bar and some menu items
-		mb = frm.addMenuBar("Windows", "Linux", "MacOS");
+		mb = frm.addMenuBar(true, "Windows", "Linux", "MacOS");
 		
 		// Add 3 buttons
 		btn1 = new Button(frm, "Normal", 10, 10);

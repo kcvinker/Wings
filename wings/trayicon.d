@@ -99,9 +99,9 @@ class TrayIcon
     }
     
     /// Add a context menu to tray icon with menu items. 
-    void addContextMenu(TrayMenuTrigger trigger, string[] menuNames ...)
+    void addContextMenu(bool cdraw, TrayMenuTrigger trigger, string[] menuNames ...)
     {
-        this.mCmenu = new ContextMenu(this, menuNames);
+        this.mCmenu = new ContextMenu(this, cdraw, menuNames);
         this.mCmenuUsed = true;
         this.mMenuTrigger = trigger;
     }

@@ -14,9 +14,7 @@ import wings.application : appData, mowClass, GEA;
 
 
 class MessageForm 
-{
-    
-    
+{    
     this(MessageHandler pFun, bool autoc = true, 
                                 bool noTrayIcon = false, 
                                 string trayTip = "cforms Message-Only Form",
