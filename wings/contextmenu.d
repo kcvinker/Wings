@@ -145,6 +145,30 @@ class ContextMenu : MenuBase
         return mi;
     }
 
+    void addClickHandler(string menuName, EventHandler callback)
+    {
+        if (this.mMenus.length > 0) {
+            foreach (menu; this.mMenus) {
+                if (menu.mText == menuName) {
+                    menu.onClick = callback;
+                    break;
+                }                 
+            }
+        }
+    }
+
+    void setMenuTag(string menuName, Object obj)
+    {
+        if (this.mMenus.length > 0) {
+            foreach (menu; this.mMenus) {
+                if (menu.mText == menuName) {
+                    menu.mTag = obj;
+                    break;
+                }                 
+            }
+        }
+    }
+
     package:
         Control mParent;
         TrayIcon mTray;

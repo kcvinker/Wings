@@ -56,6 +56,7 @@ class CheckBox : Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         this.mTextable = true;
+        this.mHasFont = true;
         ++Control.stCtlId;        
         if (checkFn) this.onClick = checkFn;
         if (parent.mAutoCreate) this.createHandle();
@@ -228,6 +229,11 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     break;
                     default: break;
                 } 
+            break;
+            case CM_FONT_CHANGED:
+                CheckBox cb = getControl!CheckBox(refData);
+                cb.updateFontHandle();
+                return 0;
             break;
             default : 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 

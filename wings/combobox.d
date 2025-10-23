@@ -73,6 +73,7 @@ class ComboBox: Control
         this.mName = format("%s_%d", "ComboBox_", cmbNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
+        this.mHasFont = true;
         ++Control.stCtlId;        
         if (parent.mAutoCreate) this.createHandle();
     }
@@ -475,6 +476,11 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
                     default: break;
                 }
+            break;
+            case CM_FONT_CHANGED:
+                ComboBox cmb = getControl!ComboBox(refData);
+                cmb.updateFontHandle();
+                return 0;
             break;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 

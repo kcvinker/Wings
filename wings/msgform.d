@@ -6,7 +6,7 @@ import wings.events : MessageHandler;
 import wings.trayicon : TrayIcon;
 import wings.timer : Timer, regNewHotKey;
 import wings.events : EventHandler;
-import wings.enums: Key;
+import wings.enums: Key, TrayMenuTrigger;
 import wings.commons: getAs, CM_TIMER_DESTROY, print;
 import wings.application : appData, mowClass, GEA;
 
@@ -15,16 +15,12 @@ import wings.application : appData, mowClass, GEA;
 
 class MessageForm 
 {    
-    this(MessageHandler pFun, bool autoc = true, 
-                                bool noTrayIcon = false, 
-                                string trayTip = "cforms Message-Only Form",
-                                string iconpath = "")
+    // Signature of MessageHandler = bool delegate(MessageForm sender, UINT message, 
+    //                                                WPARAM wParam, LPARAM lParam)
+    this(MessageHandler pFun, bool autoc = false)
     {
         if (!appData.isMowInint) appData.initMowMode();
         this.mMsgHandler = pFun;
-        this.mNotray = noTrayIcon;
-        this.mTrayIconPath = iconpath;
-        this.mTraytip = trayTip;
         if (autoc) this.createHandle();
     }
 
@@ -45,27 +41,48 @@ class MessageForm
             }
             this.mTimerMap.clear;
         }
+        print("MessageForm destructor worked");
     }
 
     void createHandle()
     {
+        import wings.commons : setThisPtrOnWindows;        
         this.mHandle = CreateWindowExW(0, mowClass.ptr, null, 
                                         0, 0, 0, 0, 0, HWND_MESSAGE, 
                                         null, appData.hInstance, null);
         if (this.mHandle) {
-            SetWindowLongPtrW(this.mHandle, GWLP_USERDATA, (cast(LONG_PTR) cast(void*) this));
+            setThisPtrOnWindows(this, this.mHandle);
+        }
+    }
+
+    void addTrayIcon(string traytip, string iconpath = "")
+    {
+        if (this.handle) this.mTray = new TrayIcon(traytip, iconpath);
+    }
+
+    void addTrayContextMenu(bool cdraw = false, 
+                            TrayMenuTrigger trigger = TrayMenuTrigger.anyClick,
+                            string[] menuNames...)
+    {
+        if (this.mTray) {
+            this.mTray.addContextMenu(cdraw, trigger, menuNames);
         }
     }
 
     void startListening()
     {
         MSG uMsg;
+        scope(exit) appData.finalize();
         while (GetMessage(&uMsg, null, 0, 0) != 0) {
             TranslateMessage(&uMsg);
             DispatchMessage(&uMsg);
         }
-        // writeln("Main loop returned");
-        scope(exit) appData.finalize();
+        // writeln("Main loop returned");        
+    }
+
+    void close() 
+    {
+        if (this.handle) DestroyWindow(this.handle);
     }
 
     int addHotKey(Key[] keyList, EventHandler pFunc, bool noRepeat = false )
@@ -96,6 +113,7 @@ class MessageForm
     TrayIcon trayIcon() {return this.mTray;}
     bool noTray() {return this.mNotray;}
     HWND handle() {return this.mHandle;}
+    HINSTANCE instanceHandle() {return appData.hInstance;}
 
     
 
@@ -121,7 +139,9 @@ LRESULT msgFormWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) no
             case WM_DESTROY: 
                 // auto mf = getAs!MessageForm(hWnd);                
                 // if (mf.onClosed) mf.onClosed(mf, new EventArgs()); 
-                print("Msg-Only Window destroyed");             
+                print("Msg-Only Window destroyed"); 
+                PostQuitMessage(0);
+                return 0;            
             break;
             case WM_GETMINMAXINFO:
                 goto case;

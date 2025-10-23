@@ -42,8 +42,6 @@
 	    SizeEventHandler - void delegate(Object, SizeEventArgs)
             onSized
             onSizing
-        HotKeyEventHandler - void delegate(Object, HotKeyEventArgs)
-            onHotKeyPress
         ThreadMsgHandler - void delegate(WPARAM, LPARAM)
             onThreadMsg  
                   
@@ -76,7 +74,7 @@ DWORD newStyle = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
 
 
 ///This class is a form class
-class Form : Control
+class Form : Control 
 {
     // Imports---------------
     import wings.gradient;  
@@ -100,7 +98,7 @@ class Form : Control
     EventHandler onMinimized, onMaximized, onRestored, onClosing, onClosed, onLoad;
     EventHandler onActivate, onDeActivate, onMoving, onMoved;
     SizeEventHandler onSized, onSizing;
-    HotKeyEventHandler onHotKeyPress;
+    // HotKeyEventHandler onHotKeyPress;
     ThreadMsgHandler onThreadMsg;
 
 
@@ -121,7 +119,7 @@ class Form : Control
         this.minimizeBox = true;
         this.mWinStyle = FormStyle.normalWin;
         this.mBkDrawMode = FormBkMode.normal;
-        this.mFont = appData.appFont;
+        this.mFont = new Font(appData.appFont);
         this.controlType = ControlType.window;
         this.mBackColor = appData.appColor; // using opCall feature
         mFormCount += 1; // Incrementing private static variable
@@ -176,7 +174,8 @@ class Form : Control
         if (this.mHandle ) {
             this.mIsCreated = true;
             if (appData.mainHwnd == null) appData.mainHwnd = this.mHandle;
-            SetWindowLongPtrW(this.mHandle, GWLP_USERDATA, (cast(LONG_PTR) cast(void*) this) );
+            setThisPtrOnWindows(this, this.mHandle);
+            this.mFont.mHwndParent = this.mHandle;
             this.setFontInternal();
         } else {
             throw new Exception("Form is not created..."); // Do we need this ?
@@ -460,8 +459,9 @@ class Form : Control
 
         void createControlHandles()
         {
-            if (this.mMenubarCreated && !this.mMenubar.mIsCreated) 
+            if (this.mMenubarCreated && !this.mMenubar.mIsCreated) {
                 this.mMenubar.createHandle();
+            }
             if (this.mControls.length) {
                 foreach (ctl; this.mControls) {
                     if (!ctl.mIsCreated) ctl.createHandle();
@@ -883,6 +883,11 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 auto win = getAs!Form(hWnd);
                 auto menu = win.getMenuFromHmenu(cast(HMENU) wParam);
                 if (menu && menu.onCloseup) menu.onCloseup(menu, new EventArgs());
+            break;
+            case CM_FONT_CHANGED:
+                auto win = getAs!Form(hWnd);
+                win.updateFontHandle();
+                return 0;
             break;
             default: 
                 return DefWindowProcW(hWnd, message, wParam, lParam); 

@@ -4,6 +4,8 @@ module wings.application;
 import std.stdio;
 import core.sys.windows.windows;
 import core.sys.windows.commctrl;
+import wings.commons: print, ptf;
+
 
 import wings.events: EventArgs;
 // import core.runtime ;
@@ -29,14 +31,15 @@ package wstring mowClass = "Wings_MsgForm_in_D";
 
 static this() 
 {    
-    writeln("Application started");
+    ptf("Application started", 0);
     appData = new ApplicationData();
+    //stdout.setvbuf(0, _IOLBF);
     
 }
 
 static ~this()
 {    
-    writeln("Application closed");    
+    ptf("Application closed", 0);    
 }
 
 class ApplicationData
@@ -182,13 +185,14 @@ class ApplicationData
         import wings.commons: CM_CMENU_DESTROY;
         
         this.isMainLoopOn = true;
+        scope(exit) this.finalize();
         MSG uMsg;
         while (GetMessage(&uMsg, null, 0, 0) != 0) {
             TranslateMessage(&uMsg);
             DispatchMessage(&uMsg);
         }
         // writeln("Main loop returned");
-        scope(exit) this.finalize();        
+                
     }
 
     //~this()

@@ -8,6 +8,7 @@ public import wings.form;
 public import wings.commons;
 public import wings.contextmenu;
 public import wings.messagebox;
+public import wings.msgform;
 public import wings.enums;
 public import wings.buttons;
 public import wings.fonts;

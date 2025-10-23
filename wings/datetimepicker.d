@@ -104,6 +104,7 @@ class DateTimePicker: Control
         this.mFormatString = " dd-MMM-yyyy";
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
+        this.mHasFont = true;
         ++Control.stCtlId;
         ++dtpNumber;
         if (parent.mAutoCreate) this.createHandle();

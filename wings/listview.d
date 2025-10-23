@@ -101,6 +101,7 @@ class ListView: Control
         mHdrBackColor(0xb3cccc);
         mHdrForeColor(0x000000);
         mHdrFont = parent.font;
+        this.mHasFont = true;
         this.mName = format("%s_%d", "ListView_", lvNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
@@ -1060,6 +1061,11 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     break;
                     default: /*print("other code ", nmcd.hdr.code); */ break;
                 }
+            break;
+            case CM_FONT_CHANGED:
+                ListView lv = getControl!ListView(refData);
+                lv.updateFontHandle();
+                return 0;
             break;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 

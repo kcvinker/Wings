@@ -72,6 +72,7 @@ class NumberPicker: Control
         mBuddyExStyle = buddyExStyle;
         mBackColor(defBackColor);
         mForeColor(defForeColor);
+        this.mHasFont = true;
         mFmtStr = "%.02f";
         mValue = mMinRange;
         this.mName = format("%s_%d", "NumberPicker_", npNumber);
@@ -521,6 +522,11 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_MOUSEMOVE: 
                 NumberPicker np = getControl!NumberPicker(refData);
                 np.npMouseMoveHandler(message, wParam, lParam); 
+            break;
+            case CM_FONT_CHANGED:
+                NumberPicker np = getControl!NumberPicker(refData);
+                np.updateFontHandle();
+                return 0;
             break;
             default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }

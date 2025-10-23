@@ -44,6 +44,7 @@ class TextBox: Control
         this.mForeColor(0x000000); // Black
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
+        this.mHasFont = true;
         ++Control.stCtlId;
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         if (parent.mAutoCreate) this.createHandle();
@@ -172,6 +173,11 @@ private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_MOUSELEAVE: 
                 TextBox tb = getControl!TextBox(refData);
                 tb.mouseLeaveHandler(); 
+            break;
+            case CM_FONT_CHANGED:
+                TextBox tb = getControl!TextBox(refData);
+                tb.updateFontHandle();
+                return 0;
             break;
             default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }

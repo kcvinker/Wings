@@ -43,6 +43,7 @@ class RadioButton: Control
         this.mName = format("%s_%d", "RadioButton_", rbNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
+        this.mHasFont = true;
         ++Control.stCtlId;
         if (evtFn) this.onClick = evtFn;
         if (parent.mAutoCreate) this.createHandle();
@@ -195,6 +196,11 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_MOUSELEAVE: 
                 RadioButton rb = getControl!RadioButton(refData);
                 rb.mouseLeaveHandler(); 
+            break;
+            case CM_FONT_CHANGED:
+                RadioButton rb = getControl!RadioButton(refData);
+                rb.updateFontHandle();
+                return 0;
             break;
             default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }

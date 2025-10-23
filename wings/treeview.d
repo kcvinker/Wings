@@ -72,6 +72,7 @@ class TreeView: Control
         this.mName = format("%s_%d", "TreeView_", tvNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
+        this.mHasFont = true;
         ++Control.stCtlId;
         if (parent.mAutoCreate) this.createHandle();
     }
@@ -340,6 +341,11 @@ private LRESULT tvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case WM_MOUSELEAVE: 
                 TreeView tv = getControl!TreeView(refData);
                 tv.mouseLeaveHandler(); 
+            break;
+            case CM_FONT_CHANGED:
+                TreeView tv = getControl!TreeView(refData);
+                tv.updateFontHandle();
+                return 0;
             break;
             default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }

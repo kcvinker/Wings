@@ -50,6 +50,7 @@ class GroupBox: Control
         this.mGBStyle = GroupBoxStyle.system;
         this.mName = format("%s_%d", "GroupBox_", gbNumber);
         this.mParent.mControls ~= this;
+        this.mHasFont = true;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;        
         if (parent.mAutoCreate) this.createHandle();
@@ -325,6 +326,11 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     gfx.drawText(gb, 12, 0);
                     return ret;
                 }
+            break;
+            case CM_FONT_CHANGED:
+                GroupBox gb = getControl!GroupBox(refData);
+                gb.updateFontHandle();
+                return 0;
             break;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 

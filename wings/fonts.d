@@ -1,13 +1,13 @@
 module wings.fonts;
 
 import core.sys.windows.windows;
-import wings.enums : FontWeight;
+import wings.enums : FontWeight, FontOwner;
 
 import std.utf;
 import std.conv;
 import std.stdio;
 
-import wings.commons : print;
+import wings.commons : print, CM_FONT_CHANGED;
 import wings.widestring : WideString;
 
 //int num = 1;
@@ -33,6 +33,7 @@ class Font {
         this.mWeight = fWeight;
         this.mItalis = fItalics;
         this.mUnderLine = fUnderline;
+        this.mOwnership = FontOwner.none;
     }
 
     this(bool createNow, string fName, int fSize,
@@ -51,8 +52,10 @@ class Font {
     ~this()
     {
         //import std.stdio;
-        if (this.mHandle) DeleteObject(this.mHandle);
-        // print("Font handle destroyed for", this.mFunc);
+        if (this.mHandle && this.mOwnership == FontOwner.owner) {
+            DeleteObject(this.mHandle);
+            print("Font handle destroyed for", this.mFunc);
+        }
     }
 
     void createFontHandle(bool formFont = false) {
@@ -74,6 +77,7 @@ class Font {
         plf.lfPitchAndFamily = 1;
         this.mHandle = CreateFontIndirectW(plf);
         this.mIsCreated = true;
+        this.mOwnership = FontOwner.owner;
     }
 
     void cloneParentHandle(HFONT pHandle) {
@@ -81,9 +85,11 @@ class Font {
             LOGFONTW lf;
             if (GetObjectW(pHandle, LOGFONTW.sizeof, cast(LPVOID)&lf)) {
                 this.mHandle = CreateFontIndirectW(&lf);
+                this.mOwnership = FontOwner.owner;
             }            
         } else {
             this.mHandle = CreateFontIndirectW(&appData.logfont);
+            this.mOwnership = FontOwner.owner;
         }
     }
 
@@ -95,7 +101,10 @@ class Font {
         this.mWeight = src.mWeight;
         this.mItalis = src.mItalis;
         this.mUnderLine = src.mUnderLine;
-        if (src.mHandle) this.createFontHandle();
+        if (src.mHandle) { // User cannot delete the font handle.
+            this.mHandle = src.mHandle;
+            this.mOwnership = FontOwner.user;
+        }
     }
 
     final void setHandle(void* hfont) {
@@ -107,11 +116,40 @@ class Font {
         this.mIsCreated = value;
     }
 
+    final void name(string value)
+    {
+        this.mName = value;
+        this.notifyParent();
+    }
+
+    final void size(int value)
+    {
+        this.mSize = value;
+        this.notifyParent();
+    }
+
+    final void weight(FontWeight value)
+    {
+        this.mWeight = value;
+        this.notifyParent();
+    }
+
+    final void italics(bool value)
+    {
+        this.mItalis = value;
+        this.notifyParent();
+    }
+
+    final void underline(bool value)
+    {
+        this.mUnderLine = value;
+        this.notifyParent();
+    }
 
 
     package:
         HFONT mHandle;
-        //WideString mWtext;
+        HWND mHwndParent;
         string mFunc;
         string mName;
         int mSize;
@@ -120,6 +158,16 @@ class Font {
         bool mUnderLine;
         bool mItalis;
         bool mIsCreated;
+        FontOwner mOwnership;
+
+        void notifyParent()
+        {
+            if (this.mHwndParent) {
+                SendMessage(this.mHwndParent, CM_FONT_CHANGED, 0, 0);
+            } else {
+                this.mHandle = null;
+            }
+        }
 
 
 }
@@ -132,3 +180,4 @@ class Font {
 //    }
 //    buffer[slen] = 0;
 //} 
+

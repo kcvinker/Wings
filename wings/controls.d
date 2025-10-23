@@ -301,6 +301,7 @@ class Control {
         bool rDownHappened;
         bool isMouseEntered;
         bool mDisabled;
+        bool mHasFont;
         int mWidth;
         int mHeight;
         int mXpos;
@@ -336,8 +337,12 @@ class Control {
                                             null);
             if (this.mHandle) {
                 this.mIsCreated = true;
-                if (!this.mBaseFontChanged) this.mFont = this.mParent.font;
-                this.createLogFontInternal();
+                if (this.mHasFont) {
+                    this.mFont.mHwndParent = this.mHandle;
+                    this.createLogFontInternal();
+                }
+                //if (!this.mBaseFontChanged) this.mFont = this.mParent.font;                
+                
                 this.getRightAndBottom();
             }
         }
@@ -350,7 +355,7 @@ class Control {
         final void setFontInternal() // Protected
         {   
             // This function is used for setting font for a control right after it created
-            if (!this.mFont.isCreated) {this.mFont.createFontHandle(); }
+            if (!this.mFont.mHandle) {this.mFont.createFontHandle(); }
             this.sendMsg(WM_SETFONT, this.mFont.handle, 1);
         }
 
@@ -383,7 +388,20 @@ class Control {
 
         void createLogFontInternal()
         { // Package
-            if (!this.mFont.isCreated) this.mFont.createFontHandle();
+            if (!this.mFont.mHandle) this.mFont.createFontHandle();
+            this.sendMsg(WM_SETFONT, this.mFont.handle, 1);
+        }
+
+        void updateFontHandle()
+        {
+            if (this.mFont.mHandle) {
+                if (this.mFont.mOwnership == FontOwner.owner) {
+                    DeleteObject(this.mFont.mHandle);
+                } else {
+                    this.mFont.mHandle = null;
+                }
+            }
+            this.mFont.createFontHandle();
             this.sendMsg(WM_SETFONT, this.mFont.handle, 1);
         }
 

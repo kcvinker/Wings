@@ -80,6 +80,7 @@ class App {
 	{	
 		// Set some properties of our controls.
 		btn1.onClick = &this.btn1OnClick;
+		btn1.font.name = "Blackadder ITC";
 		btn2.backColor = 0x83c5be;
 		btn3.setGradientColors(0xeeef20, 0x70e000);
 		btn3.onClick = &this.btn3Click;
@@ -158,6 +159,7 @@ class App {
 
 	void btn3Click(Object c, EventArgs e) {
 		// this.tic.showBalloon("Wings Balloon", "This is Wings Balloon Text", 3000);
+		print("Gradient button clicked");
 	}
 
 	private:

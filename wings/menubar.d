@@ -264,7 +264,8 @@ class MenuItem : MenuBase
     }
 
     final MenuItem[] menus() {return this.mMenus;}
-
+    final void tag(Object value) {this.mTag = value;}
+    final Object tag() {return this.mTag;}
 
     final string text() {return this.mText;}
     // final uint uFlag() {return this.mFlag;}
@@ -302,6 +303,7 @@ class MenuItem : MenuBase
         uint mId;
         SIZE mTxtSize;
         ParentKind mParentKind;
+        Object mTag;
 
 
         // Using to insert menu items in a MenuBar

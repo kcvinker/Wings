@@ -11,6 +11,12 @@ enum FontWeight {
     ultraBold = 900
 }
 
+enum FontOwner {
+    none,
+    user,
+    owner
+}
+
 /// Describe window positions
 enum FormPos {
     topLeft, topMid, topRight,

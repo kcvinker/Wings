@@ -60,6 +60,7 @@ class ListBox: Control {
         mForeColor(defForeColor);
         this.mName = format("%s_%d", "ListBox_", lbxNumber);
         this.mParent.mControls ~= this;
+        this.mHasFont = true;
         this.mCtlId = Control.stCtlId;
         ++Control.stCtlId;
         if (parent.mAutoCreate) this.createHandle();
@@ -390,6 +391,11 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     // case LBN_ERRSPACE: break;
                     default: break;
                 }
+            break;
+            case CM_FONT_CHANGED:
+                ListBox lbx = getControl!ListBox(refData);
+                lbx.updateFontHandle();
+                return 0;
             break;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 

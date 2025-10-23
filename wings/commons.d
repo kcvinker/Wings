@@ -65,6 +65,11 @@ package {
         return cres;
     }
 
+    void setThisPtrOnWindows(Object obj, HWND hw)
+    {
+        SetWindowLongPtrW(hw, GWLP_USERDATA, cast(LONG_PTR) cast(void*) obj);
+    }
+
 
     
     //alias Wstring = const(wchar)*;
@@ -216,6 +221,7 @@ package {
         enum uint CM_TRAY_MSG = MSG_BASE + 14;
         enum uint CM_CMENU_DESTROY = MSG_BASE + 15;
         enum uint CM_TIMER_DESTROY = MSG_BASE + 16;
+        enum uint CM_FONT_CHANGED = MSG_BASE + 17;
 
 
 
@@ -285,39 +291,45 @@ void printRect(const RECT* rc)
 void print(T)(string msg, T obj)
 {
     debug{
-        import std.stdio;
+        
         static x = 1;
         writefln("[%d]%s - %s", x, msg, obj);
+        // stdout.flush();
         ++x;
+        
     }
 }
 
 void print(T)(T value)
 {
     debug{
-        import std.stdio;
+        
         static x = 1;
         writefln("[%d] %s", x, value);
+        stdout.flush();
         ++x;
+        
     }
 
 }
 void print(T)(string msg, T value1, T value2)
 {
     debug{
-        import std.stdio;
+        
         static x = 1;
         writefln("[%d] %s - %s,  - %s", x, msg, value1, value2);
+        stdout.flush();
         // writeln("----------------------------------------------------------------");
         ++x;
+        
     }
 }
 
 void ptf(T...)(string fmt, T values)
 {
     debug{
-        import std.stdio;
         writefln(fmt, values);
+        stdout.flush();
     }
 
 }

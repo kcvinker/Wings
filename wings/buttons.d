@@ -118,6 +118,7 @@ class Button : Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         this.mTextable = true;
+        this.mHasFont = true;
         ++Control.stCtlId;
         ++btnNumber;
 
@@ -384,6 +385,11 @@ private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             case CM_NOTIFY : 
                 Button btn = getControl!Button(refData);
                 return btn.wmNotifyHandler(lParam); 
+            break;
+            case CM_FONT_CHANGED:
+                Button btn = getControl!Button(refData);
+                btn.updateFontHandle();
+                return 0;
             break;
             default : return DefSubclassProc(hWnd, message, wParam, lParam);
         }

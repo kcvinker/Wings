@@ -44,6 +44,7 @@ class Label: Control
         this.mName = format("%s_%d", "Label+", lblNumber);
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
+        this.mHasFont = true;
         ++Control.stCtlId;
         if (parent.mAutoCreate) this.createHandle();
         //mBorder = LabelBorder.singleLine;
@@ -216,6 +217,11 @@ private LRESULT lblWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 if (lbl.mDrawFlag & 1) SetTextColor(hdc, lbl.mForeColor.cref);
                 SetBkColor(hdc, lbl.mBackColor.cref);
                 return cast(LRESULT)lbl.mBkBrush;
+            break;
+            case CM_FONT_CHANGED:
+                Label lbl = getControl!Label(refData);
+                lbl.updateFontHandle();
+                return 0;
             break;
 
             default: return DefSubclassProc(hWnd, message, wParam, lParam);
