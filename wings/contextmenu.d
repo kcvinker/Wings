@@ -210,8 +210,10 @@ class ContextMenu : MenuBase
                 won't get any keyboard messages. If user wants to select any 
                 menu item, we must activate any window. So we are bringing our
                 tray's message-only window to foreground. 
-                --------------------------------------------------------------*/                
-                if (!lpm) SetForegroundWindow(this.mTray.mMsgHwnd);
+                --------------------------------------------------------------*/  
+                // print("lpm in showMenu ", lpm);              
+                // if (!lpm) 
+                SetForegroundWindow(this.mTray.mMsgHwnd);
 
                 /*------------------------------------------------------------------------
                 We are using TPM_RETURNCMD in the tpm_flag, so we don't get the 
@@ -219,6 +221,7 @@ class ContextMenu : MenuBase
                 ----------------------------------------------------------------------------*/
                 auto mid = TrackPopupMenu(this.mHandle, tpm_flag, pt.x, pt.y, 0, this.mDummyHwnd, null);
 
+                // if (this.mTray) PostMessageW(this.mTray.mMsgHwnd, WM_NULL, 0, 0);
                 /*-------------------------------------------------------------
                 We got the result here. So if user has selected any menu item,
                 we need to find the menu item and execute it's onClick handler.
@@ -227,7 +230,9 @@ class ContextMenu : MenuBase
                     auto menu = this.getMenuItem(mid);
                     if (menu && menu.onClick && menu.mEnabled) {
                         menu.onClick(menu, new EventArgs());
+                        return;
                     }
+                    return;
                 }
             } else {
                 throw new Exception("No menu items added to ContextMenu");

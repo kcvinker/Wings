@@ -149,9 +149,14 @@ class App {
 
 	void display() {this.frm.show();}
 
-	// When clicked on button, combo's drop down style will change. 
+	// Use a FileOpenDialog. 
 	void btn1OnClick(Object s, EventArgs e) {
-		// this.cmb.dropDownStyle = DropDownStyle.textCombo;
+		auto ofd = new FileOpenDialog("Open files", "", 
+										"Pdf Files|*.pdf|Text Files|*.txt");
+		ofd.multiSelection = true;
+		if (ofd.showDialog()) {
+			print("Selected file: ", ofd.fileNames);
+		}
 	}
 
 	// Timer tick event handler

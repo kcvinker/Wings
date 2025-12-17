@@ -85,6 +85,13 @@ class MessageForm
         if (this.handle) DestroyWindow(this.handle);
     }
 
+    void addTrayMenuClickHandler(string menuName, EventHandler callback)
+    {
+        if (this.mTray && this.mTray.mCmenu) {
+            this.mTray.mCmenu.addClickHandler(menuName, callback);
+        }
+    }
+
     int addHotKey(Key[] keyList, EventHandler pFunc, bool noRepeat = false )
     {
         int hkid = regNewHotKey(this.mHandle, keyList, noRepeat);

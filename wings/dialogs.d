@@ -13,21 +13,23 @@
 
     (2) FileOpenDialog : DialogBase
             Constructor:
-                this(string title = "Open File", string initDir = "")
+                this(string title = "Open File", string initDir = "", 
+                     string typeFilter = "All files|*.*")
             Properties:
                 multiSelection      : bool   
                 showHiddenFiles     : bool
-                fileNames           : string[] in case of multiSelection == true
+                fileNames           : string[], in case of multiSelection == true
             Functions:
-                showDialog
+                bool showDialog(HWND hwnd = null)
     
     (3) FileSaveDialog : DialogBase
             Constructor:
-                this(string title = "Save File", string initDir = "") 
+                this(string title = "Save File", string initDir = "", 
+                     string typeFilter = "All files|*.*") 
             Properties:
-                defaultExtension    : string
+                NA
             Functions:
-                showDialog
+                bool showDialog(HWND hwnd = null)
 
     (4) FolderBrowserDialog : DialogBase
             Constructor:
@@ -36,7 +38,7 @@
                 newFolderButton     : bool
                 showFiles           : bool
             Functions:
-                showDialog       
+                bool showDialog(HWND hwnd = null)     
 =============================================================================================*/
 module wings.dialogs;
 
@@ -47,6 +49,7 @@ import std.stdio;
 import std.utf;
 import std.conv;
 import std.string;
+import std.array;
 import wings.controls: finalProperty;
 
 pragma(lib, "Comdlg32.lib");
@@ -55,16 +58,18 @@ pragma(lib, "Ole32.lib");
 
 enum OFN_FORCESHOWHIDDEN = 0x10000000;
 enum BIF_NONEWFOLDERBUTTON = 0x00000200;
-enum MAX_PATH_NEW = 32768 + 256 * 100 + 1;
-enum defFilter = "All Files" ~ '\0' ~ "*.*" ~ '\0';
+enum MAX_PATH_NEW = 65_535;
 
 
 class DialogBase {
 
-    this(string title, string initDir)
+    this(string title, string initDir, string typeFilter)
     {
         this.mTitle = title;
         this.mInitDir = initDir;
+        if (typeFilter.length > 0) {
+            this.mFilter = typeFilter.replace("|", "\0") ~ "\0\0";
+        }         
     }
 
     mixin finalProperty!("title", this.mTitle);
@@ -83,18 +88,12 @@ class DialogBase {
         }
     }
 
-    void setFilters(string description, string[] filterList)
+    void setFilters(string typeFilter)
     {
-        this.mFilter = description ~ "\0";
-        auto filCount = filterList.length - 1;
-        foreach(i, filter; filterList) {
-            this.mFilter ~= "*" ~ filter;
-            if (i < filCount) this.mFilter ~= ";";
-        }
-        this.mFilter ~= "\0\0";
+        this.mFilter = typeFilter.replace("|", "\0") ~ "\0\0";        
     }
 
-    void allowAllFiles(bool value) {this.mAllowAllFiles = value;}
+    // void allowAllFiles(bool value) {this.mAllowAllFiles = value;}
 
     // void setFilter(string filterName, string[] ext) {
     //     if (this.mFilter.length > 0) {
@@ -112,63 +111,32 @@ class DialogBase {
     int mNameStart;
     int mExtStart;
     bool mAllowAllFiles;
+    
 }
 
+// Open File Dialog.
+// NOTE: When using typeFilter, use pipe character('|')...
+// ...to separate filter name and extension.
+// You can use two types of typeFilter string:
+// 1. Multiple descriptions and multiple extensions.
+//      Like, "PDF files|*.pdf|Text Files|*.txt"
+// 2. Single description and multiple extensions.
+//      Like, "Document files|*.doc;*.docx"
 class FileOpenDialog : DialogBase {
-    this(string title = "Open File", string initDir = "")
+    this(string title = "Open File", string initDir = "", 
+                    string typeFilter = "All files|*.*")
     {
-        super(title, initDir);
+        super(title, initDir, typeFilter);
     }
 
     mixin finalProperty!("multiSelection", this.mMultiSel);
     mixin finalProperty!("showHiddenFiles", this.mShowHidden);
     final string[] fileNames() {return this.mSelFiles;}
 
+    /// Show the File Open Dialog. Use hwnd to make it modal to a window.
     final bool showDialog(HWND hwnd = null)
     {
-        if (this.mFilter.length == 0) {
-            this.mFilter = "All files\0*.*\0";
-        } else {
-            if (this.mAllowAllFiles) this.mFilter = "All files\0*.*\0\0";
-        }
-        wchar[] buffer = new wchar[](MAX_PATH_NEW);
-        wchar[] ttlBuff = new wchar[](MAX_PATH);
-        ttlBuff[0] = '\u0000';
-        buffer[0] = '\u0000';
-        OPENFILENAMEW ofn;
-        ofn.hwndOwner = hwnd;
-        ofn.lpstrFile = cast(wchar*) buffer.ptr;
-        ofn.lpstrInitialDir = this.mInitDir != "" ? this.mInitDir.toUTF16z : null;
-        ofn.lpstrTitle = this.mTitle.toUTF16z;
-        ofn.lpstrFilter =  this.mFilter.toUTF16z;
-        ofn.lpstrFileTitle = cast(wchar*) ttlBuff;
-        ofn.nMaxFile = MAX_PATH_NEW;
-        ofn.nMaxFileTitle = MAX_PATH;
-        ofn.lpstrDefExt = toUTF16z("\0"); // Without this, we won't get any extension.
-
-        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-        if (this.multiSelection) ofn.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
-        if (this.showHiddenFiles) ofn.Flags |= OFN_FORCESHOWHIDDEN;
-        auto ret = GetOpenFileNameW(&ofn);
-        if (ret) {
-            if (this.mMultiSel) {
-                this.extractFileNames(buffer, ofn.nFileOffset);
-                return true;
-            } else {
-                this.mSelPath = to!string(buffer[0..$ - 1]);
-                this.mNameStart = ofn.nFileOffset;
-                this.mExtStart = ofn.nFileExtension;
-                return true;
-            }
-        }
-        // if (ret) {
-        //     obj.mNameStart = ofn.nFileOffset;
-        //     obj.mExtStart = ofn.nFileExtension;
-        //     obj.mSelPath = fromStringz(buffer.ptr).to!string;
-        //     return true;
-        // }
-        return false;
-
+        return showCommonDialog(this, hwnd);        
     }
 
     private:
@@ -179,7 +147,8 @@ class FileOpenDialog : DialogBase {
     // If user selects multi selection property, we will get all the
     // selected files in buffer with null character separated.
     // We need to loop throughi it and extract the file names.
-    void extractFileNames(wchar[] buff, int startPos) {
+    void extractFileNames(wchar[] buff, int startPos) 
+    {
         int offset = startPos;
         string dirPath = buff[0..startPos - 1].to!string;
         for (int i = startPos; i < MAX_PATH; i++) {
@@ -194,42 +163,23 @@ class FileOpenDialog : DialogBase {
     }
 }
 
-class FileSaveDialog : DialogBase {
-    this(string title = "Save File", string initDir = "") {
-        super(title, initDir);
+// Save File Dialog. 
+// For more info on typeFilter, see FileOpenDialog.
+class FileSaveDialog : DialogBase 
+{
+    this(string title = "Save File", 
+         string initDir = "",
+         string typeFilter = "All files|*.*") 
+    {
+        super(title, initDir, typeFilter);
     }
 
-    mixin finalProperty!("defaultExtension", this.mDefExt);
+    // mixin finalProperty!("defaultExtension", this.mDefExt);
 
-    final bool showDialog(HWND hwnd = null) {
-        if (this.mFilter.length == 0) {
-            this.mFilter = "All files\0*.*\0";
-        } else {
-            if (this.mAllowAllFiles) this.mFilter = format("%sAll files\0*.*\0", this.mFilter);
-        }
-        wchar[] buffer = new wchar[](MAX_PATH);
-        wchar[] ttlBuff = new wchar[](MAX_PATH);
-        ttlBuff[0] = '\u0000';
-        buffer[0] = '\u0000';
-        OPENFILENAMEW ofn;
-        ofn.hwndOwner = hwnd;
-        ofn.lpstrFile = cast(wchar*) buffer.ptr;
-        ofn.lpstrInitialDir = this.mInitDir != "" ? this.mInitDir.toUTF16z : null;
-        ofn.lpstrTitle = this.mTitle.toUTF16z;
-        ofn.lpstrFilter =  this.mFilter.toUTF16z;
-        ofn.lpstrFileTitle = cast(wchar*) ttlBuff;
-        ofn.nMaxFile = MAX_PATH;
-        ofn.nMaxFileTitle = MAX_PATH;
-        ofn.lpstrDefExt = toUTF16z("\0"); // Without this, we won't get any extension.
-        ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
-        auto ret = GetSaveFileNameW(&ofn);
-        if (ret) {
-            this.mNameStart = ofn.nFileOffset;
-            this.mExtStart = ofn.nFileExtension;
-            this.mSelPath = fromStringz(buffer.ptr).to!string;
-            return true;
-        }
-        return false;
+    /// Show the File Save Dialog. Use hwnd to make it modal to a window.
+    final bool showDialog(HWND hwnd = null) 
+    {
+        return showCommonDialog(this, hwnd);        
     }
 
     private:
@@ -237,8 +187,9 @@ class FileSaveDialog : DialogBase {
 }
 
 class FolderBrowserDialog : DialogBase {
-    this(string title = "Select folder", string initialFolder = "") {
-        super(title, initialFolder);
+    this(string title = "Select folder", string initialFolder = "") 
+    {
+        super(title, initialFolder, "");
     }
 
     mixin finalProperty!("newFolderButton", this.mNewFolBtn);
@@ -256,7 +207,7 @@ class FolderBrowserDialog : DialogBase {
         if (pidl) {
             if (SHGetPathFromIDListW(pidl, buffer.ptr)) {
                 CoTaskMemFree(pidl);
-                this.selectedPath = fromStringz(buffer.ptr).to!string;
+                this.selectedPath = fromStringz(buffer.ptr).toUTF8;
                 return true;
             }
             CoTaskMemFree(pidl);
@@ -270,6 +221,75 @@ class FolderBrowserDialog : DialogBase {
 
 }
 
+// Common function to show Open/Save file dialog
+private bool showCommonDialog(T)(T dialog, HWND hwnd)
+{
+    OPENFILENAMEW ofn;
+    wchar[] buffer;
+    wchar[] ttlBuff = new wchar[](MAX_PATH);
 
+    ttlBuff[0] = '\0';
+
+    // Decide buffer size
+    static if (is(T == FileOpenDialog)) {
+        if (dialog.multiSelection)
+            buffer = new wchar[](MAX_PATH_NEW);
+        else
+            buffer = new wchar[](MAX_PATH);
+    } else {
+        buffer = new wchar[](MAX_PATH);
+    }
+
+    buffer[0] = '\0';
+
+    // Common fields
+    ofn.hwndOwner = hwnd;
+    ofn.lpstrFile = buffer.ptr;
+    ofn.lpstrInitialDir = dialog.mInitDir != "" ? dialog.mInitDir.toUTF16z : null;
+    ofn.lpstrTitle = dialog.mTitle.toUTF16z;
+    ofn.lpstrFilter = dialog.mFilter.toUTF16z;
+    ofn.lpstrFileTitle = ttlBuff.ptr;
+    ofn.nMaxFile = cast(uint)buffer.length;
+    ofn.nMaxFileTitle = MAX_PATH;
+    ofn.lpstrDefExt = toUTF16z("\0");
+
+    // Flags
+    static if (is(T == FileOpenDialog)) {
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+        if (dialog.multiSelection)
+            ofn.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
+
+        if (dialog.showHiddenFiles)
+            ofn.Flags |= OFN_FORCESHOWHIDDEN;
+    } else {
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+    }
+
+    // Call correct WinAPI
+    bool ret;
+    static if (is(T == FileOpenDialog))
+        ret = cast(bool)GetOpenFileNameW(&ofn);
+    else
+        ret = cast(bool)GetSaveFileNameW(&ofn);
+
+    if (!ret) return false;
+
+    // Results
+    dialog.mNameStart = ofn.nFileOffset;
+    dialog.mExtStart  = ofn.nFileExtension;
+
+    static if (is(T == FileOpenDialog)) {
+        if (dialog.mMultiSel) {
+            dialog.extractFileNames(buffer, ofn.nFileOffset);
+        } else {
+            dialog.mSelPath = buffer.ptr.fromStringz.toUTF8;
+        }
+    } else {
+        dialog.mSelPath = buffer.ptr.fromStringz.toUTF8;
+    }
+
+    return true;
+}
 
 
