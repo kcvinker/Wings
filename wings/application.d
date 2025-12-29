@@ -18,8 +18,12 @@ pragma(lib, "gdiplus.lib");
 pragma(lib, "Shcore.lib");
 pragma(lib, "UxTheme.lib");
 
+alias DPI_AWARENESS_CONTEXT = HANDLE;
+enum DPI_AWARENESS_CONTEXT_SYSTEM_AWARE  = cast(DPI_AWARENESS_CONTEXT) cast(ULONG_PTR)-0x1;
 extern (Windows) nothrow {
     int GetScaleFactorForDevice(int);
+    BOOL SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT);
+	uint GetDpiForSystem();
 }
 
 package ApplicationData appData;
@@ -56,32 +60,32 @@ class ApplicationData {
     int screenWidth;
     int screenHeight;
     int frmCount;
-    int sysDPI;
+    uint sysDPI;
     int globalHotKeyID;
-    double scaleF;
     Color appColor;
     Font appFont;
     INITCOMMONCONTROLSEX iccEx;
     LOGFONTW logfont;
 
-    this() {
+    this() 
+    {
+        SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE); 
         this.hInstance = GetModuleHandleW(null);
         this.prepareAppIcon();
         this.globalHotKeyID = 100;
         GEA = new EventArgs();
     }
 
-    void initWindowMode() {
-        // this.className = 
-        this.appFont = new Font("Tahoma", 11);
+    void initWindowMode() 
+    {        
         this.appColor = Color(0xF0F0F0);
         this.screenWidth = GetSystemMetrics(0);
         this.screenHeight = GetSystemMetrics(1);
         this.iccEx.dwSize = INITCOMMONCONTROLSEX.sizeof;
         this.iccEx.dwICC = ICC_STANDARD_CLASSES;
-        this.scaleF = cast(double) GetScaleFactorForDevice(0);
+        this.sysDPI = GetDpiForSystem();	
         this.regWindowClass();
-        this.getSystemDPI();
+        this.appFont = new Font("Tahoma", 12);
         InitCommonControlsEx(&this.iccEx);
     }
 

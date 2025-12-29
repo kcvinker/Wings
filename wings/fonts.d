@@ -58,10 +58,9 @@ class Font {
         }
     }
 
-    void createFontHandle(bool formFont = false) {
-        double scale = appData.scaleF / 100;
-        auto fsiz = cast(int)(scale * cast(double)this.size);  
-        int iHeight = -MulDiv(fsiz , appData.sysDPI, 72); 
+    void createFontHandle(bool formFont = false) 
+    {  
+        int iHeight = MulDiv(this.mSize, appData.sysDPI, 72); 
         LOGFONTW lf = LOGFONTW(); 
         LOGFONTW* plf;
         plf = formFont ? &appData.logfont : &lf;
