@@ -1,5 +1,9 @@
 
-# Wings - A simple GUI library for D based on Win32 API.
+# Wings - A simple GUI library based on Win32 API.
+A Windows-only GUI library for D.
+
+## License
+This project is licensed under the MIT License.
 
 # Screenshot
 

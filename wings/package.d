@@ -1,3 +1,6 @@
+// Copyright (c) 2026 kcvinker
+// SPDX-License-Identifier: MIT
+
 module wings;
 
 private import wings.application;
