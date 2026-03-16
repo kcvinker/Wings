@@ -35,7 +35,8 @@ class App {
 	void createControls()
 	{
 		// First of all, create the form aka window.
-		frm = new Form("Wing window in D Lang", 920, 500);
+		frm = new Form("Wing window in D Lang", 900, 500);
+		frm.enablePrintPoint();
 		frm.createHandle();
 
 		//Let's create a tray icon for this program.
@@ -74,6 +75,9 @@ class App {
 		np2 = new NumberPicker(frm, lb2.right!10, gb2.top!57, btnLeft : true);
 
 		pgb = new ProgressBar(frm, 10, gb2.bottom!10, 204, 25);
+		// auto catimage = "D:\\Downloads_Ex\\2026\\nvidia-com.png";
+		pbx = new PictureBox(frm, 710, 272, 150, 150, "nvidia-com.png", PictureSizeMode.stretch);
+
 		tb = new TextBox(frm, 10, pgb.bottom!10, pgb.width, 30);
 		lbx = new ListBox(frm, gb1.right!10, btn1.bottom!15, 120, 160);
 
@@ -100,6 +104,7 @@ class App {
 	{	
 		// Set some properties of our controls.
 		btn1.onClick = &this.btn1OnClick;
+		btn1.font.name = "Blackadder ITC";
 		btn2.backColor = 0x83c5be;
 		btn3.setGradientColors(0xeeef20, 0x70e000);
 		btn3.onClick = &this.btn3Click;
@@ -153,7 +158,7 @@ class App {
 
 	void display() {this.frm.show();}
 
-	// Use a FileOpenDialog. 
+	// When clicked on button, combo's drop down style will change. 
 	void btn1OnClick(Object s, EventArgs e) {
 		auto ofd = new FileOpenDialog("Open files", "", 
 										"Pdf Files|*.pdf|Text Files|*.txt");
@@ -183,6 +188,7 @@ class App {
 
 	void btn3Click(Object c, EventArgs e) {
 		// this.tic.showBalloon("Wings Balloon", "This is Wings Balloon Text", 3000);
+		print("Gradient button clicked");
 	}
 
 	private:
@@ -199,6 +205,7 @@ class App {
 		MenuBar mb;
 		NumberPicker np1, np2;
 		ProgressBar pgb;
+		PictureBox pbx;
 		RadioButton rb1, rb2;
 		TextBox tb;
 		TrackBar tkb1, tkb2;
@@ -206,6 +213,7 @@ class App {
 		Timer tmr;	
 		TrayIcon tic;
 }
+
 
 void main() {
 	auto app = new App();	
