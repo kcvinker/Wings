@@ -53,9 +53,10 @@ enum MouseButtonState {released, pressed }
 
 /// Public enum for describing control types
 enum ControlType {
-    none, window, button, contextMenu, calendar, checkBox, comboBox, dateTimePicker, groupBox,
-    label, listBox, listView, numberPicker, panel, pictureBox, progressBar, radioButton, textBox, treeView,
-    trackBar, upDown
+    none, window, button, contextMenu, calendar, checkBox, 
+    comboBox, dateTimePicker, groupBox, label, listBox, 
+    listView, numberPicker, panel, pictureBox, progressBar, 
+    radioButton, textBox, treeView, trackBar, upDown
 }
 
 // Used for WM_SIZE and WM_SIZING message handlers
@@ -125,6 +126,13 @@ enum GroupBoxStyle : ubyte {system, /* No extra drawing, just plain Group box fr
                             overriden /* Using system style but we will over write the text. */
                             }
 
+enum PictureSizeMode {
+    normal,     // draw at original size
+    stretch,    // stretch to control size
+    autoSize,   // resize control to fit the image
+    center,     // center the image
+    zoom        // scale while keeping aspect ratio
+}
 
 enum Key {
     modifier = -65_536,

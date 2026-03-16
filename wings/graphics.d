@@ -4,23 +4,25 @@ module wings.graphics;
 import wings.d_essentials;
 import wings.wings_essentials;
 import std.stdio;
+import wings.gdiplus: GpGraphics;
+
 
 
 class Graphics {
     
     this(HWND hw) {
-        this._hdc = GetDC(hw);
-        this._freeDC = true;
-        this._hwnd = hw;
+        this.mHdc = GetDC(hw);
+        this.mFreeDc = true;
+        this.mHwnd = hw;
     }
 
     this(WPARAM wp) {
-        this._hdc = cast(HDC)(wp);        
+        this.mHdc = cast(HDC)(wp);        
     }
 
     ~this() {
-        if (this._freeDC) {
-            ReleaseDC(this._hwnd, this._hdc);
+        if (this.mFreeDc) {
+            ReleaseDC(this.mHwnd, this.mHdc);
         }
     }
 
@@ -34,23 +36,24 @@ class Graphics {
     }
 
     void drawHLine(HPEN mPen, int sx, int y, int ex) {
-        SelectObject(this._hdc, mPen);
-        MoveToEx(this._hdc, sx, y, null);
-        LineTo(this._hdc, ex, y);
+        SelectObject(this.mHdc, mPen);
+        MoveToEx(this.mHdc, sx, y, null);
+        LineTo(this.mHdc, ex, y);
     }
 
     void drawText(Control pc, int x, int y) {
-        SetBkMode(this._hdc, 1);
-        SelectObject(this._hdc, pc.font.mHandle);
-        SetTextColor(this._hdc, pc.mForeColor.cref);
-        TextOut(this._hdc, x, y, pc.mWtext.constPtr, pc.mWtext.inputLen);
+        SetBkMode(this.mHdc, 1);
+        SelectObject(this.mHdc, pc.font.mHandle);
+        SetTextColor(this.mHdc, pc.mForeColor.cref);
+        TextOut(this.mHdc, x, y, pc.mWtext.constPtr, pc.mWtext.inputLen);
     }
     
 
     private:
-        HWND _hwnd;
-        HDC _hdc;
-        bool _freeDC;
+        HWND mHwnd;
+        HDC mHdc;
+        bool mFreeDc;
+        GpGraphics* mGpGraphics;
 }
 
 

@@ -13,7 +13,7 @@ import wings.gdiplus;
 import wings.commons;
 import wings.colors;
 
-//import wings.gdiplus : Color;
+import wings.application : appData;
 
 
 
@@ -88,9 +88,8 @@ class ImageList {
         if (this.mIsCreated) {
             // We need to call some functions from Gdi+ dll.
             // This wrapper class will init the GdiplusStartup function
-            auto gp = new GdiPlus;
-            auto hBitmap = gp.createHbitmapFromFile(imgFile);
-            gp.shutDownGdiPlus();
+            appData.initGdiPlus();
+            auto hBitmap = appData.gdip.createHbitmapFromFile(imgFile);
             if (hBitmap) ImageList_Add(this.mHandle, hBitmap, null);
             //if (hBitmap) print("Gdi plus worked");
         }
@@ -101,14 +100,13 @@ class ImageList {
         if (this.mIsCreated) {
             // We loop through files on that folder and check the extension.
             // If it is in our extArray, we will process it.
-            auto gp = new GdiPlus; // do the gdi startup process.
+            appData.initGdiPlus(); // do the gdi startup process.
             foreach (imgFile; dirEntries(folderPath, SpanMode.breadth) ) {
                 if (arraySearch(extArray, imgFile.extension) != -1) {
-                    auto hBitmap = gp.createHbitmapFromFile(imgFile);
+                    auto hBitmap = appData.gdip.createHbitmapFromFile(imgFile);
                     if (hBitmap) ImageList_Add(this.mHandle, hBitmap, null);
                 }
             }
-            gp.shutDownGdiPlus(); // properly shut down gdi plus.
         }
     }
 
@@ -153,19 +151,20 @@ class ImageList {
 
     final void experiment(string folderPath) {
         if (this.mIsCreated) {
-            auto gp = new GdiPlus; // do the gdi startup process.
+            appData.initGdiPlus(); // do the gdi startup process.
             foreach (imgFile; dirEntries(folderPath, SpanMode.breadth) ) {
                 if (imgFile.extension == ".png") {
-                    // auto hBitmap = gp.readPngFile(imgFile);
+                    // auto hBitmap = appData.gdip.readPngFile(imgFile);
                     // if (hBitmap) {
                     //     print("Adding image", ImageList_AddMasked(this.mHandle, hBitmap, CLR_DEFAULT));
                     //     print(GetLastError());
                     // }
-                    auto rr = ImageList_LoadImageW(null, imgFile.toUTF16z, 16, 16, CLR_NONE, IMAGE_BITMAP, LR_LOADFROMFILE);
+                    auto rr = ImageList_LoadImageW(null, imgFile.toUTF16z, 
+                                                    16, 16, CLR_NONE, IMAGE_BITMAP, 
+                                                    LR_LOADFROMFILE);
                     //print("imlli ", rr);
                 }
             }
-            gp.shutDownGdiPlus(); // properly shut down gdi plus.
         }
     }
 
@@ -186,5 +185,68 @@ class ImageList {
 enum ILC_MIRROR = 0x00002000;
 enum ILC_PERITEMMIRROR = 0x00008000;
 
+class Image
+{
+    private:
+        GpImage* mImage = null;
+        uint mWidth;
+        uint mHeight;
+        int mChannels;        // e.g. 3 = RGB, 4 = RGBA
+        ubyte[] mPixels;      // raw pixel buffer
 
+    public:
+
+        this(string filePath)
+        {
+            // print("Loading image from file:", filePath);
+            appData.initGdiPlus();
+            auto status = GdipLoadImageFromFile(toUTF16z(filePath), &this.mImage);
+            // ptf("GdipLoadImageFromFile status: %s", status);
+            if (status != Status.ok) {throw new Exception("Failed to load image");}
+        }
+
+        ~this()
+        {
+            if(mImage) { 
+                GdipDisposeImage(mImage); 
+                mImage = null;    
+            }
+        }
+
+        @property uint width()  
+        { 
+            if (!mImage) return 0;
+            GdipGetImageWidth(mImage, &mWidth);
+            return mWidth; 
+        }
+
+        @property uint height()  
+        { 
+            if (!mImage) return 0;
+            GdipGetImageHeight(mImage, &mHeight);
+            return mHeight; 
+        }
+
+        @property GpImage* handle() { return mImage; }
+        @property SIZE size() { return SIZE(mWidth, mHeight); }
+        
+        void draw(HDC hdc, int x, int y, int w, int h)
+        {
+            if (!this.mImage) return; // No image loaded, nothing to draw.            
+            GpGraphics* gp;
+            Status st = GdipCreateFromHDC(hdc, &gp);
+            if (st != Status.ok) {
+                throw new Exception("Failed to create GDI+ graphics context");
+            }
+            // ptf("status 1, st: %s", st);
+            scope(exit) GdipDeleteGraphics(gp);
+            st = GdipDrawImageRect(gp, this.mImage,
+                                cast(float)x, cast(float)y,
+                                cast(float)w, cast(float)h);
+            if (st != Status.ok) {
+                throw new Exception("Failed to draw image");
+            }
+            // ptf("status 2, st: %s", st);
+        }
+}
 

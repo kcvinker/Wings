@@ -1,5 +1,6 @@
 module wings.gdiplus; // Created on : 04-Jun-22 11:16:02 PM
 //pragma(lib, "Gdiplus"); // Required for linker to find the right lib.
+
 /*
  Note : Microsoft developed Gdi+ as a successor of old GDI functions.
         Gdi+ is a set of 40 C++ classes and it's methods.
@@ -20,19 +21,45 @@ alias Wstring = const(wchar)* ;
 alias DebugEventProc = void function(DebugEventLevel level, char * message);
 alias NotificationHookProc = Status function(ULONG_PTR * token);
 alias NotificationUnhookProc = void function(ULONG_PTR * token);
+alias GpImage = void;
+struct GpGraphics;
 
+    
 /// A wrapper class to use Gdi plus functions easily.
 class GdiPlus {
     private uint mToken ;
+    bool isGdipInit;
 
     // Start Gdi plus operations.
     this() {
-        GdiplusStartupInput stInp = GdiplusStartupInput(1);            
-        GdiplusStartup(&this.mToken, &stInp, null); // @suppress(dscanner.unused_result)
+        if (!this.isGdipInit) {
+            this.initGdip();
+        }
+    }
+
+    void initGdip() {
+        if (this.isGdipInit) {
+            return;
+        } else {
+            print("Initializing GdiPlus...");
+            GdiplusStartupInput stInp = GdiplusStartupInput(1);            
+            GdiplusStartup(&this.mToken, &stInp, null); // @suppress(dscanner.unused_result)}
+            this.isGdipInit = true;
+            print("GdiPlus initialized successfully.");
+        }        
     }
 
     // Shutdown gdi plus operations.
-    final void shutDownGdiPlus () {GdiplusShutdown(&this.mToken);}    
+    void shutDownGdiPlus () 
+    {
+        if (this.isGdipInit) {
+            this.isGdipInit = false;
+            if (this.mToken != 0) {
+                GdiplusShutdown(&this.mToken);
+                print("GdiPlus shutdown successfully.");
+            }
+        } 
+    }   
 
     // Create an HBITMAP from a given file path.
     HBITMAP* createHbitmapFromFile(string imgFile) {
@@ -41,12 +68,12 @@ class GdiPlus {
         auto ret = GdipCreateBitmapFromFile(fPath, &pBmp); 
         //auto ret = GdipLoadImageFromFile(fPath, &pBmp) ;
         
-        if (ret == Status.Ok) {          
+        if (ret == Status.ok) {          
             auto hBmp = new HBITMAP;
             // void* resizedImg;
             // auto rsdBmp = this.resizeImage(resizedImg, pBmp, 16, 16) ;
             ret = GdipCreateHBITMAPFromBitmap(pBmp, hBmp, 0);            
-            return (ret == Status.Ok) ? hBmp : null;                
+            return (ret == Status.ok) ? hBmp : null;                
         }
         return null;
     }
@@ -61,12 +88,12 @@ class GdiPlus {
         //auto ret = GdipCreateBitmapFromFile(fPath, &pBmp); 
         auto ret = GdipLoadImageFromFile(fPath, &pBmp) ;
         
-        if (ret == Status.Ok) {                
+        if (ret == Status.ok) {                
             auto hBmp = new HBITMAP;
             // void* resizedImg;
             // auto rsdBmp = this.resizeImage(resizedImg, pBmp, 16, 16) ;
             ret = GdipCreateHBITMAPFromBitmap(pBmp, hBmp, 0);                       
-            return (ret == Status.Ok) ? hBmp : null;                
+            return (ret == Status.ok) ? hBmp : null;                
         }
         return null;
     }
@@ -78,7 +105,7 @@ class GdiPlus {
     //     if (oldSize.valueReady) {
     //         // void* pBmp ;
     //         auto ret = createBitmapFromScanZero(&result, width, height) ;
-    //         if (ret == Status.Ok) {
+    //         if (ret == Status.ok) {
     //             void* graphics;
     //             ret = GdipGetImageGraphicsContext(&result, &graphics); // graphics is the result
     //             print("last result ", ret) ;
@@ -86,7 +113,7 @@ class GdiPlus {
     //             ret = GdipSetPixelOffsetMode(&graphics, PixelOffsetMode.highQuality);
     //             void* imgAttr;
     //             ret = GdipCreateImageAttributes(&imgAttr); //imgAttr is the return value
-    //             if (ret != Status.Ok) {
+    //             if (ret != Status.ok) {
     //                 GdipDisposeImageAttributes(imgAttr);
     //                 GdipDeleteGraphics(graphics);
     //                 GdipDisposeImage(result);
@@ -119,14 +146,14 @@ class GdiPlus {
         uint result = 0;
         //print("I reached here");
         auto res = GdipGetImageWidth(img, &result);
-        if (res == Status.Ok) return result ;
+        if (res == Status.ok) return result ;
         return result;
     }
 
     uint getImageHeight(void* img) { // Private
         uint result;
         auto res = GdipGetImageHeight(img, &result);
-        if (res == Status.Ok) return result ;
+        if (res == Status.ok) return result ;
         return 0;
     }
 
@@ -162,11 +189,15 @@ extern (Windows) {
     Status GdipDisposeImageAttributes(void* imageattr);
     Status GdipDeleteGraphics(void* graphics);
     Status GdipDisposeImage(void* image);
+    Status GdipDrawImageRect(GpGraphics* graphics, GpImage* image, 
+                                float x, float y, float width, float height);
     Status GdipDrawImageRectRect(void* graphics, void* image, int dstx, // NOTE - Fix the parameter types
                                     int dsty, int dstwidth, int dstheight,
                                     int srcx, int srcy, int srcwidth, int srcheight,
                                     GpUnit srcUnit, const void* imageAttributes,
                                     void* callback, void* callbackData);
+
+    Status GdipCreateFromHDC(HDC hdc, GpGraphics** graphics);
     
 }
 
@@ -174,29 +205,29 @@ extern (Windows) {
 
 
 enum Status {
-    Ok = 0,
-    GenericError = 1,
-    InvalidParameter = 2,
-    OutOfMemory = 3,
-    ObjectBusy = 4,
-    InsufficientBuffer = 5,
-    NotImplemented = 6,
-    Win32Error = 7,
-    WrongState = 8,
-    Aborted = 9,
-    FileNotFound = 10,
-    ValueOverflow = 11,
-    AccessDenied = 12,
-    UnknownImageFormat = 13,
-    FontFamilyNotFound = 14,
-    FontStyleNotFound = 15,
-    NotTrueTypeFont = 16,
-    UnsupportedGdiplusVersion = 17,
-    GdiplusNotInitialized = 18,
-    PropertyNotFound = 19,
-    PropertyNotSupported = 20,
-    ProfileNotFound = 21
-} 
+    ok = 0,
+    genericError = 1,
+    invalidParameter = 2,
+    outOfMemory = 3,
+    objectBusy = 4,
+    insufficientBuffer = 5,
+    notImplemented = 6,
+    win32Error = 7,
+    wrongState = 8,
+    aborted = 9,
+    fileNotFound = 10,
+    valueOverflow = 11,
+    accessDenied = 12,
+    unknownImageFormat = 13,
+    fontFamilyNotFound = 14,
+    fontStyleNotFound = 15,
+    notTrueTypeFont = 16,
+    unsupportedGdiplusVersion = 17,
+    gdiplusNotInitialized = 18,
+    propertyNotFound = 19,
+    propertyNotSupported = 20,
+    profileNotFound = 21
+}
 
 enum InterPolationMode {
     invalidMode = -1,

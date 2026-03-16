@@ -7,6 +7,8 @@ import std.stdio;
 import core.sys.windows.windows;
 import core.sys.windows.commctrl;
 import wings.commons : print, ptf;
+import wings.gdiplus : GdiPlus;
+
 
 import wings.events : EventArgs;
 
@@ -69,6 +71,7 @@ class ApplicationData {
     Font appFont;
     INITCOMMONCONTROLSEX iccEx;
     LOGFONTW logfont;
+    GdiPlus gdip;
 
     this() 
     {
@@ -171,6 +174,15 @@ class ApplicationData {
         this.sysDPI = GetDeviceCaps(hdc, LOGPIXELSY);
     }
 
+    void initGdiPlus() {
+        if (!this.gdip) {
+            print("Initializing GdiPlus in appdata...");
+            this.gdip = new GdiPlus();
+        } else {
+            print("GdiPlus already initialized in appdata.");
+        }
+    }
+
     void finalize() {
         DestroyIcon(appData.appIcon);
         if (this.trayHwnds.length) {
@@ -179,6 +191,7 @@ class ApplicationData {
                     DestroyWindow(hwnd);
             }
         }
+        if (this.gdip) this.gdip.shutDownGdiPlus();
         // writeln("App Icon destroyed in appdata finalize");
     }
 

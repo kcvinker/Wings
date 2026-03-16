@@ -27,6 +27,7 @@ public import wings.listview;
 public import wings.menubar;
 public import wings.numberpicker;
 public import wings.progressbar;
+public import wings.picturebox;
 public import wings.radiobutton;
 public import wings.textbox;
 public import wings.trackbar;

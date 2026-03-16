@@ -335,6 +335,9 @@ class Control {
                                             cast(HMENU) this.mCtlId,
                                             appData.hInstance,
                                             null);
+
+            // ptf("Creating control %s with handle: %s", this.mName, this.mHandle);
+            // if (this.name == "PictureBox_1") ptf("Creating PictureBox with handle: %s", this.mHandle);
             if (this.mHandle) {
                 this.mIsCreated = true;
                 if (this.mHasFont) {
