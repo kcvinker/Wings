@@ -8,7 +8,7 @@ This project is licensed under the MIT License.
 # Screenshot
 
 
-![image](wings_160824.jpg)
+![image](appd.jpg)
 
 
 ## How to use:
