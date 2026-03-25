@@ -7,6 +7,8 @@ import wings.d_essentials;
 import wings.wings_essentials;
 import wings.imagelist: Image;
 import wings.enums: PictureSizeMode;
+import wings.form: trackMouseMove;
+
 
 
 wchar[] pBoxClass = ['W','i','n','g','s','_','P','i','c','t','u','r','e','B','o','x', 0];
@@ -116,14 +118,15 @@ class PictureBox : Control
         PictureSizeMode mSizeMode = PictureSizeMode.normal;
 
     private:
-        RECT mRect; // Cached client rect for drawing
+        RECT mRect; // Cached client rect for drawing 
         SIZE mSize; // Cached size for drawing
         string mImgPath;
-        static bool isPBoxClassRegistered;        
+        static bool isPBoxClassRegistered;  
+        bool mIsMouseTracking;
+        bool mIsMouseEntered;      
         static void registerPBoxClass()
         {
             if (isPBoxClassRegistered) return;
-
             WNDCLASSEXW wc;
             wc.cbSize = WNDCLASSEXW.sizeof;
             wc.style = 0;
@@ -137,12 +140,10 @@ class PictureBox : Control
             wc.lpszMenuName = null;
             wc.lpszClassName = pBoxClass.ptr;
             wc.hIconSm = null;
-
             if (RegisterClassExW(&wc) == 0) {
                 if (GetLastError() != ERROR_CLASS_ALREADY_EXISTS)
                     throw new Exception("Failed to register PictureBox class");
             }
-
             isPBoxClassRegistered = true;
         }
 
@@ -166,40 +167,27 @@ class PictureBox : Control
         /// Compute the destination rectangle according to the current size mode
         void computeDestRect()
         {
-            // RECT client;
-            // GetClientRect(mHandle, &client);
             int cw = this.mRect.right - this.mRect.left;
             int ch = this.mRect.bottom - this.mRect.top;
-
             if (mImage is null) this.mRect = RECT(0, 0, 0, 0);
-
             auto imgW = mImage.width;
             auto imgH = mImage.height;
-
             if (imgW == 0 || imgH == 0) this.mRect = RECT(0, 0, 0, 0);
-
             switch (this.mSizeMode) {
                 case PictureSizeMode.normal:
                     this.mRect = RECT(0, 0, imgW, imgH);
                 break;
-
-                case PictureSizeMode.center: {
+                case PictureSizeMode.center: 
                     int x = (cw - imgW) / 2;
                     int y = (ch - imgH) / 2;
                     this.mRect = RECT(x, y, x + imgW, y + imgH);
-                    
-                }
                 break;
-
                 case PictureSizeMode.stretch:
-                    // ptf("Stretch mode: control size =", cw, "x", ch);
                     this.mRect = RECT(0, 0, cw, ch);
                 break;
-
-                case PictureSizeMode.zoom: {
+                case PictureSizeMode.zoom: 
                     double ratioImg = cast(double)imgW / imgH;
                     double ratioCtl = cast(double)cw / ch;
-
                     int w, h;
                     if (ratioImg > ratioCtl) {
                         w = cw;
@@ -208,31 +196,21 @@ class PictureBox : Control
                         h = ch;
                         w = cast(int)(ch * ratioImg);
                     }
-
                     int x = (cw - w) / 2;
                     int y = (ch - h) / 2;
                     this.mRect = RECT(x, y, x + w, y + h);
-                    
-                }
                 break;
-
                 case PictureSizeMode.autoSize:
                     // AutoSize already adjusted the control, so image fits exactly
                     this.mRect = RECT(0, 0, imgW, imgH);
                 break;
-
                 default:
                     this.mRect = RECT(0, 0, 0, 0);
                 break;
             }
         }
 
-        void invalidate()
-        {
-            if (mHandle) InvalidateRect(mHandle, null, TRUE);
-        }
-
-
+        void invalidate() {if (mHandle) InvalidateRect(mHandle, null, TRUE);}
 }
 
 
@@ -286,7 +264,73 @@ LRESULT pBoxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                     }
                 // }   
                 break;             
-                // return 0;
+            
+            case WM_MOUSEMOVE:
+                auto pbx = getAs!PictureBox(hWnd);
+                if (!pbx.mIsMouseTracking) {
+                    pbx.mIsMouseTracking = true;
+                    trackMouseMove(hWnd);
+                    if (!pbx.mIsMouseEntered) {
+                        pbx.mIsMouseEntered = true;
+                        if (pbx.onMouseEnter) {                            
+                            pbx.onMouseEnter(pbx, new EventArgs());
+                        }
+                    }
+                }
+                if (pbx.onMouseMove) {
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    pbx.onMouseMove(pbx, ea);
+                }
+            break;
+            case WM_MOUSEHOVER:
+                auto pbx = getAs!PictureBox(hWnd);
+                if (pbx.mIsMouseTracking) {pbx.mIsMouseTracking = false;}
+                if (pbx.onMouseHover) {
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    pbx.onMouseHover(pbx, ea);
+                }
+            break;
+            case WM_MOUSELEAVE:
+                auto pbx = getAs!PictureBox(hWnd);
+                if (pbx.mIsMouseTracking) {
+                    pbx.mIsMouseTracking = false;
+                    pbx.mIsMouseEntered = false;
+                }
+                if (pbx.onMouseLeave) pbx.onMouseLeave(pbx, new EventArgs());                
+            break;
+            case WM_LBUTTONDOWN:
+                auto pbx = getAs!PictureBox(hWnd);
+                pbx.lDownHappened = true;
+                if (pbx.onMouseDown) {
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    pbx.onMouseDown(pbx, ea);
+                    return 0;
+                }
+            break;
+            case WM_LBUTTONUP:
+                auto pbx = getAs!PictureBox(hWnd);
+                if (pbx.onMouseUp) {
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    pbx.onMouseUp(pbx, ea);
+                }
+                if (pbx.onClick) pbx.onClick(pbx, new EventArgs());
+            break;
+            case WM_RBUTTONDOWN:
+                auto pbx = getAs!PictureBox(hWnd);
+                pbx.rDownHappened = true;
+                if (pbx.onRightMouseDown) {
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    pbx.onRightMouseDown(pbx, ea);
+                }
+            break;
+            case WM_RBUTTONUP:
+                auto pbx = getAs!PictureBox(hWnd);
+                if (pbx.onRightMouseUp) {
+                    auto ea = new MouseEventArgs(message, wParam, lParam);
+                    pbx.onRightMouseUp(pbx, ea);
+                }
+                if (pbx.onRightClick) pbx.onRightClick(pbx, new EventArgs());
+            break;
                 
             default: break;
                 // return DefWindowProcW(hWnd, message, wParam, lParam);

@@ -690,8 +690,8 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                     win.mIsMouseTracking = true;
                     trackMouseMove(hWnd);
                     if (!win.mIsMouseEntered) {
-                        if (win.onMouseEnter) {
-                            win.mIsMouseEntered = true;
+                        win.mIsMouseEntered = true;
+                        if (win.onMouseEnter) {                            
                             auto ea = new EventArgs();
                             win.onMouseEnter(win, ea);
                         }

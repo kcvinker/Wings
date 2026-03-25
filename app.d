@@ -15,7 +15,8 @@ class App {
 	void createControls()
 	{
 		// First of all, create the form aka window.
-		frm = new Form("Wing window in D Lang", 920, 500);
+		frm = new Form("Wing window in D Lang", 900, 500);
+		frm.enablePrintPoint();
 		frm.createHandle();
 
 		//Let's create a tray icon for this program.
@@ -54,6 +55,9 @@ class App {
 		np2 = new NumberPicker(frm, lb2.right!10, gb2.top!57, btnLeft : true);
 
 		pgb = new ProgressBar(frm, 10, gb2.bottom!10, 204, 25);
+		// auto catimage = "D:\\Downloads_Ex\\2026\\nvidia-com.png";
+		pbx = new PictureBox(frm, 710, 272, 150, 150, "nvidia-com.png", PictureSizeMode.stretch);
+
 		tb = new TextBox(frm, 10, pgb.bottom!10, pgb.width, 30);
 		lbx = new ListBox(frm, gb1.right!10, btn1.bottom!15, 120, 160);
 
@@ -181,6 +185,7 @@ class App {
 		MenuBar mb;
 		NumberPicker np1, np2;
 		ProgressBar pgb;
+		PictureBox pbx;
 		RadioButton rb1, rb2;
 		TextBox tb;
 		TrackBar tkb1, tkb2;
@@ -197,3 +202,5 @@ void main()
 	app.display();
 	
 }
+
+// 91471 66 30 84 7
