@@ -335,63 +335,33 @@ private LRESULT btnWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 {
     try {        
         //btn.log(message, "Button message ");
+        Button self = getControl!Button(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
-            case WM_DESTROY: 
-                Button btn = getControl!Button(refData);
-                btn.finalize(scID); 
+            case WM_DESTROY:                 
+                self.finalize(scID); 
             break;
             case WM_PAINT: 
-                Button btn = getControl!Button(refData);
-                btn.paintHandler(); 
+                self.paintHandler(); 
             break;
             case WM_SETFOCUS :
-                Button btn = getControl!Button(refData);
-                btn.setFocusHandler();
+                self.setFocusHandler();
                 return 1;
             break;
             case WM_KILLFOCUS :
-                Button btn = getControl!Button(refData);
-                btn.killFocusHandler();
+                self.killFocusHandler();
                 return 1;
-            break;
-            case WM_LBUTTONDOWN : 
-                Button btn = getControl!Button(refData);
-                btn.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP : 
-                Button btn = getControl!Button(refData);
-                btn.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN : 
-                Button btn = getControl!Button(refData);
-                btn.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP : 
-                Button btn = getControl!Button(refData);
-                btn.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL : 
-                Button btn = getControl!Button(refData);
-                btn.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE : 
-                Button btn = getControl!Button(refData);
-                btn.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE : 
-                Button btn = getControl!Button(refData);
-                btn.mouseLeaveHandler(); 
-            break;
+            break;            
             case CM_NOTIFY : 
-                Button btn = getControl!Button(refData);
-                return btn.wmNotifyHandler(lParam); 
-            break;
-            case CM_FONT_CHANGED:
-                Button btn = getControl!Button(refData);
-                btn.updateFontHandle();
-                return 0;
-            break;
-            default : return DefSubclassProc(hWnd, message, wParam, lParam);
+                return self.wmNotifyHandler(lParam); 
+            break;            
+            default : 
+                return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }
     catch (Exception e) {}

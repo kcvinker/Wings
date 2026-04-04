@@ -323,6 +323,7 @@ class Control {
             // This function works for almost all controls except combo box.
             // This will save us 150+ lines of code.
             if (this.mDisabled) this.mStyle |= WS_DISABLED;
+            PVOID lpValue = this.mControlType == ControlType.pictureBox ? cast(PVOID)this : null;
             this.mHandle = CreateWindowEx(  this.mExStyle,
                                             clsname,
                                             this.mText.toUTF16z,
@@ -334,7 +335,7 @@ class Control {
                                             this.mParent.handle,
                                             cast(HMENU) this.mCtlId,
                                             appData.hInstance,
-                                            null);
+                                            lpValue);
 
             // ptf("Creating control %s with handle: %s", this.mName, this.mHandle);
             // if (this.name == "PictureBox_1") ptf("Creating PictureBox with handle: %s", this.mHandle);
@@ -552,8 +553,6 @@ class Control {
                 if (this.onRightClick) this.onRightClick(this, new EventArgs());
             }
 
-            
-
             void mouseWheelHandler(UINT msg, WPARAM wp, LPARAM lp)
             {
                 if (this.onMouseWheel) {
@@ -594,6 +593,62 @@ class Control {
             void keyPressHandler(WPARAM wpm)
             {
                 if (this.onKeyPress) this.onKeyPress(this, new KeyEventArgs(wpm));
+            }
+
+            MsgHandlerResult commonMsgHandler(HWND hw, UINT msg, WPARAM wpm, LPARAM lpm)
+            {
+                switch (msg) {
+                    case WM_SETFOCUS: 
+                        this.setFocusHandler(); 
+                    break;
+                    case WM_KILLFOCUS: 
+                        this.killFocusHandler(); 
+                    break;
+                    case WM_CONTEXTMENU:                         
+                        if (this.mCmenu) this.mCmenu.showMenu(lpm); 
+                    break;
+                    case WM_LBUTTONDOWN : 
+                        this.mouseDownHandler(msg, wpm, lpm); 
+                    break;
+                    case WM_LBUTTONUP : 
+                        this.mouseUpHandler(msg, wpm, lpm); 
+                    break;
+                    case WM_RBUTTONDOWN : 
+                        this.mouseRDownHandler(msg, wpm, lpm); 
+                    break;
+                    case WM_RBUTTONUP : 
+                        this.mouseRUpHandler(msg, wpm, lpm); 
+                    break;
+                    case WM_MOUSEWHEEL : 
+                        this.mouseWheelHandler(msg, wpm, lpm); 
+                    break;
+                    case WM_MOUSEMOVE : 
+                        this.mouseMoveHandler(msg, wpm, lpm); 
+                    break;
+                    case WM_MOUSELEAVE : 
+                        this.mouseLeaveHandler(); 
+                    break;
+                    case WM_KEYDOWN:
+                        if (this.onKeyDown) {
+                            auto kea = new KeyEventArgs(wpm);
+                            this.onKeyDown(this, kea);
+                        }
+                    break;
+                    case WM_KEYUP:
+                        if (this.onKeyUp) {
+                            auto kea = new KeyEventArgs(wpm);
+                            this.onKeyUp(this, kea);
+                        }
+                    break;
+                    case CM_FONT_CHANGED:
+                        this.updateFontHandle();
+                        return MsgHandlerResult.returnZero;
+                    break;
+                    default:
+                        return MsgHandlerResult.proceedFunc;
+                    break;
+                }
+                return MsgHandlerResult.callDefProc;
             }
 
 

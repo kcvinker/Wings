@@ -166,65 +166,28 @@ private LRESULT lblWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
+        Label self = getControl!Label(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
             case WM_DESTROY: 
-                Label lbl = getControl!Label(refData);
-                lbl.finalize(scID); 
+                self.finalize(scID); 
             break;
             case WM_PAINT: 
-                Label lbl = getControl!Label(refData);
-                lbl.paintHandler(); 
-            break;
-            case WM_SETFOCUS: 
-                Label lbl = getControl!Label(refData);
-                lbl.setFocusHandler(); 
-            break;
-            case WM_KILLFOCUS: 
-                Label lbl = getControl!Label(refData);
-                lbl.killFocusHandler(); 
-            break;
-            case WM_LBUTTONDOWN: 
-                Label lbl = getControl!Label(refData);
-                lbl.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP: 
-                Label lbl = getControl!Label(refData);
-                lbl.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                Label lbl = getControl!Label(refData);
-                lbl.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                Label lbl = getControl!Label(refData);
-                lbl.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                Label lbl = getControl!Label(refData);
-                lbl.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                Label lbl = getControl!Label(refData);
-                lbl.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE: 
-                Label lbl = getControl!Label(refData);
-                lbl.mouseLeaveHandler(); 
+                self.paintHandler(); 
             break;
             case CM_COLOR_STATIC:
-                Label lbl = getControl!Label(refData);
                 auto hdc = cast(HDC) wParam;
-                if (lbl.mDrawFlag & 1) SetTextColor(hdc, lbl.mForeColor.cref);
-                SetBkColor(hdc, lbl.mBackColor.cref);
-                return cast(LRESULT)lbl.mBkBrush;
+                if (self.mDrawFlag & 1) SetTextColor(hdc, self.mForeColor.cref);
+                SetBkColor(hdc, self.mBackColor.cref);
+                return cast(LRESULT)self.mBkBrush;
             break;
-            case CM_FONT_CHANGED:
-                Label lbl = getControl!Label(refData);
-                lbl.updateFontHandle();
-                return 0;
-            break;
-
-            default: return DefSubclassProc(hWnd, message, wParam, lParam);
+            default: 
+                return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }
     catch (Exception e) {}

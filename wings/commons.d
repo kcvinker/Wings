@@ -144,7 +144,7 @@ package {
         rc.bottom = rc.bottom + rightBottom;
     }
 
-    pragma(inline, true) T getAs(T)(HWND hw) 
+    pragma(inline, true) T fromHwndTo(T)(HWND hw) 
     {
         return cast(T) (cast(void *) GetWindowLongPtrW(hw, GWLP_USERDATA));
     }

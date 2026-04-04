@@ -1,0 +1,7 @@
+Wings changelog
+
+1.0.070 (4-Apr-2026)
+    Removed redundant code.
+        Implemented centralized message handling system and removed hundreds of redundant code.
+        Now, base class Control provides centralized message handling function for common messages.
+        

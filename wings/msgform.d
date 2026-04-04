@@ -7,7 +7,7 @@ import wings.trayicon : TrayIcon;
 import wings.timer : Timer, regNewHotKey;
 import wings.events : EventHandler;
 import wings.enums: Key, TrayMenuTrigger;
-import wings.commons: getAs, CM_TIMER_DESTROY, print;
+import wings.commons: fromHwndTo, CM_TIMER_DESTROY, print;
 import wings.application : appData, mowClass, GEA;
 
 
@@ -142,9 +142,10 @@ extern(Windows)
 LRESULT msgFormWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothrow
 {
     try {
+        auto self = fromHwndTo!MessageForm(hWnd);
         switch (message) {            
             case WM_DESTROY: 
-                // auto mf = getAs!MessageForm(hWnd);                
+                // auto mf = fromHwndTo!MessageForm(hWnd);                
                 // if (mf.onClosed) mf.onClosed(mf, new EventArgs()); 
                 print("Msg-Only Window destroyed"); 
                 PostQuitMessage(0);
@@ -159,35 +160,31 @@ LRESULT msgFormWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) no
             case WM_CREATE: 
                 DefWindowProcW(hWnd, message, wParam, lParam);
             break;
-            case WM_HOTKEY:
-                auto mf = getAs!MessageForm(hWnd); 
+            case WM_HOTKEY: 
                 int hkid = cast(int)wParam;
-                EventHandler pFunc = mf.mHkeyMap.get(hkid, null);
+                EventHandler pFunc = self.mHkeyMap.get(hkid, null);
                 if (pFunc) {
-                    pFunc(mf, GEA);
+                    pFunc(self, GEA);
                 }
                 return 0;
             break;
-            case WM_TIMER:
-                auto mf = getAs!MessageForm(hWnd); 
+            case WM_TIMER: 
                 auto tid = cast(UINT_PTR)wParam;
-                if (tid in mf.mTimerMap){
-                    auto timer = mf.mTimerMap[tid];
-                    if (timer && timer.onTick) timer.onTick(mf, GEA); 
+                if (tid in self.mTimerMap){
+                    auto timer = self.mTimerMap[tid];
+                    if (timer && timer.onTick) timer.onTick(self, GEA); 
                     return 0;
                 }                
             break;
             case CM_TIMER_DESTROY:
-                auto mf = getAs!MessageForm(hWnd);
                 auto tid = cast(UINT_PTR)wParam;
-                if (tid in mf.mTimerMap) {
-                    mf.mTimerMap.remove(tid);
+                if (tid in self.mTimerMap) {
+                    self.mTimerMap.remove(tid);
                 }
                 return 0;
             break;
             default: 
-                auto mf = getAs!MessageForm(hWnd);
-                bool res = mf.mMsgHandler(mf, message, wParam, lParam);
+                bool res = self.mMsgHandler(self, message, wParam, lParam);
                 if (res) {
                     return 0;
                 } else {

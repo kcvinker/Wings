@@ -141,99 +141,55 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                             UINT_PTR scID, DWORD_PTR refData)
 {
     try {
+        CheckBox self = getControl!CheckBox(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
             case WM_DESTROY : 
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.finalize(scID); 
+                self.finalize(scID); 
             break;
-            case WM_PAINT : 
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.paintHandler(); 
+            case WM_PAINT:
+                self.paintHandler(); 
             break;
-            case WM_SETFOCUS : 
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.setFocusHandler(); 
-            break;
-            case WM_KILLFOCUS : 
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.killFocusHandler(); 
-            break;
-            case WM_LBUTTONDOWN : 
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP : 
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN : 
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP : 
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL : 
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE : 
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE : 
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.mouseLeaveHandler(); 
-            break;
-
-            case CM_CTLCOMMAND :
-                CheckBox cb = getControl!CheckBox(refData);
-				// writefln("CM_CTLCOMMAND in cb %s", 1);
-                cb.mChecked = cast(bool) cb.sendMsg(BM_GETCHECK, 0, 0);
-                if (cb.onCheckedChanged) {
+            case CM_CTLCOMMAND:
+				// writefln("CM_CTLCOMMAND in self %s", 1);
+                self.mChecked = cast(bool) self.sendMsg(BM_GETCHECK, 0, 0);
+                if (self.onCheckedChanged) {
                     auto ea = new EventArgs();
-                    cb.onCheckedChanged(cb, ea);
+                    self.onCheckedChanged(self, ea);
                 }
             break;
-
-            case CM_COLOR_STATIC :
-                CheckBox cb = getControl!CheckBox(refData);
+            case CM_COLOR_STATIC:
                 // We need to use this message to change the back color.
                 // There is no other ways to change the back color.
                 auto hdc = cast(HDC) wParam;
                 SetBkMode(hdc, TRANSPARENT);
-                cb.mBkBrush = CreateSolidBrush(cb.mBackColor.cref);
-                return cast(LRESULT) cb.mBkBrush;
+                self.mBkBrush = CreateSolidBrush(self.mBackColor.cref);
+                return cast(LRESULT) self.mBkBrush;
             break;
-
-            case CM_NOTIFY :
-                CheckBox cb = getControl!CheckBox(refData);
+            case CM_NOTIFY:
                 // We need to use this message to draw the fore color.
                 // There is no other ways to change the text color.
-
                 auto nmc = cast(NMCUSTOMDRAW *) lParam;
-                // writefln("dwDrawStage %s", BST_UNCHECKED);
                 switch (nmc.dwDrawStage) {
                     case CDDS_PREERASE :
                         return CDRF_NOTIFYPOSTERASE;
                     break;
                     case CDDS_PREPAINT :
                         auto rct = nmc.rc;
-                        if (!cb.mRightAlign) { // Adjusing rect. Otherwise, text will be drawn upon the check area
+                        if (!self.mRightAlign) { // Adjusing rect. Otherwise, text will be drawn upon the check area
                             rct.left += 18;
                         } else {rct.right -= 18;}
-                        SetTextColor(nmc.hdc, cb.mForeColor.cref);
-                        DrawText(nmc.hdc, cb.text.toUTF16z, -1, &rct, cb.mTxtStyle);
+                        SetTextColor(nmc.hdc, self.mForeColor.cref);
+                        DrawText(nmc.hdc, self.text.toUTF16z, -1, &rct, self.mTxtStyle);
                         return CDRF_SKIPDEFAULT;
                     break;
                     default: break;
                 } 
-            break;
-            case CM_FONT_CHANGED:
-                CheckBox cb = getControl!CheckBox(refData);
-                cb.updateFontHandle();
-                return 0;
             break;
             default : 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 

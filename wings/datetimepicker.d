@@ -208,96 +208,63 @@ private LRESULT dtpWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
+        DateTimePicker self = getControl!DateTimePicker(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         
         switch (message) {
-            case WM_DESTROY: 
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
+            case WM_DESTROY:                 
                 RemoveWindowSubclass(hWnd, &dtpWndProc, scID); 
             break;
             case WM_PAINT: 
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
-                dtp.paintHandler(); 
+                self.paintHandler(); 
             break;
-            case WM_SETFOCUS: 
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
-                dtp.setFocusHandler(); 
-            break;
-            case WM_KILLFOCUS: 
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
-                dtp.killFocusHandler(); 
-            break;
-            case WM_LBUTTONDOWN: 
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
-                dtp.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP: 
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
-                dtp.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
-                dtp.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
-                dtp.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
-                dtp.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
-                dtp.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE: 
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
-                dtp.mouseLeaveHandler(); 
-            break;
-
             case CM_NOTIFY:
-                DateTimePicker dtp = getControl!DateTimePicker(refData);
                 auto nm = cast(NMHDR *) lParam;
                 //print("nm.code", nm.code);
                 switch (nm.code) {
                     case DTN_USERSTRING:
-                        if (dtp.onTextChanged) {
+                        if (self.onTextChanged) {
                             auto dts = cast(NMDATETIMESTRINGW *) lParam;
                             auto dea = new DateTimeEventArgs(dts.pszUserString);
-                            dtp.onTextChanged(dtp, dea);
+                            self.onTextChanged(self, dea);
                             if (dea.handled) {
                                 sendMsg(hWnd, DTM_SETSYSTEMTIME, 0, dea.dateStruct);
                             }
                         }
                     break;
                     case DTN_DROPDOWN:
-                        if (dtp.onCalendarOpened) {
+                        if (self.onCalendarOpened) {
                             auto ea = new EventArgs();
-                            dtp.onCalendarOpened(dtp, ea);
+                            self.onCalendarOpened(self, ea);
                             return 0;
                         }
                     break;
                     case DTN_DATETIMECHANGE:
                         //print("time change arrived");
-                        if (dtp.dropDownCount == 0) {
-                            dtp.dropDownCount = 1;
+                        if (self.dropDownCount == 0) {
+                            self.dropDownCount = 1;
                             auto nmd = cast(NMDATETIMECHANGE *) lParam;
-                            dtp.mValue = DateTime(nmd.st);
-                            if (dtp.onValueChanged) {
+                            self.mValue = DateTime(nmd.st);
+                            if (self.onValueChanged) {
                                 auto ea = new EventArgs();
-                                dtp.onValueChanged(dtp, ea);
+                                self.onValueChanged(self, ea);
                                 return 0;
                             }
-                        } else if (dtp.dropDownCount == 1) {
-                            dtp.dropDownCount = 0;
+                        } else if (self.dropDownCount == 1) {
+                            self.dropDownCount = 0;
                             return 0;
                         }
                     break;
                     case DTN_FORMATQUERY: break;
                     case DTN_CLOSEUP:
-                        if (dtp.onCalendarClosed) {
+                        if (self.onCalendarClosed) {
                             auto ea = new EventArgs();
-                            dtp.onCalendarClosed(dtp, ea);
+                            self.onCalendarClosed(self, ea);
                         }
                     break;
                     default: break;

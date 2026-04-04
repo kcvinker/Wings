@@ -34,7 +34,7 @@ import std.stdio;
 
 
 import wings.enums: TrayMenuTrigger, BalloonIcon;
-import wings.commons: print, CM_TRAY_MSG, getAs;
+import wings.commons: print, CM_TRAY_MSG, fromHwndTo;
 import wings.application: appData;
 import wings.events;
 
@@ -230,9 +230,9 @@ class TrayIcon
         }
         this.mMsgHwnd = CreateWindowExW(0, trayWndClass.ptr, null, 
                                         0, 0, 0, 0, 0, HWND_MESSAGE, 
-                                        null, appData.hInstance, null);
+                                        null, appData.hInstance, cast(PVOID)this);
         if (this.mMsgHwnd) {
-            SetWindowLongPtrW(this.mMsgHwnd, GWLP_USERDATA, (cast(LONG_PTR) cast(void*) this));
+            // SetWindowLongPtrW(this.mMsgHwnd, GWLP_USERDATA, (cast(LONG_PTR) cast(void*) this));
             appData.trayHwnds ~= this.mMsgHwnd;
             // print("tray icon message-only window created");
         } else {
@@ -258,60 +258,61 @@ private LRESULT trayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 {
     try {
         // print("TrayIcon Wndproc rcvd", message);
+        auto self = fromHwndTo!TrayIcon(hWnd);
+        if (self is null) {
+            if (message == WM_NCCREATE) {
+                CREATESTRUCT* cs = cast(CREATESTRUCT*)lParam;
+                self = cast(TrayIcon) cs.lpCreateParams;
+                self.mMsgHwnd = hWnd;			
+                SetWindowLongPtr(hWnd, GWLP_USERDATA,  cast(LONG_PTR) cast(void*)self);                
+                return 1; // Continue window creation
+            }
+            return DefWindowProc(hWnd, message, wParam, lParam);
+        }
         switch (message) {
-            case WM_DESTROY:
-                auto tray = getAs!TrayIcon(hWnd);  
-                appData.removeTrayHwnd(tray.mMsgHwnd);
-                print("Tray icon Message only window got WM_DESTROY");
+            case WM_DESTROY:                  
+                appData.removeTrayHwnd(self.mMsgHwnd);
+                // print("Tray icon Message only window got WM_DESTROY");
                 // return 0;
             break;
             case CM_TRAY_MSG:	
                 switch(lParam) {
                     case NIN_BALLOONSHOW:                    
-                        auto tray = getAs!TrayIcon(hWnd);
-                        if (tray.onBalloonShow) tray.onBalloonShow(tray, new EventArgs());
+                        if (self.onBalloonShow) self.onBalloonShow(self, new EventArgs());
                     break;
                     case NIN_BALLOONTIMEOUT:                    
-                        auto tray = getAs!TrayIcon(hWnd);
-                        if (tray.onBalloonClose) tray.onBalloonClose(tray, new EventArgs());
-                        if (tray.mResetIcon) tray.resetIconInternal(); // Need to revert the default icon
+                        if (self.onBalloonClose) self.onBalloonClose(self, new EventArgs());
+                        if (self.mResetIcon) self.resetIconInternal(); // Need to revert the default icon
                     break;
                     case NIN_BALLOONUSERCLICK:
-                        auto tray = getAs!TrayIcon(hWnd);
-                        if (tray.onBalloonClick) tray.onBalloonClick(tray, new EventArgs());
-                        if (tray.mResetIcon) tray.resetIconInternal(); // Need to revert the default icon
+                        if (self.onBalloonClick) self.onBalloonClick(self, new EventArgs());
+                        if (self.mResetIcon) self.resetIconInternal(); // Need to revert the default icon
                     break;
                     case WM_LBUTTONDOWN:
-                        auto tray = getAs!TrayIcon(hWnd);
-                        if (tray.onLeftMouseDown) tray.onLeftMouseDown(tray, new EventArgs());                    
+                        if (self.onLeftMouseDown) self.onLeftMouseDown(self, new EventArgs());                    
                     break;
-                    case WM_LBUTTONUP:
-                    auto tray = getAs!TrayIcon(hWnd);
-                        if (tray.onLeftMouseUp) tray.onLeftMouseUp(tray, new EventArgs());
-                        if (tray.onLeftClick) tray.onLeftClick(tray, new EventArgs());
-                        if (tray.mCmenuUsed && (tray.mMenuTrigger & TrayMenuTrigger.leftClick))
-                            tray.mCmenu.showMenu(0);
+                    case WM_LBUTTONUP:                    
+                        if (self.onLeftMouseUp) self.onLeftMouseUp(self, new EventArgs());
+                        if (self.onLeftClick) self.onLeftClick(self, new EventArgs());
+                        if (self.mCmenuUsed && (self.mMenuTrigger & TrayMenuTrigger.leftClick))
+                            self.mCmenu.showMenu(0);
                     break;
                     case WM_LBUTTONDBLCLK:
-                        auto tray = getAs!TrayIcon(hWnd);
-                        if (tray.onLeftDoubleClick) tray.onLeftDoubleClick(tray, new EventArgs());
-                        if (tray.mCmenuUsed && (tray.mMenuTrigger & TrayMenuTrigger.leftDoubleClick)) 
-                            tray.mCmenu.showMenu(0);
+                        if (self.onLeftDoubleClick) self.onLeftDoubleClick(self, new EventArgs());
+                        if (self.mCmenuUsed && (self.mMenuTrigger & TrayMenuTrigger.leftDoubleClick)) 
+                            self.mCmenu.showMenu(0);
                     break;
                     case WM_RBUTTONDOWN:
-                        auto tray = getAs!TrayIcon(hWnd);
-                        if (tray.onRightMouseDown) tray.onRightMouseDown(tray, new EventArgs());
+                        if (self.onRightMouseDown) self.onRightMouseDown(self, new EventArgs());
                     break;
                     case WM_RBUTTONUP:
-                        auto tray = getAs!TrayIcon(hWnd);
-                        if (tray.onRightMouseUp) tray.onRightMouseUp(tray, new EventArgs());
-                        if (tray.onRightClick) tray.onRightClick(tray, new EventArgs());
-                        if (tray.mCmenuUsed && (tray.mMenuTrigger & TrayMenuTrigger.rightClick)) 
-                            tray.mCmenu.showMenu(0);
+                        if (self.onRightMouseUp) self.onRightMouseUp(self, new EventArgs());
+                        if (self.onRightClick) self.onRightClick(self, new EventArgs());
+                        if (self.mCmenuUsed && (self.mMenuTrigger & TrayMenuTrigger.rightClick)) 
+                            self.mCmenu.showMenu(0);
                     break;
                     case WM_MOUSEMOVE:
-                        auto tray = getAs!TrayIcon(hWnd);
-                        if (tray.onMouseMove) tray.onMouseMove(tray, new EventArgs());
+                        if (self.onMouseMove) self.onMouseMove(self, new EventArgs());
                     break;
                     default: break;
                 } 

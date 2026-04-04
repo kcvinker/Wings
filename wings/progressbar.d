@@ -263,43 +263,19 @@ private LRESULT pgbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        //  gb.log(message);
+        ProgressBar self = getControl!ProgressBar(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
             case WM_DESTROY : 
-                // ProgressBar pgb = getControl!ProgressBar(refData);
                 RemoveWindowSubclass(hWnd, &pgbWndProc, scID); 
-            break;
-            case WM_LBUTTONDOWN : 
-                ProgressBar pgb = getControl!ProgressBar(refData);
-                pgb.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP : 
-                ProgressBar pgb = getControl!ProgressBar(refData);
-                pgb.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN : 
-                ProgressBar pgb = getControl!ProgressBar(refData);
-                pgb.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP : 
-                ProgressBar pgb = getControl!ProgressBar(refData);
-                pgb.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL : 
-                ProgressBar pgb = getControl!ProgressBar(refData);
-                pgb.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE : 
-                ProgressBar pgb = getControl!ProgressBar(refData);
-                pgb.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE : 
-                ProgressBar pgb = getControl!ProgressBar(refData);
-                pgb.mouseLeaveHandler(); 
-            break;
+            break;            
             case WM_PAINT :
-                ProgressBar pgb = getControl!ProgressBar(refData);
-                return pgb.drawPercentage(hWnd, message, wParam, lParam);
+                return self.drawPercentage(hWnd, message, wParam, lParam);
             break;
             default : return DefSubclassProc(hWnd, message, wParam, lParam); 
         }

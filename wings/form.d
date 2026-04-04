@@ -169,12 +169,12 @@ class Form : Control
                                         null,
                                         menuHwnd,
                                         appData.hInstance,
-                                        null);
+                                        cast(PVOID)this);
 
         if (this.mHandle ) {
             this.mIsCreated = true;
             if (appData.mainHwnd == null) appData.mainHwnd = this.mHandle;
-            setThisPtrOnWindows(this, this.mHandle);
+            // setThisPtrOnWindows(this, this.mHandle);
             this.mFont.mHwndParent = this.mHandle;
             this.setFontInternal();
         } else {
@@ -532,50 +532,62 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
 {
     try {
         // print("Main wndproc message", message);
+        auto self = fromHwndTo!Form(hWnd);
+        if (self is null) {
+            if (message == WM_NCCREATE) {
+                CREATESTRUCT* cs = cast(CREATESTRUCT*)lParam;
+                self = cast(Form) cs.lpCreateParams;
+                self.mHandle = hWnd;			
+                SetWindowLongPtr(hWnd, GWLP_USERDATA,  cast(LONG_PTR) cast(void*)self);                
+                return 1; // Continue window creation
+            }
+            return DefWindowProc(hWnd, message, wParam, lParam);
+        }
+
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefWindowProcW(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
+
         switch (message) {            
-            case WM_DESTROY: 
-                auto win = getAs!Form(hWnd);                
-                if (win.onClosed) win.onClosed(win, new EventArgs());              
+            case WM_DESTROY:                 
+                if (self.onClosed) self.onClosed(self, new EventArgs());              
             break;
             case WM_NCDESTROY:
-                auto win = getAs!Form(hWnd);
-                win.finalize(); // Do the housekeeping for this window.
+                self.finalize(); // Do the housekeeping for this window.
                 if (hWnd == appData.mainHwnd) PostQuitMessage(0); 
             break;
             case WM_CLOSE:
-                auto win = getAs!Form(hWnd);
                 auto ea = new EventArgs();                
-                if (win.onClosing) win.onClosing(win, ea);
+                if (self.onClosing) self.onClosing(self, ea);
                 if (ea.cancel) return 0; // User don't want to close the window
             break; 
             case CM_WIN_THREAD_MSG: // Users can send this msg from different threads.
-                auto win = getAs!Form(hWnd);
-                if (win.onThreadMsg) win.onThreadMsg(wParam, lParam); 
+                if (self.onThreadMsg) self.onThreadMsg(wParam, lParam); 
             break;
             case WM_TIMER:
-                auto win = getAs!Form(hWnd);
-                Timer timer = win.mTimerMap.get(cast(UINT_PTR)wParam, null);
-                if (timer && timer.onTick) timer.onTick(win, GEA);
+                Timer timer = self.mTimerMap.get(cast(UINT_PTR)wParam, null);
+                if (timer && timer.onTick) timer.onTick(self, GEA);
                 return 0;
             break;
             case WM_SHOWWINDOW:
-                auto win = getAs!Form(hWnd);
-                if (!win.mIsLoaded) {
-                    win.mIsLoaded = true;
-                    if (win.onLoad) win.onLoad(win, new EventArgs());
+                if (!self.mIsLoaded) {
+                    self.mIsLoaded = true;
+                    if (self.onLoad) self.onLoad(self, new EventArgs());
                 }
                 return 0;
             break;
             case WM_ACTIVATEAPP:
-                auto win = getAs!Form(hWnd);
-                if (win.onActivate || win.onDeActivate) {
+                if (self.onActivate || self.onDeActivate) {
                     auto ea = new EventArgs();
                     immutable bool flag = cast(bool) wParam;
                     if (!flag) {
-                        if (win.onDeActivate) win.onDeActivate(win, ea);
+                        if (self.onDeActivate) self.onDeActivate(self, ea);
                         return 0;
                     } else {
-                        if (win.onActivate) win.onActivate(win, ea);
+                        if (self.onActivate) self.onActivate(self, ea);
                     }
                 }
             break;
@@ -593,7 +605,6 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 return SendMessageW(ctlHwnd, CM_COLOR_STATIC, wParam, lParam);
             break;
             case WM_CTLCOLORLISTBOX:
-                auto win = getAs!Form(hWnd);
                 auto ctlHwnd = cast(HWND) lParam;
                 /*----------------------------------------------------------------------------------
                 If user uses a ComboBox, it contains a ListBox in it.
@@ -601,7 +612,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 So, we need to check it before dispatch this message to that listbox.
                 Because, if it is from Combo's listbox, there is no Wndproc function for that ListBox.
                 -------------------------------------------------------------------------------------*/
-                auto cmb = win.cmb_dict.get(ctlHwnd, null);
+                auto cmb = self.cmb_dict.get(ctlHwnd, null);
                 if (cmb) {
                     return SendMessageW(cmb, CM_COLOR_CMB_LIST, wParam, lParam);
                 } else {
@@ -610,12 +621,11 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
             break;
             case WM_COMMAND:
 				// writefln("WM_COMMAND 1 - wpm hiw %d", HIWORD(wParam));
-                auto win = getAs!Form(hWnd);
                 switch (lParam){
                     case 0: // It's from menu
                         if (HIWORD(wParam) == 0) {
                             auto mid = cast(uint)(LOWORD(wParam));
-                            auto menu = win.mMenuItemDict.get(mid, null);
+                            auto menu = self.mMenuItemDict.get(mid, null);
                             if (menu && menu.onClick) menu.onClick(menu, new EventArgs());
                             return 0;
                         } else { // It's from accelerator key
@@ -628,171 +638,86 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                     break;
                 }
             break;
-            case WM_KEYUP, WM_SYSKEYUP:
-                auto win = getAs!Form(hWnd);
-                if (win.onKeyUp) 
-                    win.onKeyUp(win, new KeyEventArgs(wParam));
+            case WM_SYSKEYUP:
+                if (self.onKeyUp) 
+                    self.onKeyUp(self, new KeyEventArgs(wParam));
             break;
-            case WM_KEYDOWN, WM_SYSKEYDOWN:
+            case WM_SYSKEYDOWN:
                 print("form keydown");
-                auto win = getAs!Form(hWnd);
-                if (win.onKeyDown) 
-                    win.onKeyDown(win, new KeyEventArgs(wParam));
+                if (self.onKeyDown) 
+                    self.onKeyDown(self, new KeyEventArgs(wParam));
             break;
             case WM_CHAR:
-                auto win = getAs!Form(hWnd);
-                if (win.onKeyPress)                
-                    win.onKeyPress(win, new KeyPressEventArgs(wParam));                
-            break;
-            case WM_LBUTTONDOWN:
-                auto win = getAs!Form(hWnd);
-                win.lDownHappened = true;
-                if (win.onMouseDown) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    win.onMouseDown(win, ea);
-                    return 0;
-                }
-            break;
-            case WM_LBUTTONUP:
-                auto win = getAs!Form(hWnd);
-                if (win.onMouseUp) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    win.onMouseUp(win, ea);
-                }
-                if (win.onClick) win.onClick(win, new EventArgs());
-            break;
-            case WM_RBUTTONDOWN:
-                auto win = getAs!Form(hWnd);
-                win.rDownHappened = true;
-                if (win.onRightMouseDown) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    win.onRightMouseDown(win, ea);
-                }
-            break;
-            case WM_RBUTTONUP:
-                auto win = getAs!Form(hWnd);
-                if (win.onRightMouseUp) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    win.onRightMouseUp(win, ea);
-                }
-                if (win.onRightClick) win.onRightClick(win, new EventArgs());
-            break;
-            case WM_MOUSEWHEEL:
-                auto win = getAs!Form(hWnd);
-                if (win.onMouseWheel) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    win.onMouseWheel(win, ea);
-                }
-            break;
-            case WM_MOUSEMOVE:
-                auto win = getAs!Form(hWnd);
-                if (!win.mIsMouseTracking) {
-                    win.mIsMouseTracking = true;
-                    trackMouseMove(hWnd);
-                    if (!win.mIsMouseEntered) {
-                        win.mIsMouseEntered = true;
-                        if (win.onMouseEnter) {                            
-                            auto ea = new EventArgs();
-                            win.onMouseEnter(win, ea);
-                        }
-                    }
-                }
-                if (win.onMouseMove) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    win.onMouseMove(win, ea);
-                }
-            break;
-            case WM_MOUSEHOVER:
-                auto win = getAs!Form(hWnd);
-                if (win.mIsMouseTracking) {win.mIsMouseTracking = false;}
-                if (win.onMouseHover) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    win.onMouseHover(win, ea);
-                }
-            break;
-            case WM_MOUSELEAVE:
-                auto win = getAs!Form(hWnd);
-                if (win.mIsMouseTracking) {
-                    win.mIsMouseTracking = false;
-                    win.mIsMouseEntered = false;
-                }
-                if (win.onMouseLeave) win.onMouseLeave(win, new EventArgs());
-                
+                if (self.onKeyPress)                
+                    self.onKeyPress(self, new KeyPressEventArgs(wParam));                
             break;
             case WM_HSCROLL: return SendMessageW(cast(HWND) lParam, CM_HSCROLL, wParam, lParam);
             case WM_VSCROLL: return SendMessageW(cast(HWND) lParam, CM_VSCROLL, wParam, lParam);
 
             case WM_SIZING:
-                auto win = getAs!Form(hWnd);
-                win.mSizingStarted = true;
+                self.mSizingStarted = true;
                 auto sea = new SizeEventArgs(message, wParam, lParam);
-                // win.width = sea.windowRect.right - sea.windowRect.left;
-                // win.height = sea.windowRect.bottom - sea.windowRect.top;
-                win.setDataAtSizeMsg(sea.windowRect);
-                if (win.onSizing) {
-                    win.onSizing(win, sea);
+                // self.width = sea.windowRect.right - sea.windowRect.left;
+                // self.height = sea.windowRect.bottom - sea.windowRect.top;
+                self.setDataAtSizeMsg(sea.windowRect);
+                if (self.onSizing) {
+                    self.onSizing(self, sea);
                     return 1;
                 }
                 return 0;
             break;
             case WM_SIZE:
-                auto win = getAs!Form(hWnd);
-                win.mSizingStarted = false;
-                if (win.onSized) {
+                self.mSizingStarted = false;
+                if (self.onSized) {
                     auto sea = new SizeEventArgs(message, wParam, lParam);
-                    win.onSized(win, sea);
+                    self.onSized(self, sea);
                     return 1;
                 }
             break;
             case WM_MOVE:
-                auto win = getAs!Form(hWnd);
-                win.setDataAtMoveMsg(xFromLparam(lParam), yFromLparam(lParam));
-                if (win.onMoved) win.onMoved(win, new EventArgs());
+                self.setDataAtMoveMsg(xFromLparam(lParam), yFromLparam(lParam));
+                if (self.onMoved) self.onMoved(self, new EventArgs());
                 return 0;
             break;
             case WM_MOVING:
-                auto win = getAs!Form(hWnd);
                 auto rct = cast(RECT*) lParam;
-                win.setDataAtMoveMsg(rct.left, rct.top);
-                if (win.onMoving) {
+                self.setDataAtMoveMsg(rct.left, rct.top);
+                if (self.onMoving) {
                     auto ea = new EventArgs();
-                    win.onMoving(win, ea);
+                    self.onMoving(self, ea);
                     return 1;
                 }
                 return 0;
             break;
             case WM_SYSCOMMAND:
-                auto win = getAs!Form(hWnd);
                 auto uMsg = cast(UINT) (wParam & 0xFFF0);
                 switch (uMsg) {
                     case SC_MINIMIZE:
-                        if (win.onMinimized) win.onMinimized(win, new EventArgs());
+                        if (self.onMinimized) self.onMinimized(self, new EventArgs());
                     break;
 
                     case SC_MAXIMIZE:
-                        if (win.onMaximized) win.onMaximized(win, new EventArgs());
+                        if (self.onMaximized) self.onMaximized(self, new EventArgs());
                     break;
 
                     case SC_RESTORE:
-                        if (win.onRestored) win.onRestored(win, new EventArgs());
+                        if (self.onRestored) self.onRestored(self, new EventArgs());
                     break;
                     default: break;
                 }
             break;
             case WM_ERASEBKGND:
-                auto win = cast(Form) (cast(void *) GetWindowLongPtrW(hWnd, GWLP_USERDATA));
-                if (win.mBkDrawMode != FormBkMode.normal) {
+                if (self.mBkDrawMode != FormBkMode.normal) {
                     auto dch = cast(HDC) wParam;
-                    win.setBkClrInternal(dch);
+                    self.setBkClrInternal(dch);
                     return cast(LRESULT)1; // We must return non zero value if handle this message.
                 }
                 // Do not return zero here. It will cause static controls's back ground looks ugly.
             break;
             case WM_HOTKEY:
-                auto win = getAs!Form(hWnd);
                 int hkid = cast(int)wParam;
-                EventHandler pFunc = win.mHkeyMap.get(hkid, null);
-                if (pFunc) pFunc(win, GEA);
+                EventHandler pFunc = self.mHkeyMap.get(hkid, null);
+                if (pFunc) pFunc(self, GEA);
                 return 0;
             break;   
             case WM_MEASUREITEM:
@@ -812,7 +737,6 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 return 1;
             break;
             case WM_DRAWITEM:
-                auto win = getAs!Form(hWnd);
                 auto dis = cast(LPDRAWITEMSTRUCT) lParam;
                 auto mi = getMenuItem(dis.itemData);
                 COLORREF txtClrRef = mi.mFgColor.cref;
@@ -825,18 +749,18 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                                                     dis.rcItem.top + 1,
                                                     dis.rcItem.right,
                                                     dis.rcItem.bottom);
-                        FillRect(dis.hDC, &rc, win.mMenubar.mMenuHotBgBrush);
-                        FrameRect(dis.hDC, &rc, win.mMenubar.mMenuFrameBrush);
+                        FillRect(dis.hDC, &rc, self.mMenubar.mMenuHotBgBrush);
+                        FrameRect(dis.hDC, &rc, self.mMenubar.mMenuFrameBrush);
                         txtClrRef = 0x00000000;
                     } else {
-                        FillRect(dis.hDC, &dis.rcItem, win.mMenubar.mMenuGrayBrush);
-                        txtClrRef = win.mMenubar.mMenuGrayCref;
+                        FillRect(dis.hDC, &dis.rcItem, self.mMenubar.mMenuGrayBrush);
+                        txtClrRef = self.mMenubar.mMenuGrayCref;
                     }
                 
                 // Else we will draw normal menu text. No highlighting.
                 } else {
-                    FillRect(dis.hDC, &dis.rcItem, win.mMenubar.mMenuDefBgBrush);
-                    if (!mi.mEnabled) txtClrRef = win.mMenubar.mMenuGrayCref;
+                    FillRect(dis.hDC, &dis.rcItem, self.mMenubar.mMenuDefBgBrush);
+                    if (!mi.mEnabled) txtClrRef = self.mMenubar.mMenuGrayCref;
                 }
 
                 SetBkMode(dis.hDC, 1);
@@ -845,28 +769,26 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 } else {
                     dis.rcItem.left += 25;
                 }
-                SelectObject(dis.hDC, win.mMenubar.mFont.mHandle);
+                SelectObject(dis.hDC, self.mMenubar.mFont.mHandle);
                 SetTextColor(dis.hDC, txtClrRef);
                 DrawTextW(dis.hDC, mi.mWideText, -1, &dis.rcItem, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
                 return 0;
             break;
             case CM_MENU_ADDED:
-                auto win = getAs!Form(hWnd);
                 // De-reference the pointer and put the menu item in our dict
-                win.mMenuItemDict[cast(uint)wParam] = *(cast(MenuItem*) (cast(void*)lParam));
-                // writeln("Added menu name: ", win.mMenuItemDict[cast(uint)wParam].mText);
+                self.mMenuItemDict[cast(uint)wParam] = *(cast(MenuItem*) (cast(void*)lParam));
+                // writeln("Added menu name: ", self.mMenuItemDict[cast(uint)wParam].mText);
                 return 0;
             break;
             case WM_MENUSELECT:
-                auto win = getAs!Form(hWnd);
-                auto pmenu = win.getMenuFromHmenu(cast(HMENU) lParam);
+                auto pmenu = self.getMenuFromHmenu(cast(HMENU) lParam);
                 immutable int mid = cast(int) LOWORD(wParam); // Could be an id of a child menu or index of a child menu
                 immutable WORD hwwpm = HIWORD(wParam);
                 if (pmenu) {
                     MenuItem menu;
                     switch (hwwpm) {
                         case 33_152: // A normal child menu. We can use mid ad menu id.
-                            menu = win.mMenuItemDict[mid]; break;
+                            menu = self.mMenuItemDict[mid]; break;
                         case 33_168: // A popup child menu. We can use mid as index.
                             menu = pmenu.getChildFromIndex(mid); break;
                         default: break;
@@ -875,18 +797,15 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 }
             break;
             case WM_INITMENUPOPUP:
-                auto win = getAs!Form(hWnd);
-                auto menu = win.getMenuFromHmenu(cast(HMENU) wParam);
+                auto menu = self.getMenuFromHmenu(cast(HMENU) wParam);
                 if (menu && menu.onPopup) menu.onPopup(menu, new EventArgs());
             break;
             case WM_UNINITMENUPOPUP:
-                auto win = getAs!Form(hWnd);
-                auto menu = win.getMenuFromHmenu(cast(HMENU) wParam);
+                auto menu = self.getMenuFromHmenu(cast(HMENU) wParam);
                 if (menu && menu.onCloseup) menu.onCloseup(menu, new EventArgs());
             break;
             case CM_FONT_CHANGED:
-                auto win = getAs!Form(hWnd);
-                win.updateFontHandle();
+                self.updateFontHandle();
                 return 0;
             break;
             default: 

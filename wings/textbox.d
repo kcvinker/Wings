@@ -126,58 +126,29 @@ private LRESULT tbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
+        TextBox self = getControl!TextBox(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
             case WM_NCDESTROY: 
-                TextBox tb = getControl!TextBox(refData);
-                tb.finalize(scID); 
+                self.finalize(scID); 
             break;
             case CM_COLOR_EDIT:
-                TextBox tb = getControl!TextBox(refData);
-                if (tb.mDrawFlag) {
+                if (self.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
-                    if (tb.mDrawFlag & 1) SetTextColor(hdc, tb.mForeColor.cref);
-                    if (tb.mDrawFlag & 2) SetBkColor(hdc, tb.mBackColor.cref);
+                    if (self.mDrawFlag & 1) SetTextColor(hdc, self.mForeColor.cref);
+                    if (self.mDrawFlag & 2) SetBkColor(hdc, self.mBackColor.cref);
                 }
-                return toLresult(tb.mBkBrush);
+                return toLresult(self.mBkBrush);
             break;
             case CM_CTLCOMMAND:
-                TextBox tb = getControl!TextBox(refData);
             	if (HIWORD(wParam) == EN_CHANGE) {
-            		if (tb.onTextChanged) tb.onTextChanged(tb, new EventArgs());
+            		if (self.onTextChanged) self.onTextChanged(self, new EventArgs());
             	}
-            break;
-            case WM_LBUTTONDOWN: 
-                TextBox tb = getControl!TextBox(refData);
-                tb.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP: 
-                TextBox tb = getControl!TextBox(refData);
-                tb.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                TextBox tb = getControl!TextBox(refData);
-                tb.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                TextBox tb = getControl!TextBox(refData);
-                tb.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                TextBox tb = getControl!TextBox(refData);
-                tb.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                TextBox tb = getControl!TextBox(refData);
-                tb.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE: 
-                TextBox tb = getControl!TextBox(refData);
-                tb.mouseLeaveHandler(); 
-            break;
-            case CM_FONT_CHANGED:
-                TextBox tb = getControl!TextBox(refData);
-                tb.updateFontHandle();
-                return 0;
             break;
             default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }

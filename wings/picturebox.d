@@ -40,7 +40,7 @@ class PictureBox : Control
         this.createHandleInternal(pBoxClass.ptr);
         if (this.mHandle) {
             // ptf("PictureBox handle created:", this.mHandle);
-            setThisPtrOnWindows(this, this.mHandle,);
+            // setThisPtrOnWindows(this, this.mHandle,);
             GetClientRect(this.mHandle, &mRect);
         }
     }
@@ -222,29 +222,41 @@ LRESULT pBoxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
     // ptf("PictureBox WndProc received message: %s", message);
     try {
         // print("Main wndproc message", message);
+        auto self = fromHwndTo!PictureBox(hWnd);
+        if (self is null) {
+            if (message == WM_NCCREATE) {
+                CREATESTRUCT* cs = cast(CREATESTRUCT*)lParam;
+                self = cast(PictureBox) cs.lpCreateParams;
+                self.mHandle = hWnd;			
+                SetWindowLongPtr(hWnd, GWLP_USERDATA,  cast(LONG_PTR) cast(void*)self);                
+                return 1; // Continue window creation
+            }
+            return DefWindowProc(hWnd, message, wParam, lParam);
+        }
+
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefWindowProcW(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) { 
             case WM_CREATE: 
-                // We can do any initialization here if needed
-                // ptf("PictureBox created with handle: %s", hWnd);
-                break;    
-                   
-            case WM_DESTROY: 
-                // auto pbx = getAs!PictureBox(hWnd);                
-                              
+            break;                   
+            case WM_DESTROY:                               
             break;
             case WM_PAINT: 
-                PAINTSTRUCT ps;
-                auto pbx = getAs!PictureBox(hWnd);
+                PAINTSTRUCT ps;                
                 HDC hdc = BeginPaint(hWnd, &ps); 
                 scope(exit) EndPaint(hWnd, &ps);               
-                if (pbx.mImage) { 
-                    pbx.mImage.draw(hdc, pbx.mRect.left, pbx.mRect.top, 
-                                    pbx.mRect.right - pbx.mRect.left, 
-                                    pbx.mRect.bottom - pbx.mRect.top);
+                if (self.mImage) { 
+                    self.mImage.draw(hdc, self.mRect.left, self.mRect.top, 
+                                    self.mRect.right - self.mRect.left, 
+                                    self.mRect.bottom - self.mRect.top);
                 } else {
                     // If no image, fill with background color
                     // print("No image to draw, filling with background color");
-                    HBRUSH hbr = CreateSolidBrush(pbx.mBackColor.cref);
+                    HBRUSH hbr = CreateSolidBrush(self.mBackColor.cref);
                     FillRect(hdc, &ps.rcPaint, hbr);
                     DeleteObject(hbr);
                 }
@@ -256,84 +268,11 @@ LRESULT pBoxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 return 1;
 
             case WM_SIZE:
-                // if (hWnd) {
-                    // ptf("PictureBox resized, new size: %d x %d", LOWORD(lParam), HIWORD(lParam));
-                    auto pbx = getAs!PictureBox(hWnd);
-                    if (pbx) {
-                        if (pbx.mSizeMode != PictureSizeMode.autoSize) pbx.invalidate();
-                    }
-                // }   
-                break;             
-            
-            case WM_MOUSEMOVE:
-                auto pbx = getAs!PictureBox(hWnd);
-                if (!pbx.mIsMouseTracking) {
-                    pbx.mIsMouseTracking = true;
-                    trackMouseMove(hWnd);
-                    if (!pbx.mIsMouseEntered) {
-                        pbx.mIsMouseEntered = true;
-                        if (pbx.onMouseEnter) {                            
-                            pbx.onMouseEnter(pbx, new EventArgs());
-                        }
-                    }
-                }
-                if (pbx.onMouseMove) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    pbx.onMouseMove(pbx, ea);
+                if (self) {
+                    if (self.mSizeMode != PictureSizeMode.autoSize) self.invalidate();
                 }
             break;
-            case WM_MOUSEHOVER:
-                auto pbx = getAs!PictureBox(hWnd);
-                if (pbx.mIsMouseTracking) {pbx.mIsMouseTracking = false;}
-                if (pbx.onMouseHover) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    pbx.onMouseHover(pbx, ea);
-                }
-            break;
-            case WM_MOUSELEAVE:
-                auto pbx = getAs!PictureBox(hWnd);
-                if (pbx.mIsMouseTracking) {
-                    pbx.mIsMouseTracking = false;
-                    pbx.mIsMouseEntered = false;
-                }
-                if (pbx.onMouseLeave) pbx.onMouseLeave(pbx, new EventArgs());                
-            break;
-            case WM_LBUTTONDOWN:
-                auto pbx = getAs!PictureBox(hWnd);
-                pbx.lDownHappened = true;
-                if (pbx.onMouseDown) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    pbx.onMouseDown(pbx, ea);
-                    return 0;
-                }
-            break;
-            case WM_LBUTTONUP:
-                auto pbx = getAs!PictureBox(hWnd);
-                if (pbx.onMouseUp) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    pbx.onMouseUp(pbx, ea);
-                }
-                if (pbx.onClick) pbx.onClick(pbx, new EventArgs());
-            break;
-            case WM_RBUTTONDOWN:
-                auto pbx = getAs!PictureBox(hWnd);
-                pbx.rDownHappened = true;
-                if (pbx.onRightMouseDown) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    pbx.onRightMouseDown(pbx, ea);
-                }
-            break;
-            case WM_RBUTTONUP:
-                auto pbx = getAs!PictureBox(hWnd);
-                if (pbx.onRightMouseUp) {
-                    auto ea = new MouseEventArgs(message, wParam, lParam);
-                    pbx.onRightMouseUp(pbx, ea);
-                }
-                if (pbx.onRightClick) pbx.onRightClick(pbx, new EventArgs());
-            break;
-                
             default: break;
-                // return DefWindowProcW(hWnd, message, wParam, lParam);
         }
     } 
     catch (Exception e){}    

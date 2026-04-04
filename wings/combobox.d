@@ -346,78 +346,21 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 {
     try {        
         //print("ComboBox Messages", message);
+        ComboBox self = getControl!ComboBox(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
-            case WM_DESTROY: 
-                // print("Combo's main window proc destroyed");
-                ComboBox cmb = getControl!ComboBox(refData);
-                cmb.finalize(scID); 
+            case WM_DESTROY:                 
+                self.finalize(scID); 
             break;
             case WM_PAINT: 
-                ComboBox cmb = getControl!ComboBox(refData);
-                cmb.paintHandler(); 
-            break;
-            case WM_LBUTTONUP: 
-                ComboBox cmb = getControl!ComboBox(refData);
-                cmb.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                ComboBox cmb = getControl!ComboBox(refData);
-                cmb.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                ComboBox cmb = getControl!ComboBox(refData);
-                cmb.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                ComboBox cmb = getControl!ComboBox(refData);
-                cmb.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                ComboBox cmb = getControl!ComboBox(refData);
-                cmb.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE:
-                ComboBox cmb = getControl!ComboBox(refData);
-                /*-----------------------------------------------------------------
-                Here, we need to do a trick. Actually, in a Combobox, when the
-                text input mode enabled, we get two mouse leave msg & two mouse 
-                move msg. Because, combo's text area is an edit control. 
-                It is surrounded by the combo. So, when mouse enters the combo's 
-                rect, we get a mouse move msg. But when mouse enters into 
-                text box's rect, we get a mouse leave from combo and mouse move 
-                from textbox. So here we are checking the mouse is in combo's rect 
-                or not. If it is stil inside, we suppress the mouse leave
-                and continue receiving the mouse move msgs from text are.
-                -------------------------------------------------------------------*/
-                if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    if (cmb.isInComboRect(hWnd)) {
-                        return 1;
-                    } else {
-                        if (cmb.onMouseLeave) cmb.onMouseLeave(cmb, new EventArgs());
-                    }
-                } else {
-                    if (cmb.onMouseLeave) cmb.onMouseLeave(cmb, new EventArgs());
-                }
-            break;
-            case WM_KEYDOWN:
-                ComboBox cmb = getControl!ComboBox(refData);
-                // To get this message here, cmb's drop down style must be labelCombo.
-                if (cmb.onKeyDown) {
-                    auto kea = new KeyEventArgs(wParam);
-                    cmb.onKeyDown(cmb, kea);
-                }
-            break;
-
-            case WM_KEYUP:
-                ComboBox cmb = getControl!ComboBox(refData);
-                // To get this message here, cmb's drop down style must be labelCombo.
-                if (cmb.onKeyUp) {
-                    auto kea = new KeyEventArgs(wParam);
-                    cmb.onKeyUp(cmb, kea);
-                }
-            break;
+                self.paintHandler(); 
+            break;            
             case CM_COLOR_CMB_LIST:
-                ComboBox cmb = getControl!ComboBox(refData);
                 /*---------------------------------------------------------------
                 We can change the colors of List area & text area of a combo. 
                 Here we are dealing with list area. NOTE: You can change 
@@ -425,62 +368,55 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 NOTE: In labelCombo mode, if you change the color, it won't 
                 affect in text area. Only change the color if user wants to be.
                 ------------------------------------------------------------------*/
-                if (cmb.mDrawFlag) {
+                if (self.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     SetBkMode(hdc, TRANSPARENT);
-                    if ((cmb.mDrawFlag & 1) == 1) SetTextColor(hdc, cmb.mForeColor.cref);
-                    if ((cmb.mDrawFlag & 2) == 2) SetBkColor(hdc, cmb.mBackColor.cref);
+                    if ((self.mDrawFlag & 1) == 1) SetTextColor(hdc, self.mForeColor.cref);
+                    if ((self.mDrawFlag & 2) == 2) SetBkColor(hdc, self.mBackColor.cref);
 
                 }
-                return cast(LRESULT)cmb.mBkBrush;
+                return cast(LRESULT)self.mBkBrush;
             break;
             case CM_CTLCOMMAND:
-                ComboBox cmb = getControl!ComboBox(refData);
                 auto nCode = HIWORD(wParam);
                 switch (nCode) {
                     case CBN_SELCHANGE:
-                        if (cmb.onSelectionChanged) cmb.onSelectionChanged(cmb, new EventArgs());
+                        if (self.onSelectionChanged) self.onSelectionChanged(self, new EventArgs());
                     break;
 
                     case CBN_SETFOCUS:
-                        if (cmb.onGotFocus) cmb.onGotFocus(cmb, new EventArgs());
+                        if (self.onGotFocus) self.onGotFocus(self, new EventArgs());
                     break;
 
                     case CBN_KILLFOCUS:
-                        if (cmb.onLostFocus) cmb.onLostFocus(cmb, new EventArgs());
+                        if (self.onLostFocus) self.onLostFocus(self, new EventArgs());
                     break;
 
                     case CBN_EDITCHANGE:
-                        if (cmb.onTextChanged) cmb.onTextChanged(cmb, new EventArgs());
+                        if (self.onTextChanged) self.onTextChanged(self, new EventArgs());
                     break;
 
                     case CBN_EDITUPDATE:
-                        if (cmb.onTextUpdated) cmb.onTextUpdated(cmb, new EventArgs());
+                        if (self.onTextUpdated) self.onTextUpdated(self, new EventArgs());
                     break;
 
                     case CBN_DROPDOWN:
-                        if (cmb.onListOpened) cmb.onListOpened(cmb, new EventArgs());
+                        if (self.onListOpened) self.onListOpened(self, new EventArgs());
                     break;
 
                     case CBN_CLOSEUP:
-                        if (cmb.onListClosed) cmb.onListClosed(cmb, new EventArgs());
+                        if (self.onListClosed) self.onListClosed(self, new EventArgs());
                     break;
 
                     case CBN_SELENDOK:
-                        if (cmb.onSelectionCommitted) cmb.onSelectionCommitted(cmb, new EventArgs());
+                        if (self.onSelectionCommitted) self.onSelectionCommitted(self, new EventArgs());
                     break;
 
                     case CBN_SELENDCANCEL:
-                        if (cmb.onSelectionCancelled) cmb.onSelectionCancelled(cmb, new EventArgs());
+                        if (self.onSelectionCancelled) self.onSelectionCancelled(self, new EventArgs());
                     break;
-
                     default: break;
                 }
-            break;
-            case CM_FONT_CHANGED:
-                ComboBox cmb = getControl!ComboBox(refData);
-                cmb.updateFontHandle();
-                return 0;
             break;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 
@@ -503,81 +439,27 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
                                                     UINT_PTR scID, DWORD_PTR refData)
 { // @suppress(dscanner.style.long_line)
     try {
+        ComboBox self = getControl!ComboBox(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
             case WM_DESTROY: 
-                // print("Combo Edit window proc destroyed");
                 RemoveWindowSubclass(hWnd, &cmbEditWndProc, scID); 
-            break;
-            case WM_KEYDOWN:
-                ComboBox cmb = getControl!ComboBox(refData);
-                if (cmb.onTextKeyDown) {
-                    auto kea = new KeyEventArgs(wParam);
-                    cmb.onTextKeyDown(cmb, kea);
-                }
-            break;
-            case WM_KEYUP:
-                ComboBox cmb = getControl!ComboBox(refData);
-                if (cmb.onTextKeyUp) {
-                    auto kea = new KeyEventArgs(wParam);
-                    cmb.onTextKeyUp(cmb, kea);
-                }
-            break;
-            case WM_LBUTTONDOWN:
-                ComboBox cmb = getControl!ComboBox(refData);
-                if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    // cmb.tbMLDownHappened = true;
-                    if (cmb.onTextMouseDown) {
-                       auto mea = new MouseEventArgs(message, wParam, lParam);
-                       cmb.onTextMouseDown(cmb, mea);
-                       return 0;
-                    }
-                }
-            break;
-            case WM_LBUTTONUP:
-                ComboBox cmb = getControl!ComboBox(refData);
-                if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    if (cmb.onTextMouseUp) {
-                       auto mea = new MouseEventArgs(message, wParam, lParam);
-                       cmb.onTextMouseUp(cmb, mea);
-                    }
-                }
-                if (cmb.onTextMouseClick) cmb.onTextMouseClick(cmb, new EventArgs());                
-            break;
-            case WM_RBUTTONDOWN:
-                ComboBox cmb = getControl!ComboBox(refData);
-                if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    if (cmb.onTextRightDown) {
-                       auto mea = new MouseEventArgs(message, wParam, lParam);
-                       cmb.onTextRightDown(cmb, mea);
-                       return 0;
-                    }
-                }
-            break;
-            case WM_RBUTTONUP:
-                ComboBox cmb = getControl!ComboBox(refData);
-                if (cmb.dropDownStyle == DropDownStyle.textCombo) {
-                    if (cmb.onTextRightUp) {
-                       auto mea = new MouseEventArgs(message, wParam, lParam);
-                       cmb.onTextRightUp(cmb, mea);
-                    }
-                }
-                if (cmb.onTextRightClick) cmb.onTextRightClick(cmb, new EventArgs()); 
-            break;
+            break;            
             case CM_COLOR_EDIT:
-                ComboBox cmb = getControl!ComboBox(refData);
                 // Here, we receive color changing message for text box of combo.
                 // NOTE: this is only work for text typing combo box.
-                if (cmb.mDrawFlag) {
+                if (self.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     // SetBkMode(hdc, TRANSPARENT);
-                    if (cmb.mDrawFlag & 1) SetTextColor(hdc, cmb.mForeColor.cref);
-                    if (cmb.mDrawFlag & 2) SetBkColor(hdc, cmb.mBackColor.cref);
+                    if (self.mDrawFlag & 1) SetTextColor(hdc, self.mForeColor.cref);
+                    if (self.mDrawFlag & 2) SetBkColor(hdc, self.mBackColor.cref);
                 }
-                return cast(LRESULT) cmb.mBkBrush;
-            break;
-            case WM_MOUSEMOVE:
-                ComboBox cmb = getControl!ComboBox(refData);
-                cmb.mouseMoveHandler(message, wParam, lParam);
+                return cast(LRESULT) self.mBkBrush;
             break;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 

@@ -33,7 +33,7 @@ import core.sys.windows.windows;
 import wings.controls: Control;
 import wings.menubar: MenuBase, MenuItem, getMenuItem, ParentKind;
 import wings.events: EventHandler, EventArgs;
-import wings.commons: getMousePoints, getMousePos, getAs, print;
+import wings.commons: getMousePoints, getMousePos, fromHwndTo, print;
 
 enum wstring cmenuWndClass = "Wings_Cmenu_Msg_Window";
 enum UINT tpm_flag = TPM_LEFTBUTTON | TPM_RETURNCMD;
@@ -335,19 +335,18 @@ private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 {
     try {
         // print("Cmenu Wndproc rcvd", message);
+        auto self = fromHwndTo!ContextMenu(hWnd);
         switch (message) {            
             // case WM_DESTROY:        
             //     writeln("Cmenu Message only window got WM_DESTROY");
             // break;
             case WM_MEASUREITEM:
-                auto cm = getAs!ContextMenu(hWnd);
                 auto pmi = cast(LPMEASUREITEMSTRUCT) lParam;
-                pmi.itemWidth = UINT(cm.mWidth);
-                pmi.itemHeight = UINT(cm.mHeight);
+                pmi.itemWidth = UINT(self.mWidth);
+                pmi.itemHeight = UINT(self.mHeight);
                 return 1;
             break;
             case WM_DRAWITEM:
-                auto cm = getAs!ContextMenu(hWnd);
                 auto dis = cast(LPDRAWITEMSTRUCT) lParam;
                 auto mi = getMenuItem(dis.itemData);
                 COLORREF txtClrRef = mi.mFgColor.cref;
@@ -355,40 +354,37 @@ private LRESULT cmenuWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                     if (mi.mEnabled) {
                         auto rc = RECT(dis.rcItem.left + 4, dis.rcItem.top + 2, 
                                         dis.rcItem.right, dis.rcItem.bottom - 2);
-                        FillRect(dis.hDC, &rc, cm.mHotBgBrush);
-                        FrameRect(dis.hDC, &rc, cm.mBorderBrush);
+                        FillRect(dis.hDC, &rc, self.mHotBgBrush);
+                        FrameRect(dis.hDC, &rc, self.mBorderBrush);
                         txtClrRef = 0x00000000;
                     } else {
-                        FillRect(dis.hDC, &dis.rcItem, cm.mGrayBrush);
-                        txtClrRef = cm.mGrayCref;
+                        FillRect(dis.hDC, &dis.rcItem, self.mGrayBrush);
+                        txtClrRef = self.mGrayCref;
                     }
                 } else {
-                    FillRect(dis.hDC, &dis.rcItem, cm.mDefBgBrush);
-                    if (!mi.mEnabled) txtClrRef = cm.mGrayCref;
+                    FillRect(dis.hDC, &dis.rcItem, self.mDefBgBrush);
+                    if (!mi.mEnabled) txtClrRef = self.mGrayCref;
                 }
                 SetBkMode(dis.hDC, 1);
                 dis.rcItem.left += 25;
-                SelectObject(dis.hDC, cm.mFont.handle);
+                SelectObject(dis.hDC, self.mFont.handle);
                 SetTextColor(dis.hDC, txtClrRef);
                 DrawTextW(dis.hDC, mi.mWideText, -1, &dis.rcItem, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
                 return 0;
             break;
             case WM_ENTERMENULOOP: 
-                auto cm = getAs!ContextMenu(hWnd);
-                if (cm.onMenuShown) cm.onMenuShown(cm.mParent, new EventArgs()); 
+                if (self.onMenuShown) self.onMenuShown(self.mParent, new EventArgs()); 
                 // print("Cmenu Wndproc WM_ENTERMENULOOP");
             break;
             case WM_EXITMENULOOP: 
-                auto cm = getAs!ContextMenu(hWnd);
-                if (cm.onMenuClose) cm.onMenuClose(cm.mParent, new EventArgs()); 
+                if (self.onMenuClose) self.onMenuClose(self.mParent, new EventArgs()); 
                 // print("Cmenu Wndproc WM_EXITMENULOOP");           
             break;
             case WM_MENUSELECT:
-                auto cm = getAs!ContextMenu(hWnd);
                 immutable int idNum = cast(int) (LOWORD(wParam));
                 auto hMenu = cast(HMENU) lParam;
                 if (hMenu && idNum > 0) {
-                    auto menu = cm.getMenuItem(idNum);
+                    auto menu = self.getMenuItem(idNum);
                     if (menu && menu.mEnabled) {
                         if (menu.onFocus) menu.onFocus(menu, new EventArgs());
                     }

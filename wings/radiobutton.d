@@ -121,27 +121,29 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
+        RadioButton self = getControl!RadioButton(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
-            case WM_DESTROY: 
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.finalize(scID); 
+            case WM_DESTROY:                 
+                self.finalize(scID); 
             break;
             case CM_COLOR_STATIC:
-                RadioButton rb = getControl!RadioButton(refData);
             	auto hdc = cast(HDC) wParam;
                 SetBkMode(hdc, TRANSPARENT);
-                return toLresult(CreateSolidBrush(rb.mBackColor.cref));
+                return toLresult(CreateSolidBrush(self.mBackColor.cref));
             break;
-
             case CM_CTLCOMMAND:
-                RadioButton rb = getControl!RadioButton(refData);
             	if (HIWORD(wParam) == 0) {
-            		rb.mChecked = cast(bool) rb.sendMsg(BM_GETCHECK, 0, 0);
-            		if (rb.onStateChanged) rb.onStateChanged(rb, new EventArgs());
+            		self.mChecked = cast(bool) self.sendMsg(BM_GETCHECK, 0, 0);
+            		if (self.onStateChanged) self.onStateChanged(self, new EventArgs());
             	}
             break;
             case CM_NOTIFY:
-                RadioButton rb = getControl!RadioButton(refData);
                 auto nmcd = getNmcdPtr(lParam);
                 switch (nmcd.dwDrawStage) {
                     case CDDS_PREERASE:
@@ -149,59 +151,17 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     break;
                     case CDDS_PREPAINT:
                         RECT rct = nmcd.rc;
-                        if (rb.mRightAlign) { rct.right -= 18;} else {rct.left += 18;}
-                        SetTextColor(nmcd.hdc, rb.mForeColor.cref);
-                        DrawTextW(nmcd.hdc, rb.text.toUTF16z, -1, &rct, rb.mTxtStyle);
+                        if (self.mRightAlign) { rct.right -= 18;} else {rct.left += 18;}
+                        SetTextColor(nmcd.hdc, self.mForeColor.cref);
+                        DrawTextW(nmcd.hdc, self.text.toUTF16z, -1, &rct, self.mTxtStyle);
                         return CDRF_SKIPDEFAULT;
                     break;
                     default: break;
                 }
             break;
             case WM_PAINT: 
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.paintHandler(); 
-            break;
-            case WM_SETFOCUS: 
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.setFocusHandler(); 
-            break;
-            case WM_KILLFOCUS: 
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.killFocusHandler(); 
-            break;
-            case WM_LBUTTONDOWN: 
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP: 
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE: 
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.mouseLeaveHandler(); 
-            break;
-            case CM_FONT_CHANGED:
-                RadioButton rb = getControl!RadioButton(refData);
-                rb.updateFontHandle();
-                return 0;
-            break;
+                self.paintHandler(); 
+            break;            
             default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }

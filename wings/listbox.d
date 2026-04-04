@@ -316,86 +316,56 @@ private LRESULT lbxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
+        ListBox self = getControl!ListBox(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
             case WM_DESTROY: 
-                ListBox lbx = getControl!ListBox(refData);
-                lbx.finalize(scID); 
+                self.finalize(scID); 
             break;
             case WM_PAINT: 
-                ListBox lbx = getControl!ListBox(refData);
-                lbx.paintHandler(); 
-            break;
-            case WM_LBUTTONDOWN: 
-                ListBox lbx = getControl!ListBox(refData);
-                lbx.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP: 
-                ListBox lbx = getControl!ListBox(refData);
-                lbx.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                ListBox lbx = getControl!ListBox(refData);
-                lbx.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                ListBox lbx = getControl!ListBox(refData);
-                lbx.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                ListBox lbx = getControl!ListBox(refData);
-                lbx.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                ListBox lbx = getControl!ListBox(refData);
-                lbx.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE: 
-                ListBox lbx = getControl!ListBox(refData);
-                lbx.mouseLeaveHandler(); 
+                self.paintHandler(); 
             break;
             case CM_COLOR_EDIT:
-                ListBox lbx = getControl!ListBox(refData);
-                if (lbx.mDrawFlag) {
+                if (self.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
                     SetBkMode(hdc, TRANSPARENT);
-                    if (lbx.mDrawFlag & 1) SetTextColor(hdc, lbx.mForeColor.cref);
-                    lbx.mBkBrush = CreateSolidBrush(lbx.mBackColor.cref);
-                    //print("cm ctl color on lbx");
-                    return cast(LRESULT) lbx.mBkBrush;
+                    if (self.mDrawFlag & 1) SetTextColor(hdc, self.mForeColor.cref);
+                    self.mBkBrush = CreateSolidBrush(self.mBackColor.cref);
+                    //print("cm ctl color on self");
+                    return cast(LRESULT) self.mBkBrush;
                 }
             break;
             case CM_CTLCOMMAND:
-                ListBox lbx = getControl!ListBox(refData);
                 auto nCode = HIWORD(wParam);
                 switch (nCode) {
                     case LBN_DBLCLK:
-                        if (lbx.onDoubleClick) lbx.onDoubleClick(lbx, new EventArgs());
+                        if (self.onDoubleClick) self.onDoubleClick(self, new EventArgs());
                     break;
                     case LBN_KILLFOCUS:
-                        if (lbx.onLostFocus) lbx.onLostFocus(lbx, new EventArgs());
+                        if (self.onLostFocus) self.onLostFocus(self, new EventArgs());
                     break;
                     case LBN_SELCHANGE:
-                        if (!lbx.mMultiSel) {
-                            auto selIndx = lbx.sendMsg(LB_GETCURSEL, 0, 0);
+                        if (!self.mMultiSel) {
+                            auto selIndx = self.sendMsg(LB_GETCURSEL, 0, 0);
                             if (selIndx != LB_ERR) {
-                                lbx.mSelIndex = cast(int) selIndx;
-                                if (lbx.onSelectionChanged) 
-                                    lbx.onSelectionChanged(lbx, new EventArgs());
+                                self.mSelIndex = cast(int) selIndx;
+                                if (self.onSelectionChanged) 
+                                    self.onSelectionChanged(self, new EventArgs());
                             }
                         }
                     break;
                     case LBN_SETFOCUS:
-                        if (lbx.onGotFocus) lbx.onGotFocus(lbx, new EventArgs());
+                        if (self.onGotFocus) self.onGotFocus(self, new EventArgs());
                     break;
                     // case LBN_SELCANCEL: break;
                     // case LBN_ERRSPACE: break;
                     default: break;
                 }
-            break;
-            case CM_FONT_CHANGED:
-                ListBox lbx = getControl!ListBox(refData);
-                lbx.updateFontHandle();
-                return 0;
             break;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 

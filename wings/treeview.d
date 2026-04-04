@@ -298,54 +298,19 @@ private LRESULT tvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
+        TreeView self = getControl!TreeView(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
             case WM_DESTROY: 
                 RemoveWindowSubclass(hWnd, &tvWndProc, scID); 
             break;
             case WM_PAINT: 
-                TreeView tv = getControl!TreeView(refData);
-                tv.paintHandler(); 
-            break;
-            case WM_SETFOCUS: 
-                TreeView tv = getControl!TreeView(refData);
-                tv.setFocusHandler(); 
-            break;
-            case WM_KILLFOCUS: 
-                TreeView tv = getControl!TreeView(refData);
-                tv.killFocusHandler(); 
-            break;
-            case WM_LBUTTONDOWN: 
-                TreeView tv = getControl!TreeView(refData);
-                tv.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP: 
-                TreeView tv = getControl!TreeView(refData);
-                tv.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                TreeView tv = getControl!TreeView(refData);
-                tv.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                TreeView tv = getControl!TreeView(refData);
-                tv.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                TreeView tv = getControl!TreeView(refData);
-                tv.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                TreeView tv = getControl!TreeView(refData);
-                tv.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE: 
-                TreeView tv = getControl!TreeView(refData);
-                tv.mouseLeaveHandler(); 
-            break;
-            case CM_FONT_CHANGED:
-                TreeView tv = getControl!TreeView(refData);
-                tv.updateFontHandle();
-                return 0;
+                self.paintHandler(); 
             break;
             default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }

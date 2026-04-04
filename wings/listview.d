@@ -968,69 +968,30 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
+        ListView self = getControl!ListView(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
             case WM_DESTROY: 
-                ListView lv = getControl!ListView(refData);
-                lv.finalize(scID); 
+                self.finalize(scID); 
             break;
             case WM_PAINT: 
-                ListView lv = getControl!ListView(refData);
-                lv.paintHandler(); 
+                self.paintHandler(); 
             break;
-            case WM_SETFOCUS: 
-                ListView lv = getControl!ListView(refData);
-                lv.setFocusHandler(); 
-            break;
-            case WM_KILLFOCUS: 
-                ListView lv = getControl!ListView(refData);
-                lv.killFocusHandler(); 
-            break;
-            case WM_LBUTTONDOWN: 
-                ListView lv = getControl!ListView(refData);
-                lv.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP: 
-                ListView lv = getControl!ListView(refData);
-                lv.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                ListView lv = getControl!ListView(refData);
-                lv.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                ListView lv = getControl!ListView(refData);
-                lv.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                ListView lv = getControl!ListView(refData);
-                lv.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                ListView lv = getControl!ListView(refData);
-                lv.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE: 
-                ListView lv = getControl!ListView(refData);
-                lv.mouseLeaveHandler(); 
-            break;
-            case WM_CONTEXTMENU: 
-                ListView lv = getControl!ListView(refData);
-                if (lv.mCmenu) lv.mCmenu.showMenu(lParam); 
-            break;
-
             case CM_NOTIFY:
                 // Windows will send this msg to parent window and parent window transfer this to here.
-                ListView lv = getControl!ListView(refData);
-                return lv.wmNotifyHandler(lParam);
+                return self.wmNotifyHandler(lParam);
             break;
-
             case WM_NOTIFY: // This msg is coming from Header control.
-                ListView lv = getControl!ListView(refData);
                 auto nmh= cast(NMHDR*) lParam;
                 switch (nmh.code) {
                     case NM_CUSTOMDRAW:  // Let's draw header back & fore colors
                         auto nmcd = cast(NMCUSTOMDRAW*) lParam;
-                        if (!lv.mDrawHeader) {
+                        if (!self.mDrawHeader) {
                             switch (nmcd.dwDrawStage)  {// NM_CUSTOMDRAW is always -12 when item painting
                                 case CDDS_PREPAINT:
                                     /*-------------------------------------------------------------- 
@@ -1049,7 +1010,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                     header colors, text and tell the system to not to draw anything on 
                                     this header. So system will skip the default drawing jobs. 
                                     --------------------------------------------------------------------*/
-                                    return lv.headerCustomDraw(nmcd);
+                                    return self.headerCustomDraw(nmcd);
                                 break;
                                 //case CDDS_ITEMPOSTPAINT:
                                 //   // lv.headerCustomDraw(nmcd);
@@ -1061,11 +1022,6 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     break;
                     default: /*print("other code ", nmcd.hdr.code); */ break;
                 }
-            break;
-            case CM_FONT_CHANGED:
-                ListView lv = getControl!ListView(refData);
-                lv.updateFontHandle();
-                return 0;
             break;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 
@@ -1082,6 +1038,7 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 {
     try {       
        //printWinMsg(message);
+       ListView self = getControl!ListView(refData);
         switch (message) {
             case WM_DESTROY: RemoveWindowSubclass(hWnd, &hdrWndProc, scID); break;
             case WM_MOUSEMOVE:
@@ -1093,28 +1050,25 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 the item index which is under the pointer. So we can set the drawing
                 flag for that column. 
                 --------------------------------------------------------------------------*/
-                ListView lv = getControl!ListView(refData);
                 HD_HITTESTINFO hinfo;
                 hinfo.pt = getMousePos(lParam);
-                lv.mHotHdr = cast(int) SendMessage(hWnd, HDM_HITTEST, 0, cast(LPARAM) &hinfo);
+                self.mHotHdr = cast(int) SendMessage(hWnd, HDM_HITTEST, 0, cast(LPARAM) &hinfo);
             break;
             case WM_MOUSELEAVE:
                 /* When mouse leaves the header, we need to set flag to false and repaint */
-                ListView lv = getControl!ListView(refData);
-                lv.mHotHdr = -1;
+                self.mHotHdr = -1;
             break;
             case HDM_LAYOUT:
-                /* Set the window pos structures fields, so that windows will adjust our header & lv */
-                ListView lv = getControl!ListView(refData);
-                if (lv.mChangeHdrHeight) {
+                /* Set the window pos structures fields, so that windows will adjust our header & self */
+                if (self.mChangeHdrHeight) {
                     LPHDLAYOUT pHl = cast(LPHDLAYOUT) lParam;
                     pHl.pwpos.hwnd = hWnd;
                     pHl.pwpos.flags = SWP_FRAMECHANGED;
                     pHl.pwpos.x = pHl.prc.left;
                     pHl.pwpos.y = 0;
                     pHl.pwpos.cx = (pHl.prc.right - pHl.prc.left);
-                    pHl.pwpos.cy = lv.mHdrHeight;
-                    pHl.prc.top =lv.mHdrHeight;
+                    pHl.pwpos.cy = self.mHdrHeight;
+                    pHl.prc.top =self.mHdrHeight;
                     return 1;
                 }
             break;
@@ -1125,15 +1079,14 @@ private LRESULT hdrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 we are using white color for header. 
                 -------------------------------------------------------------------*/
                 // First, let the control to do it's necessary drawings.
-                ListView lv = getControl!ListView(refData);
                 DefSubclassProc(hWnd, message, wParam, lParam);
 
                 // Now, we can draw the last part of the header.
                 RECT hrc;
-                SendMessage(hWnd, HDM_GETITEMRECT, lv.mColumns.length - 1, cast(LPARAM) &hrc);
-                auto rc = RECT(hrc.right + 1, hrc.top, lv.width, hrc.bottom);
+                SendMessage(hWnd, HDM_GETITEMRECT, self.mColumns.length - 1, cast(LPARAM) &hrc);
+                auto rc = RECT(hrc.right + 1, hrc.top, self.width, hrc.bottom);
                 HDC hdc = GetDC(hWnd);
-                FillRect(hdc, &rc, lv.mHdrDefBkBrush);
+                FillRect(hdc, &rc, self.mHdrDefBkBrush);
                 ReleaseDC(hWnd, hdc);
                 return 0;
             break;

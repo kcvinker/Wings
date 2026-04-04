@@ -240,97 +240,57 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
-        switch (message) {
-            
+        GroupBox self = getControl!GroupBox(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
+        switch (message) {            
             case WM_DESTROY: 
-                RemoveWindowSubclass(hWnd, &gbWndProc, scID);
-                GroupBox gb = getControl!GroupBox(refData);
-                gb.finalize(); 
-            break;
-            case WM_SETFOCUS: 
-                GroupBox gb = getControl!GroupBox(refData);
-                gb.setFocusHandler(); 
-            break;
-            case WM_KILLFOCUS: 
-                GroupBox gb = getControl!GroupBox(refData);
-                gb.killFocusHandler(); 
-            break;
-            case WM_LBUTTONDOWN: 
-                GroupBox gb = getControl!GroupBox(refData);
-                gb.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP: 
-                GroupBox gb = getControl!GroupBox(refData);
-                gb.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                GroupBox gb = getControl!GroupBox(refData);
-                gb.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                GroupBox gb = getControl!GroupBox(refData);
-                gb.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                GroupBox gb = getControl!GroupBox(refData);
-                gb.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                GroupBox gb = getControl!GroupBox(refData);
-                gb.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE: 
-                GroupBox gb = getControl!GroupBox(refData);
-                gb.mouseLeaveHandler(); 
+                RemoveWindowSubclass(hWnd, &gbWndProc, scID);                
+                self.finalize(); 
             break;
             case WM_GETTEXTLENGTH: 
-                GroupBox gb = getControl!GroupBox(refData);
-                if (gb.mGBStyle == GroupBoxStyle.overriden) return 0;
+                if (self.mGBStyle == GroupBoxStyle.overriden) return 0;
             break;
             case CM_COLOR_STATIC:
-                GroupBox gb = getControl!GroupBox(refData);
-                if (gb.mGBStyle == GroupBoxStyle.classic) {
+                if (self.mGBStyle == GroupBoxStyle.classic) {
                     HDC hdc = cast(HDC)wParam;
                     SetBkMode(hdc, TRANSPARENT);
-                    SetTextColor(hdc, gb.mForeColor.cref);    
+                    SetTextColor(hdc, self.mForeColor.cref);    
                 }
-        	    return cast(LRESULT)gb.mBkBrush;
+        	    return cast(LRESULT)self.mBkBrush;
             break;
             case WM_ERASEBKGND:
-                GroupBox gb = getControl!GroupBox(refData);
                 auto hdc = cast(HDC)wParam;
-                if (gb.mGetWidth) {
+                if (self.mGetWidth) {
                     SIZE sz;
-                    SelectObject(hdc, gb.mFont.mHandle);
-                    GetTextExtentPoint32(hdc, gb.mWtext.constPtr, gb.mWtext.inputLen, &sz);
-                    gb.mTxtWidth = sz.cx + 10;
-                    gb.mGetWidth = false;                    
+                    SelectObject(hdc, self.mFont.mHandle);
+                    GetTextExtentPoint32(hdc, self.mWtext.constPtr, self.mWtext.inputLen, &sz);
+                    self.mTxtWidth = sz.cx + 10;
+                    self.mGetWidth = false;                    
                 }
-                if (gb.mDBFill) {
-                    gb.mMemDc = CreateCompatibleDC(hdc);
-                    gb.mBmp = CreateCompatibleBitmap(hdc, gb.mWidth, gb.mHeight);
-                    SelectObject(gb.mMemDc, gb.mBmp);
-                    FillRect(gb.mMemDc, &gb.mRect, gb.mBkBrush);
-                    gb.mDBFill = false;
+                if (self.mDBFill) {
+                    self.mMemDc = CreateCompatibleDC(hdc);
+                    self.mBmp = CreateCompatibleBitmap(hdc, self.mWidth, self.mHeight);
+                    SelectObject(self.mMemDc, self.mBmp);
+                    FillRect(self.mMemDc, &self.mRect, self.mBkBrush);
+                    self.mDBFill = false;
                 }
-                BitBlt(hdc, 0, 0, gb.mWidth, gb.mHeight, gb.mMemDc, 0, 0, SRCCOPY);
+                BitBlt(hdc, 0, 0, self.mWidth, self.mHeight, self.mMemDc, 0, 0, SRCCOPY);
                 return 1;
                 
             break;
             case WM_PAINT:
-                GroupBox gb = getControl!GroupBox(refData);
-                if (gb.mGBStyle == GroupBoxStyle.overriden) {
+                if (self.mGBStyle == GroupBoxStyle.overriden) {
                     auto ret = DefSubclassProc(hWnd, message, wParam, lParam);
                     auto gfx = new Graphics(hWnd);
-                    gfx.drawHLine(gb.mPen, 10, 9, gb.mTxtWidth);
-                    gfx.drawText(gb, 12, 0);
+                    gfx.drawHLine(self.mPen, 10, 9, self.mTxtWidth);
+                    gfx.drawText(self, 12, 0);
                     return ret;
                 }
-            break;
-            case CM_FONT_CHANGED:
-                GroupBox gb = getControl!GroupBox(refData);
-                gb.updateFontHandle();
-                return 0;
             break;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 

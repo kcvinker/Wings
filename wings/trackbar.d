@@ -483,131 +483,97 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                                 UINT_PTR scID, DWORD_PTR refData)
 {
     try {
+        TrackBar self = getControl!TrackBar(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
             case WM_DESTROY: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                if (tkb.mRecreateEnabled) {
+                if (self.mRecreateEnabled) {
                     RemoveWindowSubclass(hWnd, &tkbWndProc, scID); 
                 } else {
-                    tkb.finalize(hWnd, scID);
+                    self.finalize(hWnd, scID);
                 }
                 
             break;
             case CM_COLOR_STATIC: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                return cast(LRESULT) tkb.mBkBrush; 
+                return cast(LRESULT) self.mBkBrush; 
             break;
             case WM_PAINT: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                tkb.paintHandler(); 
-            break;
-            case WM_SETFOCUS: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                tkb.setFocusHandler(); 
-            break;
-            case WM_KILLFOCUS: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                tkb.killFocusHandler(); 
-            break;
-            case WM_LBUTTONDOWN: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                tkb.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                tkb.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                tkb.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                tkb.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                tkb.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                tkb.mouseMoveHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSELEAVE: 
-                TrackBar tkb = getControl!TrackBar(refData);
-                tkb.mouseLeaveHandler(); 
+                self.paintHandler(); 
             break;
             case CM_HSCROLL, CM_VSCROLL:
-                TrackBar tkb = getControl!TrackBar(refData);
                 auto lwp = LOWORD(wParam);
                 switch (lwp) {
                     case TB_THUMBPOSITION:
-                        tkb.setupValueInternal(HIWORD(wParam));
-                        if (!tkb.mFreeMove) {
-                            int pos = tkb.mValue;
-                            double half = tkb.mFrequency / 2;
-                            auto diff = pos % tkb.mFrequency;
+                        self.setupValueInternal(HIWORD(wParam));
+                        if (!self.mFreeMove) {
+                            int pos = self.mValue;
+                            double half = self.mFrequency / 2;
+                            auto diff = pos % self.mFrequency;
                             if (diff >= half) {
-                                pos = (tkb.mFrequency - diff) + tkb.mValue;
+                                pos = (self.mFrequency - diff) + self.mValue;
                             } else if (diff < half) {
-                                pos =  tkb.mValue - diff;
+                                pos =  self.mValue - diff;
                             }
 
-                            if (tkb.mReversed) {
-                                tkb.sendMsg(TBM_SETPOS, true, (pos * -1));
+                            if (self.mReversed) {
+                                self.sendMsg(TBM_SETPOS, true, (pos * -1));
                             } else {
-                                tkb.sendMsg(TBM_SETPOS, true, pos);
+                                self.sendMsg(TBM_SETPOS, true, pos);
                             }
-                            tkb.mValue = pos;
+                            self.mValue = pos;
                         }
 
                         // We need to refresh Trackbar in order to display our new drawings.
-                        InvalidateRect(hWnd, &tkb.mChannelRc, false);
+                        InvalidateRect(hWnd, &self.mChannelRc, false);
 
-                        tkb.mTrackChange = TrackChange.mouseDrag;
-                        if (tkb.onDragged) tkb.onDragged(tkb, new EventArgs());
-                        if (tkb.onValueChanged) tkb.onValueChanged(tkb, new EventArgs());
+                        self.mTrackChange = TrackChange.mouseDrag;
+                        if (self.onDragged) self.onDragged(self, new EventArgs());
+                        if (self.onValueChanged) self.onValueChanged(self, new EventArgs());
                     break;
                     case THUMB_LINE_HIGH:
-                        tkb.setupValueInternal(cast(int)tkb.sendMsg(TBM_GETPOS, 0, 0));
-                        tkb.mTrackChange = TrackChange.arrowHigh;
-                        if (tkb.onValueChanged) tkb.onValueChanged(tkb, new EventArgs());
+                        self.setupValueInternal(cast(int)self.sendMsg(TBM_GETPOS, 0, 0));
+                        self.mTrackChange = TrackChange.arrowHigh;
+                        if (self.onValueChanged) self.onValueChanged(self, new EventArgs());
                     break;
                     case THUMB_LINE_LOW:
-                        tkb.setupValueInternal(cast(int)tkb.sendMsg(TBM_GETPOS, 0, 0));
-                        tkb.mTrackChange = TrackChange.arrowLow;
-                        if (tkb.onValueChanged) tkb.onValueChanged(tkb, new EventArgs());
+                        self.setupValueInternal(cast(int)self.sendMsg(TBM_GETPOS, 0, 0));
+                        self.mTrackChange = TrackChange.arrowLow;
+                        if (self.onValueChanged) self.onValueChanged(self, new EventArgs());
                     break;
                     case THUMB_PAGE_HIGH:
-                        tkb.setupValueInternal(cast(int)tkb.sendMsg(TBM_GETPOS, 0, 0));
-                        tkb.mTrackChange = TrackChange.pageHigh;
-                        if (tkb.onValueChanged) tkb.onValueChanged(tkb, new EventArgs());
+                        self.setupValueInternal(cast(int)self.sendMsg(TBM_GETPOS, 0, 0));
+                        self.mTrackChange = TrackChange.pageHigh;
+                        if (self.onValueChanged) self.onValueChanged(self, new EventArgs());
                     break;
                     case THUMB_PAGE_LOW:
-                        tkb.setupValueInternal(cast(int)tkb.sendMsg(TBM_GETPOS, 0, 0));
-                        tkb.mTrackChange = TrackChange.pageLow;
-                        if (tkb.onValueChanged) tkb.onValueChanged(tkb, new EventArgs());
+                        self.setupValueInternal(cast(int)self.sendMsg(TBM_GETPOS, 0, 0));
+                        self.mTrackChange = TrackChange.pageLow;
+                        if (self.onValueChanged) self.onValueChanged(self, new EventArgs());
                     break;
                     case TB_THUMBTRACK:
-                        tkb.setupValueInternal(cast(int)tkb.sendMsg(TBM_GETPOS, 0, 0));
-                        if (tkb.onDragging) tkb.onDragging(tkb, new EventArgs());
+                        self.setupValueInternal(cast(int)self.sendMsg(TBM_GETPOS, 0, 0));
+                        if (self.onDragging) self.onDragging(self, new EventArgs());
                     break;
                     default: break;
                 }
             break;
             case CM_NOTIFY:
-                TrackBar tkb = getControl!TrackBar(refData);
                 auto nmh = cast(LPNMHDR) lParam;
                 final switch (nmh.code) {
                     case NM_CUSTOMDRAW:
-                        if (tkb.mCustDraw) {
+                        if (self.mCustDraw) {
                             auto nmcd = cast(LPNMCUSTOMDRAW) lParam;
                             if (nmcd.dwDrawStage == CDDS_PREPAINT) return CDRF_NOTIFYITEMDRAW;
 
                             if (nmcd.dwDrawStage ==  CDDS_ITEMPREPAINT) {
                                 if (nmcd.dwItemSpec == TBCD_TICS) {
-                                    if (!tkb.mNoTics) {
-                                        tkb.drawTics(nmcd.hdc);
+                                    if (!self.mNoTics) {
+                                        self.drawTics(nmcd.hdc);
                                         return CDRF_SKIPDEFAULT;
                                     }
                                 }
@@ -619,16 +585,16 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                                     these flags. But in this case, we don't need to reduce 1 point from...
                                     the coloring rect. It looks perfect without changing rect. 
                                     ----------------------------------------------------------------------*/
-                                    if (tkb.mChannelSTyle == ChannelStyle.classic) {
-                                        DrawEdge(nmcd.hdc, &nmcd.rc, BDR_SUNKENOUTER, tkb.mChannelFlag);
+                                    if (self.mChannelSTyle == ChannelStyle.classic) {
+                                        DrawEdge(nmcd.hdc, &nmcd.rc, BDR_SUNKENOUTER, self.mChannelFlag);
                                     } else {
-                                        SelectObject(nmcd.hdc, tkb.mChannelPen);
+                                        SelectObject(nmcd.hdc, self.mChannelPen);
                                         Rectangle(nmcd.hdc, nmcd.rc.left, nmcd.rc.top, nmcd.rc.right, nmcd.rc.bottom );
                                     }
 
-                                    if (tkb.mSelRange) {// Fill the selection range
-                                        auto rc = tkb.getThumbRect();
-                                        if (tkb.fillChannelRect(nmcd, rc)) InvalidateRect(hWnd, &nmcd.rc, false);
+                                    if (self.mSelRange) {// Fill the selection range
+                                        auto rc = self.getThumbRect();
+                                        if (self.fillChannelRect(nmcd, rc)) InvalidateRect(hWnd, &nmcd.rc, false);
                                     }
                                     return CDRF_SKIPDEFAULT;
                                 }
@@ -638,7 +604,7 @@ private LRESULT tkbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                         }
                     break;
                     case 4_294_967_280: // con.TRBN_THUMBPOSCHANGING:                        
-                        tkb.mTrackChange = TrackChange.mouseClick;
+                        self.mTrackChange = TrackChange.mouseClick;
                     break;
                 }
             break;

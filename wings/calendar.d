@@ -158,66 +158,46 @@ extern(Windows)
 private LRESULT calWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                                 UINT_PTR scID, DWORD_PTR refData)
 {
-    try {        
+    try {       
+        Calendar self = getControl!Calendar(refData); 
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
-            case WM_DESTROY : 
-                // Calendar cal = getControl!Calendar(refData);
+            case WM_DESTROY:
                 RemoveWindowSubclass(hWnd, &calWndProc, scID); 
             break;
-            case WM_PAINT :
-                Calendar cal = getControl!Calendar(refData);
-                cal.paintHandler(); 
-            break;
-            case WM_LBUTTONDOWN :
-                Calendar cal = getControl!Calendar(refData);
-                cal.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP :
-                Calendar cal = getControl!Calendar(refData);
-                cal.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN :
-                Calendar cal = getControl!Calendar(refData);
-                cal.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP :
-                Calendar cal = getControl!Calendar(refData);
-                cal.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL :
-                Calendar cal = getControl!Calendar(refData);
-                cal.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE :
-                Calendar cal = getControl!Calendar(refData);
-                cal.mouseMoveHandler(message, wParam, lParam); break;
-            case WM_MOUSELEAVE :
-                Calendar cal = getControl!Calendar(refData);
-                cal.mouseLeaveHandler(); break;
-            case CM_NOTIFY :
-                Calendar cal = getControl!Calendar(refData);
+            case WM_PAINT:
+                self.paintHandler(); 
+            break;            
+            case CM_NOTIFY:
                 auto nm = cast(NMHDR *) lParam;
                 switch (nm.code) {
                     case MCN_SELECT :
                         auto nms = cast(NMSELCHANGE *) lParam;
-                        cal.value = DateTime(nms.stSelStart);
-                        if (cal.valueChanged) cal.valueChanged(cal, new EventArgs());
-                        break;
+                        self.value = DateTime(nms.stSelStart);
+                        if (self.valueChanged) self.valueChanged(self, new EventArgs());
+                    break;
                     case MCN_SELCHANGE :
                         auto nms = cast(NMSELCHANGE *) lParam;
-                        cal.value = DateTime(nms.stSelStart);
-                        if (cal.selectionChanged) cal.selectionChanged(cal, new EventArgs());
-                        break;
+                        self.value = DateTime(nms.stSelStart);
+                        if (self.selectionChanged) self.selectionChanged(self, new EventArgs());
+                    break;
                     case MCN_VIEWCHANGE :
                         auto nmv = cast(NMVIEWCHANGE *) lParam;
-                        cal.viewMode = cast(ViewMode) nmv.dwNewView;
-                        cal.oldViewMode = cast(ViewMode) nmv.dwOldView;
-                        if (cal.viewChanged) cal.viewChanged(cal, new EventArgs());
-                        break;
+                        self.viewMode = cast(ViewMode) nmv.dwNewView;
+                        self.oldViewMode = cast(ViewMode) nmv.dwOldView;
+                        if (self.viewChanged) self.viewChanged(self, new EventArgs());
+                    break;
                     default : break;
                 }
             break;
-          	default : return DefSubclassProc(hWnd, message, wParam, lParam); break;
+          	default : 
+                return DefSubclassProc(hWnd, message, wParam, lParam); 
+            break;
         }
     }
     catch (Exception e) {}

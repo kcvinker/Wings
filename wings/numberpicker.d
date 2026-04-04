@@ -463,70 +463,28 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 {
     try {
         //printWinMsg(message);
+        NumberPicker self = getControl!NumberPicker(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
             case WM_DESTROY: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.finalize(scID); 
+                self.finalize(scID); 
             break;
             case CM_NOTIFY:
-                NumberPicker np = getControl!NumberPicker(refData);
                 auto nm = cast(NMUPDOWN*) lParam;
                 if (nm.hdr.code == UDN_DELTAPOS) {//writeln("delta pos");
-                    auto tbstr = np.getControlText(np.mBuddyHandle);
-                    np.mValue = parse!double(tbstr);
-                    np.setValueInternal(nm.iDelta);
-                    if (np.onValueChanged) np.onValueChanged(np, new EventArgs());
-                }
-            break;
-            case WM_MOUSELEAVE:
-                NumberPicker np = getControl!NumberPicker(refData);
-                if (np.mTrackMouseLeave) {
-                    if (!np.isMouseOnMe()) {
-                        np.isMouseEntered = false;
-                        if (np.mOnMouseLeave) np.mOnMouseLeave(np, new EventArgs());
-                    }
+                    auto tbstr = self.getControlText(self.mBuddyHandle);
+                    self.mValue = parse!double(tbstr);
+                    self.setValueInternal(nm.iDelta);
+                    if (self.onValueChanged) self.onValueChanged(self, new EventArgs());
                 }
             break;
             case WM_PAINT: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.paintHandler(); 
-            break;
-            case WM_SETFOCUS: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.setFocusHandler(); 
-            break;
-            case WM_KILLFOCUS: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.killFocusHandler(); 
-            break;
-            case WM_LBUTTONDOWN: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.npMouseMoveHandler(message, wParam, lParam); 
-            break;
-            case CM_FONT_CHANGED:
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.updateFontHandle();
-                return 0;
+                self.paintHandler(); 
             break;
             default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }
@@ -541,45 +499,18 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 {
     try {
         //printWinMsg(message);
+        NumberPicker self = getControl!NumberPicker(refData);
+        auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
+        if (res == MsgHandlerResult.callDefProc) {
+            return DefSubclassProc(hWnd, message, wParam, lParam);
+        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+            return cast(LRESULT) res;
+        }
         switch (message) {
             case WM_DESTROY: 
-                NumberPicker np = getControl!NumberPicker(refData);
                 RemoveWindowSubclass(hWnd, &buddyWndProc, scID ); 
             break;
-            case WM_SETFOCUS: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.setFocusHandler(); 
-            break;
-            case WM_KILLFOCUS: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.killFocusHandler(); 
-            break;
-            case WM_LBUTTONDOWN: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.mouseDownHandler(message, wParam, lParam); 
-            break;
-            case WM_LBUTTONUP: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.mouseUpHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONDOWN: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.mouseRDownHandler(message, wParam, lParam); 
-            break;
-            case WM_RBUTTONUP: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.mouseRUpHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEWHEEL: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.mouseWheelHandler(message, wParam, lParam); 
-            break;
-            case WM_MOUSEMOVE: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.npMouseMoveHandler(message, wParam, lParam); 
-            break;
             case WM_PAINT:
-                NumberPicker np = getControl!NumberPicker(refData);
 
                 // Let the control paint it's basic stuff.
                 DefSubclassProc(hWnd, message, wParam, lParam);
@@ -593,54 +524,30 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 edit's back color. 
                 ------------------------------------------------------------------------------*/
                 HDC hdc = GetDC(hWnd);
-                DrawEdge(hdc, &np.mTBRect, BDR_SUNKENOUTER, np.mTopEdgeFlag);
-                DrawEdge(hdc, &np.mTBRect, BDR_RAISEDINNER, np.mBotEdgeFlag);
-                auto fpen = CreatePen(PS_SOLID, 1, np.mBackColor.cref);
+                DrawEdge(hdc, &self.mTBRect, BDR_SUNKENOUTER, self.mTopEdgeFlag);
+                DrawEdge(hdc, &self.mTBRect, BDR_RAISEDINNER, self.mBotEdgeFlag);
+                auto fpen = CreatePen(PS_SOLID, 1, self.mBackColor.cref);
                 scope(exit) DeleteObject(fpen);
-                MoveToEx(hdc, np.mLineX, np.mTBRect.top + 1, null);
+                MoveToEx(hdc, self.mLineX, self.mTBRect.top + 1, null);
                 SelectObject(hdc, fpen);
-                LineTo(hdc, np.mLineX, np.mTBRect.bottom - 1);
+                LineTo(hdc, self.mLineX, self.mTBRect.bottom - 1);
                 ReleaseDC(hWnd, hdc);
                 return 1;
             break;
             case EM_SETSEL: return 1; break; // To eliminate the text selection
             case CM_COLOR_EDIT:
-                NumberPicker np = getControl!NumberPicker(refData);
-                if (np.mDrawFlag) {
+                if (self.mDrawFlag) {
                     auto hdc = cast(HDC) wParam;
-                    if (np.mDrawFlag & 1) SetTextColor(hdc, np.mForeColor.cref);
-                    np.mBkBrush = CreateSolidBrush(np.mBackColor.cref);
-                    SetBkColor(hdc, np.mBackColor.cref);
-                    return cast(LRESULT) np.mBkBrush;
-                }
-            break;
-            case WM_KEYDOWN:
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.mKeyPressed = true;
-                np.keyDownHandler(wParam);
-            break;
-            case WM_KEYUP: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.keyUpHandler(wParam); 
-            break;
-            case WM_CHAR: 
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.keyPressHandler(wParam); 
-            break;
-            case WM_MOUSELEAVE:
-                NumberPicker np = getControl!NumberPicker(refData);
-                if (np.mTrackMouseLeave) {
-                    if (!np.isMouseOnMe()) {
-                        np.isMouseEntered = false;
-                        if (np.mOnMouseLeave) np.mOnMouseLeave(np, new EventArgs());
-                    }
+                    if (self.mDrawFlag & 1) SetTextColor(hdc, self.mForeColor.cref);
+                    self.mBkBrush = CreateSolidBrush(self.mBackColor.cref);
+                    SetBkColor(hdc, self.mBackColor.cref);
+                    return cast(LRESULT) self.mBkBrush;
                 }
             break;
             case CM_CTLCOMMAND:
-                NumberPicker np = getControl!NumberPicker(refData);
                 auto nCode = HIWORD(wParam);
                 if (nCode == EN_UPDATE) {
-                    if (np.mHideCaret) HideCaret(hWnd);
+                    if (self.mHideCaret) HideCaret(hWnd);
                 }
             break;
             case CM_BUDDY_RESIZE: 
@@ -650,8 +557,7 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                 After sending the UDM_SETBUDDY message, the previous NumberPicker's buddy...
                 will be sperated from it's updown. So we need to combine them once again. 
                 ----------------------------------------------------------------------------*/
-                NumberPicker np = getControl!NumberPicker(refData);
-                np.resizeBuddy(); 
+                self.resizeBuddy(); 
             break;
             default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }

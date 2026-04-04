@@ -134,6 +134,8 @@ enum PictureSizeMode {
     zoom        // scale while keeping aspect ratio
 }
 
+enum MsgHandlerResult { returnZero, returnOne, callDefProc, proceedFunc}
+
 enum Key {
     modifier = -65_536,
     none = 0,
