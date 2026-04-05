@@ -1,5 +1,8 @@
 Wings changelog
 
+1.0.071 (5-Apr-2026)
+    Fixed bug in ComboBox mouse enter & mouse leave events.
+
 1.0.070 (4-Apr-2026)
     Removed redundant code.
         Implemented centralized message handling system and removed hundreds of redundant code.

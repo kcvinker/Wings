@@ -47,6 +47,8 @@ module wings.combobox; // Created on 02-May-2022 15:02:41
 import wings.d_essentials;
 import std.conv;
 import std.utf;
+import std.stdio;
+
 
 import std.algorithm.mutation; // We have a function called 'remove'. So this must be renamed.
 import wings.wings_essentials;
@@ -74,6 +76,7 @@ class ComboBox: Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         this.mHasFont = true;
+        this.mSpMLeaveProc = &specialMouseLeaveMsgHanlder;
         ++Control.stCtlId;        
         if (parent.mAutoCreate) this.createHandle();
     }
@@ -277,6 +280,8 @@ class ComboBox: Control
         }
     }
 
+    package:
+        RECT mMyRect;
 
 	private:
     // Variables
@@ -306,6 +311,11 @@ class ComboBox: Control
                                 UINT_PTR(editSubClsID),
                                 this.toDwPtr);
             ++editSubClsID;
+            RECT r;
+            GetClientRect(this.mHandle, &r);
+            printRct(r, POINT(1, 1), false);
+            SetRect(&this.mMyRect, this.mXpos, this.mYpos, this.mXpos + r.right, this.mYpos + r.bottom);
+            printRct(this.mMyRect, POINT(0, 0), false);
 		}
 
         // Internal function to insert items to ComboBox.
@@ -337,7 +347,41 @@ class ComboBox: Control
 
 } // End class ComboBox...........................................
 
+int x1 = 1;
+void printRct(RECT r, POINT p, BOOL res) {
+        stdout.flush();
+		writefln("[%d]  [%d, %d, %d, %d], [%d, %d] == %s", x1, r.left, r.top, r.right, r.bottom, p.x, p.y, res);
+		x1 += 1;
+        
+	}
 
+MsgHandlerResult specialMouseLeaveMsgHanlder(Control ctl)
+{
+    /* Since combo box is a combination of a button control and an
+        * edit control, we need special treatment for mouse leave event.
+        * We need to check if the mouse pointer is inside our control
+        * rect each time we get a mouse leave message. Some times, user
+        * moves the mouse from edit to arrow button or vice versa.*/
+    if (ctl.onMouseLeave || ctl.onMouseEnter || ctl.onMouseMove) {
+        auto self = cast(ComboBox) ctl;
+        POINT pt;
+        GetCursorPos(&pt);
+        ScreenToClient(self.mParent.mHandle, &pt);        
+        BOOL inside = PtInRect(&self.mMyRect, pt);
+        
+        if (inside) {     
+            printRct(self.mMyRect, pt, inside);   
+            return MsgHandlerResult.returnOne;
+        } else {
+            // self._isMouseEntered = false;
+            if (self.mIsMouseTracking &&  self.onMouseLeave) {
+                self.mIsMouseTracking = false;
+                self.onMouseLeave(self, new EventArgs());
+            }
+        }
+    }
+    return MsgHandlerResult.callDefProc; 
+}
 
 
 extern(Windows)
@@ -350,7 +394,7 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
         if (res == MsgHandlerResult.callDefProc) {
             return DefSubclassProc(hWnd, message, wParam, lParam);
-        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+        } else if (res == MsgHandlerResult.returnOne || res == MsgHandlerResult.returnZero) {
             return cast(LRESULT) res;
         }
         switch (message) {
@@ -443,7 +487,7 @@ private LRESULT cmbEditWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
         auto res = self.commonMsgHandler(hWnd, message, wParam, lParam);
         if (res == MsgHandlerResult.callDefProc) {
             return DefSubclassProc(hWnd, message, wParam, lParam);
-        } else if (res == MsgHandlerResult.returnZero || res == MsgHandlerResult.returnOne) {
+        } else if (res == MsgHandlerResult.returnOne || res == MsgHandlerResult.returnZero) {
             return cast(LRESULT) res;
         }
         switch (message) {

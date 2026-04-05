@@ -17,6 +17,9 @@ import wings.colors;
 import wings.contextmenu;
 
 
+alias SpecialMouseMoveHandler = MsgHandlerResult function(Control sender, HWND hw, UINT message, 
+                                                            WPARAM wParam, LPARAM lParam);
+alias SpecialMouseLeaveHandler = MsgHandlerResult function(Control sender);
 
 
 enum repeatingCode = "  mWidth = w;
@@ -300,6 +303,7 @@ class Control {
         bool lDownHappened;
         bool rDownHappened;
         bool isMouseEntered;
+        bool mIsMouseTracking;
         bool mDisabled;
         bool mHasFont;
         int mWidth;
@@ -317,6 +321,8 @@ class Control {
         WideString mWtext;
         static int mSubClassId = 1000;
         int mRight, mBottom;
+        SpecialMouseMoveHandler mSpMMoveProc;
+        SpecialMouseLeaveHandler mSpMLeaveProc;
 
         void createHandleInternal(wchar* clsname)
         {  // protected
@@ -563,20 +569,34 @@ class Control {
 
             void mouseMoveHandler(UINT msg, WPARAM wp, LPARAM lp)
             {
-                if (this.isMouseEntered) {
-                    if (this.onMouseMove) {
-                        auto mea = new MouseEventArgs(msg, wp, lp);
-                        this.onMouseMove(this, mea);
-                    }
-                } else {
-                    this.isMouseEntered = true;
-                    if (this.onMouseEnter) this.onMouseEnter(this, new EventArgs());
+                if (this.onMouseMove) {
+                    auto mea = new MouseEventArgs(msg, wp, lp);
+                    this.onMouseMove(this, mea);
                 }
+
+                // 2. Determine if we need to start/restart tracking
+                bool needsLeave = (this.onMouseEnter != null || this.onMouseLeave != null);
+                bool needsHover = (this.onMouseHover != null);
+
+                if (needsLeave || needsHover) {
+                    if (!this.mIsMouseTracking) {
+                        uint flags = 0;
+                        if (needsLeave) flags |= TME_LEAVE;
+                        if (needsHover) flags |= TME_HOVER;
+
+                        // Start tracking with combined flags
+                        this.mIsMouseTracking = cast(bool) trackMouseMove(this.mHandle, flags);                         
+
+                        // Fire Mouse Enter immediately on transition
+                        if (this.onMouseEnter) this.onMouseEnter(this, new EventArgs()); 
+                    }
+                    // if (this.name.str_view() == "ComboBox_1") ptf("combo mouse enter 525 = %s", this._isMouseTracking);
+                } 	
             }
 
             void mouseLeaveHandler()
             {
-                this.isMouseEntered = false;
+                this.mIsMouseTracking = false;
                 if (this.onMouseLeave) this.onMouseLeave(this, new EventArgs());
             }
 
@@ -623,10 +643,19 @@ class Control {
                         this.mouseWheelHandler(msg, wpm, lpm); 
                     break;
                     case WM_MOUSEMOVE : 
-                        this.mouseMoveHandler(msg, wpm, lpm); 
+                        if (!this.mSpMMoveProc) {
+                            this.mouseMoveHandler(msg, wpm, lpm); 
+                        } else {
+                            this.mSpMMoveProc(this, hw, msg, wpm, lpm);
+                        }
+                        
                     break;
                     case WM_MOUSELEAVE : 
-                        this.mouseLeaveHandler(); 
+                        if (!this.mSpMLeaveProc) {
+                            this.mouseLeaveHandler(); 
+                         } else {
+                            return this.mSpMLeaveProc(this);
+                        }
                     break;
                     case WM_KEYDOWN:
                         if (this.onKeyDown) {
@@ -669,4 +698,14 @@ class Control {
 
 
 } // End Control Class
+
+bool trackMouseMove(HWND hw, DWORD flags = TME_HOVER | TME_LEAVE)
+{
+    TRACKMOUSEEVENT tme;
+    tme.cbSize = tme.sizeof;
+    tme.dwFlags = flags;
+    tme.dwHoverTime = HOVER_DEFAULT;
+    tme.hwndTrack = hw;
+    return TrackMouseEvent(&tme) != 0;
+}
 

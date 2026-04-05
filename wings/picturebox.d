@@ -7,7 +7,7 @@ import wings.d_essentials;
 import wings.wings_essentials;
 import wings.imagelist: Image;
 import wings.enums: PictureSizeMode;
-import wings.form: trackMouseMove;
+import wings.controls: trackMouseMove;
 
 
 

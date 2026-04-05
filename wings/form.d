@@ -514,17 +514,6 @@ struct HotKeyStruct
 
 
 
-void trackMouseMove(HWND hw)
-{
-    TRACKMOUSEEVENT tme;
-    tme.cbSize = tme.sizeof;
-    tme.dwFlags = TME_HOVER | TME_LEAVE;
-    tme.dwHoverTime = HOVER_DEFAULT;
-    tme.hwndTrack = hw;
-    TrackMouseEvent(&tme);
-}
-
-
  //int x = 1;
 /// WndProc function for Form class
 extern(Windows)

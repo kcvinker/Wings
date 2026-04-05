@@ -5,6 +5,8 @@ import wings;
 // Since, Wings use delegates for event handling and D is an OOP language...
 // We can wrap up the entire app in a class. It's handy.
 class App {
+	// import wings.commons: log;
+	
 
 	this() 
 	{
@@ -134,6 +136,8 @@ class App {
 
 		// Add handler for listview's context menu.
 		lv.contextMenu["Linux"].onClick = &this.onLVContextMenuClick;
+		cmb.onMouseEnter = &this.menter;
+		cmb.onMouseLeave = &this.mleave;
 	}
 
 	void display() {this.frm.show();}
@@ -169,6 +173,12 @@ class App {
 	void btn3Click(Object c, EventArgs e) {
 		// this.tic.showBalloon("Wings Balloon", "This is Wings Balloon Text", 3000);
 		print("Gradient button clicked");
+	}
+	void menter(Object c, EventArgs e) {
+		writeln("Mouse entered combo");
+	}
+	void mleave(Object c, EventArgs e) {
+		writeln("Mouse leave from combo");
 	}
 
 	private:
