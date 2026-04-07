@@ -52,6 +52,7 @@ import std.stdio;
 
 import std.algorithm.mutation; // We have a function called 'remove'. So this must be renamed.
 import wings.wings_essentials;
+import wings.controls : specialMouseLeaveMsgHanlder;
 
 
 // private int cmbNumber = 1;
@@ -76,7 +77,7 @@ class ComboBox: Control
         this.mParent.mControls ~= this;
         this.mCtlId = Control.stCtlId;
         this.mHasFont = true;
-        this.mSpMLeaveProc = &specialMouseLeaveMsgHanlder;
+        // this.mSpMLeaveProc = (ctl) => specialMouseLeaveMsgHanlder(cast(ComboBox) ctl);
         ++Control.stCtlId;        
         if (parent.mAutoCreate) this.createHandle();
     }
@@ -280,8 +281,9 @@ class ComboBox: Control
         }
     }
 
-    package:
-        RECT mMyRect;
+    protected:
+        RECT mSpRect;
+        mixin SpecialMouseLeaveHandler;
 
 	private:
     // Variables
@@ -314,8 +316,8 @@ class ComboBox: Control
             RECT r;
             GetClientRect(this.mHandle, &r);
             printRct(r, POINT(1, 1), false);
-            SetRect(&this.mMyRect, this.mXpos, this.mYpos, this.mXpos + r.right, this.mYpos + r.bottom);
-            printRct(this.mMyRect, POINT(0, 0), false);
+            SetRect(&this.mSpRect, this.mXpos, this.mYpos, this.mXpos + r.right, this.mYpos + r.bottom);
+            // printRct(this.mSpRect, POINT(0, 0), false);
 		}
 
         // Internal function to insert items to ComboBox.
@@ -355,33 +357,7 @@ void printRct(RECT r, POINT p, BOOL res) {
         
 	}
 
-MsgHandlerResult specialMouseLeaveMsgHanlder(Control ctl)
-{
-    /* Since combo box is a combination of a button control and an
-        * edit control, we need special treatment for mouse leave event.
-        * We need to check if the mouse pointer is inside our control
-        * rect each time we get a mouse leave message. Some times, user
-        * moves the mouse from edit to arrow button or vice versa.*/
-    if (ctl.onMouseLeave || ctl.onMouseEnter || ctl.onMouseMove) {
-        auto self = cast(ComboBox) ctl;
-        POINT pt;
-        GetCursorPos(&pt);
-        ScreenToClient(self.mParent.mHandle, &pt);        
-        BOOL inside = PtInRect(&self.mMyRect, pt);
-        
-        if (inside) {     
-            printRct(self.mMyRect, pt, inside);   
-            return MsgHandlerResult.returnOne;
-        } else {
-            // self._isMouseEntered = false;
-            if (self.mIsMouseTracking &&  self.onMouseLeave) {
-                self.mIsMouseTracking = false;
-                self.onMouseLeave(self, new EventArgs());
-            }
-        }
-    }
-    return MsgHandlerResult.callDefProc; 
-}
+
 
 
 extern(Windows)

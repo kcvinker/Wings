@@ -1,5 +1,9 @@
 Wings changelog
 
+1.0.072 (7-Apr-2026)
+    Fixed a bug NumberPicker mouse enter & mouse leave events.
+        Now, mouse enter & mouse leave events uses overrided functions. 
+
 1.0.071 (5-Apr-2026)
     Fixed bug in ComboBox mouse enter & mouse leave events.
 

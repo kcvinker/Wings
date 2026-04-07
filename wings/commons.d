@@ -202,6 +202,29 @@ package {
 
     }
 
+    mixin template SpecialMouseLeaveHandler() {
+        override MsgHandlerResult mouseLeaveHandler()
+        {
+            bool needsLeave = (this.onMouseEnter !is null || this.onMouseLeave !is null);
+            bool needsHover = (this.onMouseHover !is null);
+            if (needsLeave || needsHover) {                        
+                POINT pt;
+                GetCursorPos(&pt);
+                ScreenToClient(this.mParent.mHandle, &pt);        
+                BOOL inside = PtInRect(&this.mSpRect, pt);                        
+                if (inside) {     
+                    // printRct(this.mSpRect, pt, inside);   
+                    return MsgHandlerResult.returnOne;
+                } else {
+                    this.mIsMouseTracking = false;
+                    this.onMouseLeave(this, new EventArgs());
+                    return MsgHandlerResult.returnZero;
+                }
+            }
+            return MsgHandlerResult.callDefProc;
+        }
+    }
+
     // Message Constants - Wing's own messages
         enum uint MSG_BASE = WM_APP + 1;
         enum uint CM_LEFTCLICK = MSG_BASE;

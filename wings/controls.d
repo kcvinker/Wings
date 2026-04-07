@@ -8,6 +8,8 @@ import core.sys.windows.commctrl;
 import std.conv;
 
 import wings.application: appData;
+// import wings.numberpicker: NumberPicker;
+
 import wings.fonts;
 import wings.events;
 import wings.enums;
@@ -17,9 +19,9 @@ import wings.colors;
 import wings.contextmenu;
 
 
-alias SpecialMouseMoveHandler = MsgHandlerResult function(Control sender, HWND hw, UINT message, 
-                                                            WPARAM wParam, LPARAM lParam);
-alias SpecialMouseLeaveHandler = MsgHandlerResult function(Control sender);
+// alias SpecialMouseMoveHandler = MsgHandlerResult function(Control sender, HWND hw, UINT message, 
+//                                                             WPARAM wParam, LPARAM lParam);
+// alias SpecialMouseLeaveHandler = MsgHandlerResult delegate(Control sender);
 
 
 enum repeatingCode = "  mWidth = w;
@@ -296,6 +298,23 @@ class Control {
 
         abstract void createHandle() {writeln("Control's impl");}
 
+        bool shouldTrackMouse(HWND hwnd) 
+        {
+            return !this.mIsMouseTracking;
+        }
+
+        // ComboBox & NumberPicker needs to override this.
+        MsgHandlerResult mouseLeaveHandler()
+        {
+            if (this.mIsMouseTracking) {                
+                this.mIsMouseTracking = false;
+                this.onMouseLeave(this, new EventArgs());
+                return MsgHandlerResult.returnZero;
+            }
+            return MsgHandlerResult.callDefProc;                
+        }
+
+        
 
     package:
         Font mFont;
@@ -321,8 +340,6 @@ class Control {
         WideString mWtext;
         static int mSubClassId = 1000;
         int mRight, mBottom;
-        SpecialMouseMoveHandler mSpMMoveProc;
-        SpecialMouseLeaveHandler mSpMLeaveProc;
 
         void createHandleInternal(wchar* clsname)
         {  // protected
@@ -500,6 +517,8 @@ class Control {
             this.getRightAndBottom();
         }
 
+        
+
 
         // Common WndProc Message Handlers.=================================
             LRESULT paintHandler()
@@ -567,7 +586,7 @@ class Control {
                 }
             }
 
-            void mouseMoveHandler(UINT msg, WPARAM wp, LPARAM lp)
+            void mouseMoveHandler(HWND hw, UINT msg, WPARAM wp, LPARAM lp)
             {
                 if (this.onMouseMove) {
                     auto mea = new MouseEventArgs(msg, wp, lp);
@@ -579,7 +598,7 @@ class Control {
                 bool needsHover = (this.onMouseHover != null);
 
                 if (needsLeave || needsHover) {
-                    if (!this.mIsMouseTracking) {
+                    if (this.shouldTrackMouse(hw)) {
                         uint flags = 0;
                         if (needsLeave) flags |= TME_LEAVE;
                         if (needsHover) flags |= TME_HOVER;
@@ -592,13 +611,7 @@ class Control {
                     }
                     // if (this.name.str_view() == "ComboBox_1") ptf("combo mouse enter 525 = %s", this._isMouseTracking);
                 } 	
-            }
-
-            void mouseLeaveHandler()
-            {
-                this.mIsMouseTracking = false;
-                if (this.onMouseLeave) this.onMouseLeave(this, new EventArgs());
-            }
+            }            
 
             void keyDownHandler(WPARAM wpm)
             {
@@ -642,20 +655,11 @@ class Control {
                     case WM_MOUSEWHEEL : 
                         this.mouseWheelHandler(msg, wpm, lpm); 
                     break;
-                    case WM_MOUSEMOVE : 
-                        if (!this.mSpMMoveProc) {
-                            this.mouseMoveHandler(msg, wpm, lpm); 
-                        } else {
-                            this.mSpMMoveProc(this, hw, msg, wpm, lpm);
-                        }
-                        
+                    case WM_MOUSEMOVE :
+                        this.mouseMoveHandler(hw, msg, wpm, lpm);                         
                     break;
                     case WM_MOUSELEAVE : 
-                        if (!this.mSpMLeaveProc) {
-                            this.mouseLeaveHandler(); 
-                         } else {
-                            return this.mSpMLeaveProc(this);
-                        }
+                        return this.mouseLeaveHandler(); 
                     break;
                     case WM_KEYDOWN:
                         if (this.onKeyDown) {
@@ -709,3 +713,33 @@ bool trackMouseMove(HWND hw, DWORD flags = TME_HOVER | TME_LEAVE)
     return TrackMouseEvent(&tme) != 0;
 }
 
+MsgHandlerResult specialMouseLeaveMsgHanlder(T)(T ctl)
+{
+    /* Some controls like combo box nuber picker are a combination 
+     * of a button control and an edit control, we need special 
+     * treatment for mouse leave event. We need to check if the 
+     * mouse pointer is inside our control rect each time we get 
+     * a mouse leave message. Some times, user moves the mouse 
+     * from edit to arrow button or vice versa.*/
+    static if (__traits(hasMember, T, "mMyRect")) {
+        if (ctl.onMouseLeave || ctl.onMouseEnter || ctl.onMouseMove) {
+            POINT pt;
+            GetCursorPos(&pt);
+            ScreenToClient(ctl.mParent.mHandle, &pt);        
+            BOOL inside = PtInRect(&ctl.mMyRect, pt);
+            
+            if (inside) {     
+                // printRct(ctl.mMyRect, pt, inside);   
+                return MsgHandlerResult.returnOne;
+            } else {
+                // ctl._isMouseEntered = false;
+                if (ctl.mIsMouseTracking &&  ctl.onMouseLeave) {
+                    ctl.mIsMouseTracking = false;
+                    ctl.onMouseLeave(ctl, new EventArgs());
+                }
+            }
+        }
+    }
+    
+    return MsgHandlerResult.callDefProc; 
+}

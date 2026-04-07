@@ -136,8 +136,8 @@ class App {
 
 		// Add handler for listview's context menu.
 		lv.contextMenu["Linux"].onClick = &this.onLVContextMenuClick;
-		cmb.onMouseEnter = &this.menter;
-		cmb.onMouseLeave = &this.mleave;
+		np1.onMouseEnter = &this.menter;
+		np1.onMouseLeave = &this.mleave;
 	}
 
 	void display() {this.frm.show();}

@@ -32,13 +32,16 @@
 =============================================================================================*/
 
 module wings.numberpicker;
+
 import wings.d_essentials;
 import wings.wings_essentials;
 import std.conv;
 import wings.clipboard;
 import std.algorithm: clamp;
+import wings.controls : specialMouseLeaveMsgHanlder;
 import std.stdio;
 import std.datetime.stopwatch;
+
 
 enum DWORD buddyStyle = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP| WS_BORDER;
 enum DWORD buddyExStyle = WS_EX_LEFT | WS_EX_LTRREADING;
@@ -108,6 +111,7 @@ class NumberPicker: Control
             GetClientRect(this.mHandle, &this.mUDRect);
             this.resizeBuddy();
             SendMessageW(oldBuddy, CM_BUDDY_RESIZE, 0, 0);
+            this.mSpRect = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
             this.getRightAndBottom();
 
             /*==================================================================
@@ -244,29 +248,40 @@ class NumberPicker: Control
         We need to use these three event handler props individually.
         We can't use parent's methods for these. 
         ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++/
-        final void onMouseEnter(EventHandler value)
+        // final void onMouseEnter(EventHandler value)
+        // {
+        //     this.mOnMouseEnter = value;
+        //     this.mTrackMouseLeave = true;
+        // }
+
+        // final void onMouseLeave(EventHandler value)
+        // {
+        //     this.mOnMouseLeave = value;
+        //     this.mTrackMouseLeave = true;
+        // }
+
+        // final void onMouseMove(MouseEventHandler value)
+        // {
+        //     this.mOnMouseMove = value;
+        //     this.mTrackMouseLeave = true;
+        // }
+
+        override bool shouldTrackMouse(HWND hWnd)
         {
-            this.mOnMouseEnter = value;
-            this.mTrackMouseLeave = true;
+            return !this.mIsMouseTracking && hWnd == this.mBuddyHandle;
         }
 
-        final void onMouseLeave(EventHandler value)
-        {
-            this.mOnMouseLeave = value;
-            this.mTrackMouseLeave = true;
-        }
-
-        final void onMouseMove(MouseEventHandler value)
-        {
-            this.mOnMouseMove = value;
-            this.mTrackMouseLeave = true;
-        }
+        
 
     //endregion Properties
 
     EventHandler onValueChanged;
     PaintEventHandler onTextPaint;
-
+    
+    protected:
+        RECT mSpRect;
+        mixin SpecialMouseLeaveHandler;
+        
     private:
     // region private members
         bool mEditStarted;
@@ -298,10 +313,10 @@ class NumberPicker: Control
         Alignment mTxtPos;
         RECT mUDRect;
         RECT mTBRect;
-        RECT mMyRect;
-        EventHandler mOnMouseLeave;
-        EventHandler mOnMouseEnter;
-        MouseEventHandler mOnMouseMove;
+        // RECT mMyRect;
+        // EventHandler mOnMouseLeave;
+        // EventHandler mOnMouseEnter;
+        // MouseEventHandler mOnMouseMove;
         static wchar[] mUpdClassName = ['m', 's', 'c', 't', 'l', 's', '_', 'u', 'p', 'd', 'o', 'w', 'n', '3', '2', 0];
         static int npNumber;
     // endregion private members
@@ -330,7 +345,6 @@ class NumberPicker: Control
         {
             // Creating the updown control only.
             this.mCtlId = Control.stCtlId;
-            this.mMyRect = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
             this.mHandle = CreateWindowEx( this.mExStyle,
                                             this.mUpdClassName.ptr,
                                             null,
@@ -418,34 +432,34 @@ class NumberPicker: Control
             SetWindowTextW(this.mBuddyHandle, newStr.toUTF16z);
         }
 
-        bool isMouseOnMe()  // Private
-        {
-            /*---------------------------------------------------------------------- 
-            If this returns False, mouse_leave event will triggered
-            Since, updown control is a combo of an edit and button controls...
-            we have no better options to control the mouse enter & leave mechanism.
-            Now, we create an imaginary rect over the bondaries of these two controls.
-            If mouse is inside that rect, there is no mouse leave. Perfect hack. 
-            ---------------------------------------------------------------------------*/
-            POINT pt;
-            GetCursorPos(&pt);
-            ScreenToClient(this.mParent.handle, &pt);
-            auto res = PtInRect(&this.mMyRect, pt);
-            return cast(bool) res;
-        }
+        // bool isMouseOnMe()  // Private
+        // {
+        //     /*---------------------------------------------------------------------- 
+        //     If this returns False, mouse_leave event will triggered
+        //     Since, updown control is a combo of an edit and button controls...
+        //     we have no better options to control the mouse enter & leave mechanism.
+        //     Now, we create an imaginary rect over the bondaries of these two controls.
+        //     If mouse is inside that rect, there is no mouse leave. Perfect hack. 
+        //     ---------------------------------------------------------------------------*/
+        //     POINT pt;
+        //     GetCursorPos(&pt);
+        //     ScreenToClient(this.mParent.handle, &pt);
+        //     auto res = PtInRect(&this.mMyRect, pt);
+        //     return cast(bool) res;
+        // }
 
-        void npMouseMoveHandler(UINT msg, WPARAM wp, LPARAM lp)  // Private
-        {
-            if (this.isMouseEntered) {
-                if (this.mOnMouseMove) {
-                    auto mea = new MouseEventArgs(msg, wp, lp);
-                    this.mOnMouseMove(this, mea);
-                }
-            } else {
-                this.isMouseEntered = true;
-                if (this.mOnMouseEnter) this.mOnMouseEnter(this, new EventArgs());
-            }
-        }
+        // void npMouseMoveHandler(UINT msg, WPARAM wp, LPARAM lp)  // Private
+        // {
+        //     if (this.isMouseEntered) {
+        //         if (this.mOnMouseMove) {
+        //             auto mea = new MouseEventArgs(msg, wp, lp);
+        //             this.mOnMouseMove(this, mea);
+        //         }
+        //     } else {
+        //         this.isMouseEntered = true;
+        //         if (this.mOnMouseEnter) this.mOnMouseEnter(this, new EventArgs());
+        //     }
+        // }
 
         void finalize(UINT_PTR subClsId) // Private
         {
@@ -455,6 +469,8 @@ class NumberPicker: Control
 
     // endregion private functions
 } // End of NumberPicker class
+
+
 
 
 extern(Windows)
