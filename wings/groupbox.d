@@ -2,9 +2,9 @@
 // GroupBox class -  Created on: 24-May-22 10:59:01 AM
 /*==============================================GroupBox Docs=====================================
     Constructor:
-        this(Form parent, string txt)
-        this(Form parent, string txt, int x, int y)
-        this(Form parent, string txt, int x, int y, int w, int h)
+        this (Control parent, string txt)
+        this (Control parent, string txt, int x, int y)
+        this (Control parent, string txt, int x, int y, int w, int h)
 
 	Properties:
 		GroupBox inheriting all Control class properties	
@@ -34,54 +34,43 @@ enum WCHAR* EMP_WSTR_PTR = EWSA.ptr;
 
 class GroupBox: Control
 {
-    this(Form parent, string txt, int x, int y, int w, int h, GroupBoxStyle style = GroupBoxStyle.system)
+    this (Control parent, string txt, int x, int y, int w, int h, GroupBoxStyle style = GroupBoxStyle.system)
     {
-        mixin(repeatingCode);
-        ++gbNumber;
-        mControlType = ControlType.groupBox;
-        this.mFont = new Font(parent.font);
-        mText = txt;
-        mStyle = gb_style; 
-        mExStyle = gb_exstyle; 
-        mBackColor = parent.mBackColor;
-        mWtext = new WideString(txt);
+        import std.functional;
+        import wings.form : printFormPoints;
+        
+        this.mControlType = ControlType.groupBox;
+        this.initControl(parent, x, y, w, h, &gbNumber, txt);
         this.mDBFill = true;
         this.mGetWidth = true;
         this.mGBStyle = GroupBoxStyle.system;
-        this.mName = format("%s_%d", "GroupBox_", gbNumber);
-        this.mParent.mControls ~= this;
-        this.mHasFont = true;
-        this.mCtlId = Control.stCtlId;
-        ++Control.stCtlId;        
-        if (parent.mAutoCreate) this.createHandle();
+        if (this.mOwnerForm.mEnablePrintPoint) this.onMouseUp = toDelegate(&printFormPoints);
     }
 
-    this(Form parent, string txt, int x, int y)
+    this (Control parent, string txt, int x, int y)
     {
         this(parent, txt, x, y, 150, 150);
     }
 
-    this(Form parent, string txt)
+    this (Control parent, string txt)
     {
         this(parent, txt, 20, 20, 150, 150);
     }
 
     override void createHandle()
-    {
-        import wings.buttons: btnClassName;        
+    {       
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         if (this.mGBStyle == GroupBoxStyle.overriden) {
             this.mPen = CreatePen(PS_SOLID, PEN_WIDTH, this.mBackColor.cref );
         }
         SetRect(&this.mRect, 0, 0, this.mWidth, this.mHeight);
-        this.createHandleInternal(btnClassName.ptr);
+        this.createHandleInternal();
         if (this.mHandle) {
             if (this.mGBStyle == GroupBoxStyle.classic) {
 				SetWindowTheme(this.mHandle, EMP_WSTR_PTR, EMP_WSTR_PTR);
             	this.mThemeOff = true;
 			}
             this.setSubClass(&gbWndProc);
-            this.setFontInternal();
         }
     }
 
@@ -171,7 +160,7 @@ class GroupBox: Control
         bool mGetWidth;
         bool mThemeOff;
         int mTxtWidth;
-        static int gbNumber;
+        static int gbNumber = 1;
         GroupBoxStyle mGBStyle;
         Control[] mControls;
 
@@ -248,9 +237,16 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             return cast(LRESULT) res;
         }
         switch (message) {            
-            case WM_DESTROY: 
+            case WM_NCDESTROY: 
                 RemoveWindowSubclass(hWnd, &gbWndProc, scID);                
                 self.finalize(); 
+            break;
+            case WM_NCHITTEST:
+                auto hit = DefSubclassProc(hWnd, message, wParam, lParam);
+                if (hit == HTTRANSPARENT) {
+                    return HTCLIENT;
+                }
+                return hit;
             break;
             case WM_GETTEXTLENGTH: 
                 if (self.mGBStyle == GroupBoxStyle.overriden) return 0;
@@ -291,6 +287,18 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                     gfx.drawText(self, 12, 0);
                     return ret;
                 }
+            break;
+            case WM_NOTIFY:
+                auto nm = cast(NMHDR*) lParam;
+                return SendMessageW(nm.hwndFrom, CM_NOTIFY, wParam, lParam);
+            break;
+            case WM_CTLCOLOREDIT:
+                auto ctlHwnd = cast(HWND) lParam;
+                return SendMessageW(ctlHwnd, CM_COLOR_EDIT, wParam, lParam);
+            break;
+            case WM_CTLCOLORSTATIC:
+                auto ctlHwnd = cast(HWND) lParam;
+                return SendMessageW(ctlHwnd, CM_COLOR_STATIC, wParam, lParam);
             break;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 

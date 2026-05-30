@@ -2,8 +2,8 @@
 // Created on: 23-July-22 11:43:46 AM
 /*==============================================RadioButton Docs=====================================
     Constructor:
-        this (Form parent, string txt, int x, int y, EventHandler evtFn = null)
-        this (Form parent, string txt, int x, int y, int w, int h, EventHandler evtFn = null)
+        this (Control parent, string txt, int x, int y, EventHandler evtFn = null)
+        this (Control parent, string txt, int x, int y, int w, int h, EventHandler evtFn = null)
 
 	Properties:
 		RadioButton inheriting all Control class properties	
@@ -28,28 +28,15 @@ import std.stdio;
 
 class RadioButton: Control
 {
-	this (Form parent, string txt, int x, int y, int w, int h, EventHandler evtFn = null)
+	this (Control parent, string txt, int x, int y, int w, int h, EventHandler evtFn = null)
     {
-        mixin(repeatingCode);
-        ++rbNumber;
-        mAutoSize = true;
         mControlType = ControlType.radioButton;
-        this.mFont = new Font(parent.font);
-        mText = txt;
-        mStyle = WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON;
-        mExStyle = WS_EX_LTRREADING | WS_EX_LEFT;
-        mTxtStyle = DT_SINGLELINE | DT_VCENTER;
-        mBackColor = parent.mBackColor;
-        this.mName = format("%s_%d", "RadioButton_", rbNumber);
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        this.mHasFont = true;
-        ++Control.stCtlId;
+        this.initControl(parent, x, y, w, h, &rbNumber, txt);
+        mAutoSize = true;
         if (evtFn) this.onClick = evtFn;
-        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this (Form parent, string txt, int x, int y, EventHandler evtFn = null)
+    this (Control parent, string txt, int x, int y, EventHandler evtFn = null)
     {
         this(parent, txt, x, y, 0, 0, evtFn);
     }
@@ -59,7 +46,7 @@ class RadioButton: Control
     {
         import wings.buttons: btnClassName;
     	this.setRbStyle();
-    	this.createHandleInternal(btnClassName.ptr);
+    	this.createHandleInternal();
     	if (this.mHandle) {
             this.setSubClass(&rbWndProc);
             this.setRbSize();

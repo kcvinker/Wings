@@ -6,8 +6,10 @@ import std.stdio;
 import std.utf;
 import core.sys.windows.commctrl;
 import std.conv;
+import std.format;
 
 import wings.application: appData;
+import wings.ctl_static_data: ControlMetaData, ControlMetaDataList;
 // import wings.numberpicker: NumberPicker;
 
 import wings.fonts;
@@ -24,11 +26,6 @@ import wings.contextmenu;
 // alias SpecialMouseLeaveHandler = MsgHandlerResult delegate(Control sender);
 
 
-enum repeatingCode = "  mWidth = w;
-                        mHeight = h;
-                        mXpos = x;
-                        mYpos = y;
-                        mParent = parent;"; /// Setting size, position.
 
 mixin template finalProperty(string pName, alias obj) {
     mixin(`final typeof(obj) `, pName, `() { return obj; }`);
@@ -40,11 +37,17 @@ mixin template finalProperty(string pName, alias obj) {
 class Control {
     import wings.widestring : WideString;
 
+    void tpr() {
+        ptf("CM_COLOR_STATIC: %d", CM_COLOR_STATIC);
+        ptf("CM_COLOR_EDIT: %d", CM_COLOR_EDIT);
+        ptf("CM_NOTIFY: %d", CM_NOTIFY);
+    }
+
     /// Set the text of control
         void text(string value)
         {
             this.mText = value;
-            if (this.mIsCreated && this.mTextable) {
+            if (this.mIsCreated && this.mHasText) {
                 SetWindowTextW(this.mHandle, this.mText.toUTF16z);
             }
         }
@@ -189,7 +192,7 @@ class Control {
         final bool isHandleCreated() {return this.mIsCreated;}
 
         /// Returns the parent object(Form) of this control.
-        final Form parent() {return this.mParent;}
+        final Control parent() {return this.mParent;}
 
         final int rightX() {return this.mXpos + this.mWidth + 10;}
         final int downY() {return this.mYpos + this.mHeight + 10;}
@@ -284,7 +287,7 @@ class Control {
         bool mIsCreated;
         bool mBaseFontChanged;
         bool mVisible = true;
-        bool mTextable;
+        bool mHasText;
 
 
 
@@ -335,26 +338,68 @@ class Control {
         RECT mRect;
         HWND mHandle;
         HBRUSH mBkBrush;
-        Form mParent;
+        Control mParent;
+        Form mOwnerForm;
         ContextMenu mCmenu;
         WideString mWtext;
         static int mSubClassId = 1000;
         int mRight, mBottom;
 
-        void createHandleInternal(wchar* clsname)
+        // Initializing common members of controls. This will be called in each control's constructor.
+        void initControl(Control parent, int x, int y, int w, int h, int* ctlCounter, string txt = "" )
+        {
+            ControlMetaData meta = ControlMetaDataList[this.mControlType];
+            this.mParent = parent;
+            this.mWidth = w;
+            this.mHeight = h;
+            this.mXpos = x;
+            this.mYpos = y;      
+            this.mStyle = meta.style;
+            this.mCtlId = stCtlId++;
+            
+            this.mName = format("%s%d", meta.prefix, (*ctlCounter)++);
+
+            if (meta.isTextable && txt.length > 0) {
+                this.mText = txt;
+                this.mWtext = new WideString(txt);
+                this.mHasText = true;
+            } 
+
+            this.mOwnerForm = parent.mControlType == ControlType.form ? cast(Form)parent : parent.mOwnerForm;
+            if (this.mOwnerForm) {
+                if (meta.hasFont) {
+                    this.mFont = new Font(this.mOwnerForm.font);
+                } 
+                if (meta.bcMode == BackColorMode.inherit) {
+                    this.mBackColor = this.mOwnerForm.mBackColor;
+                } else if (meta.bcMode == BackColorMode.white) {
+                    this.mBackColor(0xFFFFFF);
+                }
+                if (meta.isBlackFGC) {
+                    this.mForeColor(0x000000);
+                } else {
+                    this.mForeColor = this.mOwnerForm.mForeColor;
+                }
+                this.mOwnerForm.mControls ~= this;
+            }
+        }
+
+        void createHandleInternal()
         {  // protected
             // This function works for almost all controls except combo box.
             // This will save us 150+ lines of code.
+            
+            
+            ControlMetaData meta = ControlMetaDataList[this.mControlType];
             if (this.mDisabled) this.mStyle |= WS_DISABLED;
             PVOID lpValue = this.mControlType == ControlType.pictureBox ? cast(PVOID)this : null;
-            this.mHandle = CreateWindowEx(  this.mExStyle,
-                                            clsname,
-                                            this.mText.toUTF16z,
+            LPCWSTR ctlTxt = meta.isTextable && this.mText.length > 0 ? this.mText.toUTF16z : null;
+            this.mHandle = CreateWindowEx(  meta.exStyle,
+                                            meta.className.ptr,
+                                            ctlTxt,
                                             this.mStyle,
-                                            this.mXpos,
-                                            this.mYpos,
-                                            this.mWidth,
-                                            this.mHeight,
+                                            this.mXpos, this.mYpos, 
+                                            this.mWidth, this.mHeight,
                                             this.mParent.handle,
                                             cast(HMENU) this.mCtlId,
                                             appData.hInstance,
@@ -364,13 +409,13 @@ class Control {
             // if (this.name == "PictureBox_1") ptf("Creating PictureBox with handle: %s", this.mHandle);
             if (this.mHandle) {
                 this.mIsCreated = true;
-                if (this.mHasFont) {
+                if (meta.hasFont) {
                     this.mFont.mHwndParent = this.mHandle;
                     this.createLogFontInternal();
                 }
                 //if (!this.mBaseFontChanged) this.mFont = this.mParent.font;                
                 
-                this.getRightAndBottom();
+                // this.getRightAndBottom();
             }
         }
 
@@ -490,16 +535,16 @@ class Control {
         RECT getMappedRect()
         {
             RECT rct;
-            HWND fhw;
             if (this.mIsCreated) {
-                fhw = this.mHandle;
                 GetClientRect(this.mHandle, &rct);
+                MapWindowPoints(this.mHandle, this.mParent.mHandle, cast(LPPOINT)&rct, 2);
             } else {
-                fhw = this.mParent.mHandle;
                 rct = RECT(this.mXpos, this.mYpos, 
-                            (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
+                           (this.mXpos + this.mWidth), 
+                           (this.mYpos + this.mHeight)
+                           );
             }
-            MapWindowPoints(fhw, this.mParent.mHandle, cast(LPPOINT)&rct, 2);
+            
             return rct;
         }
 

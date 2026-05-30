@@ -3,8 +3,8 @@
 /*==============================================ListView Docs=====================================
     Constructor:
         this(Form parent)
-        this(Form parent, int x, int y)
-        this(Form parent, int x, int y, int w, int h, string[] colnames = null, int[] widths = null)
+        this (Control parent, int x, int y)
+        this (Control parent, int x, int y, int w, int h, string[] colnames = null, int[] widths = null)
 
 	Properties:
 		ListView inheriting all Control class properties	
@@ -80,49 +80,32 @@ bool lvCreated = false;
 
 class ListView: Control
 {
-    this(Form parent, int x, int y, int w, int h, string[] colnames = null, int[] widths = null)
+    this (Control parent, int x, int y, int w, int h)
     {
         if (!lvCreated) {
             lvCreated = true;
             appData.iccEx.dwICC = ICC_LISTVIEW_CLASSES;
             InitCommonControlsEx(&appData.iccEx);
         }
-        mixin(repeatingCode);
-        ++lvNumber;
-        mControlType = ControlType.listView;
-        this.mFont = new Font(parent.font);
-        mLvStyle = ListViewStyle.report;
-        mShowGridLines = true;
-        mFullRowSel = true;
-        mStyle = lvStyle;
-        mExStyle = 0;
-        mBackColor(0xFFFFFF);
-        mForeColor(defForeColor);
-        mHdrBackColor(0xb3cccc);
-        mHdrForeColor(0x000000);
-        mHdrFont = parent.font;
-        this.mHasFont = true;
-        this.mName = format("%s_%d", "ListView_", lvNumber);
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        ++Control.stCtlId;
-        if (parent.mAutoCreate) this.createHandle();
-        if ((colnames != null && widths != null) && (colnames.length == widths.length)) {
-           foreach (i, name; colnames) {
-                auto col = new ListViewColumn(name, widths[i]);
-                this.addColumnInternal(col);
-            }
-        }
+        this.mControlType = ControlType.listView;
+        this.initControl(parent, x, y, w, h, &lvNumber);
+        this.mLvStyle = ListViewStyle.report;
+        this.mShowGridLines = true;
+        this.mFullRowSel = true;
+        this.mHdrBackColor(0xb3cccc);
+        this.mHdrForeColor(0x000000);
+        this.mHdrFont = parent.font;
     }
 
     this(Form parent) { this(parent, 20, 20, 250, 200); }
-    this(Form parent, int x, int y) { this(parent, x, y, 250, 200);}
+    this (Control parent, int x, int y) { this(parent, x, y, 250, 200);}
 
 
     override void createHandle()  
     {
         this.adjustLVStyles();
-        this.createHandleInternal(mClassName.ptr);
+        print("Creating ListView handle...");
+        this.createHandleInternal();
         if (this.mHandle) {
             this.setSubClass(&lvWndProc);
             this.setLvExStyles();
@@ -132,7 +115,8 @@ class ListView: Control
                 In such cases, we need to add those columns right after creation. */
             if (this.mColumns.length > 0) {
                 foreach (ci; this.mColumns) {
-                    this.sendMsg(LVM_INSERTCOLUMNW, ci.index, &ci.pLvc);
+                    // this.sendMsg(LVM_INSERTCOLUMNW, ci.index, &ci.pLvc);
+                    this.addColumnInternal(ci);
                 }
             }
 
@@ -146,36 +130,43 @@ class ListView: Control
                 this.sendMsg(LVM_SETCOLUMNORDERARRAY, ordList.length, ordList.ptr);
                 this.mCbisLast = true;
             }
+
+            if (this.mItems.length > 0) {
+                foreach (item; this.mItems) {
+                    this.addItemInternal(item);
+                }
+            }
         }
     }
 
     // Methods
         final bool checked() {return this.mChecked;} /// Chacked state of the checkbox.
-        final void addColumn(ListViewColumn lvc) { this.addColumnInternal(lvc);}
+        
+        final void addColumn(ListViewColumn lvc) { this.tryAddColumn(lvc);}
 
         final void addColumn(string text)
         {
             auto lvc = new ListViewColumn(text);
-            this.addColumnInternal(lvc);
+            this.tryAddColumn(lvc);
         }
 
         final void addColumn(string text, int width)
         {
             auto lvc = new ListViewColumn(text, width);
-            this.addColumnInternal(lvc);
+            this.tryAddColumn(lvc);
         }
 
         final void addColumn(string text, int width, int imgIndx ) 
         {
             auto lvc = new ListViewColumn(text, width, imgIndx);
-            this.addColumnInternal(lvc);
+            this.tryAddColumn(lvc);
         }
 
         final void addColumns(string[] names... ) 
         {
             foreach (name; names) {
                 auto lvc = new ListViewColumn(name);
-                this.addColumnInternal(lvc);
+                this.tryAddColumn(lvc);
             }
         }
 
@@ -184,7 +175,7 @@ class ListView: Control
             if (names.length != widths.length) return;
             foreach (i, name; names) {
                 auto lvc = new ListViewColumn(name, widths[i]);
-                this.addColumnInternal(lvc);
+                this.tryAddColumn(lvc);
             }
         }
 
@@ -204,7 +195,7 @@ class ListView: Control
                 if ((colnames.length > 0 && widths.length > 0) && (colnames.length == widths.length)) {
                     foreach (i, name; colnames) {
                         auto col = new ListViewColumn(name, widths[i]);
-                        this.addColumnInternal(col);
+                        this.tryAddColumn(col);
                     }
                 }
             }
@@ -237,70 +228,113 @@ class ListView: Control
         /// Adds a row of items to listview. Only for Report view.
         void addRow(string[] items...)
         {
-            if (this.mLvStyle != ListViewStyle.report || !this.mIsCreated) return;
+            if (this.mLvStyle != ListViewStyle.report) return;
+            this.mItemIndexCounter += 1;
             auto iLen = items.length;
             auto lvItem = new ListViewItem(items[0]);
-            lvItem.mPHwnd = this.mHandle;
-            this.addItemInternal(lvItem);
+            lvItem.mIndex = this.mItemIndexCounter;
+            // lvItem.mPHwnd = this.mHandle;
             for (int i = 1; i < iLen; ++i) {
-                this.addSubItemInternal(items[i], lvItem.index, i);
+                lvItem.mSubItems ~= new ListViewSubItem(items[i], i);
             }
+            this.mItems ~= lvItem;
+            if (this.mIsCreated) this.addItemInternal(lvItem);
         }
 
         /// Add bulk of items to listiview.
         void addItems(string[] items...)
-        {
-            if (this.mLvStyle != ListViewStyle.report || !this.mIsCreated) return;
-            auto iLen = items.length;
-            auto lvItem = new ListViewItem(items[0]);
-            this.addItemInternal(lvItem);
-            for (int i = 1; i < iLen; ++i) {
-                this.addSubItemInternal(items[i], lvItem.index, i);
+        {   
+            ListViewItem[] tempItems = new ListViewItem[items.length];
+             foreach (indx, item; items) {
+                auto lvItem = new ListViewItem(item);
+                this.mItemIndexCounter += 1;
+                lvItem.mIndex = this.mItemIndexCounter;
+                tempItems[indx] = lvItem;
+                this.mItems ~= lvItem;
+            }
+
+            if (this.mIsCreated) {
+                foreach (lvItem; this.mItems) {
+                    this.addItemInternal(lvItem);
+                }
             }
         }
 
         /// Adds an item to list view.
         void addItem(T)(T item, int imgIndx = -1)
         {
-            if (this.mIsCreated) {
-                auto lvItem = new ListViewItem(item.toString, imgIndx);
-                this.addItemInternal(lvItem);
-            }
+            auto lvItem = new ListViewItem(item.to!string, imgIndx);
+            this.mItemIndexCounter += 1;
+            lvItem.mIndex = this.mItemIndexCounter;
+            this.mItems ~= lvItem;
+            if (this.mIsCreated) this.addItemInternal(lvItem);
+            
         }
 
         /// Adds an item to list view.
         void addItem(ListViewItem item)
         {
+            this.mItemIndexCounter += 1;
+            item.mIndex = this.mItemIndexCounter;
+            this.mItems ~= item;
             if (this.mIsCreated) this.addItemInternal(item);
         }
 
         /// Add sub items to an item at given index. Works only report view.
-        void addSubItems(T...)(int itemIndex, T subItems)
-        {
-            if (this.mIsCreated && this.mLvStyle == ListViewStyle.report) {
-                int subIndx = 1;
-                foreach (item; subItems) {
-                    auto sItem = item.toString;
-                    this.addSubItemInternal(sItem, itemIndex, subIndx);
-                    ++subIndx;
+        void addSubItems(T, U...)(T obj, U subItems)
+        {            
+            ListViewItem itemObj = getItem(obj);
+            if (!itemObj) return;
+            print("306");
+            int silen = subItems.length;
+            if (silen > 0) {
+                if (itemObj.mSubItems.length > 0) {
+                    itemObj.mSubItems.length = 0; // Clear existing sub items if any.
+                    assumeSafeAppend(itemObj.mSubItems);
                 }
+                
+                int subIndx = 1;
+                foreach (sitem; subItems) {
+                    string sitxt = sitem.to!string;
+                    auto subi = new ListViewSubItem(sitxt, subIndx);
+                    itemObj.mSubItems ~= subi;
+                    if (this.mIsCreated) this.addSubItemInternal(subi, itemObj.index);
+                    ++subIndx;
+                }     
             }
+                   
         }
 
         /// Add subitem to listview.
-        void addSubItem(T)(T subItem, int itemIndex, int subIndx, int imgIndx = -1)
+        void addSubItem(T, U)(T item, U subItem, int subIndx, int imgIndx = -1)
         {
-            if (this.mIsCreated && this.mLvStyle == ListViewStyle.report) {
-                this.addSubItemInternal(subItem.toString, itemIndex, subIndx, imgIndx );
+            ListViewItem itemObj = getItem(item);
+            if (itemObj) {
+                auto sItem = subItem.to!string;
+                auto sitemObj = new ListViewSubItem(sItem, itemObj.index, subIndx, imgIndx);
+                itemObj.mSubItems ~= sitemObj;
+                if (this.mIsCreated) this.addSubItemInternal(sItem, itemObj.index);
             }
         }
 
-        final void deleteItem(int index)
+        void deleteItem(T)(T item)
         {
-            if (this.mIsCreated && this.mItems.length > 0) {
-                this.sendMsg(LVM_DELETEITEM, index, 0);
-                // TODO delete from mItems
+            ListViewItem itemObj = getItem(item);
+            if (itemObj) {
+                if (this.mIsCreated) {
+                    this.sendMsg(LVM_DELETEITEM, itemObj.index, 0);
+                }
+                this.mItems.remove(itemObj);
             }
+        }
+
+        void deleteItemAt(int index)
+        {
+            if (index < 0 || index >= this.mItems.length) return;
+            if (this.mIsCreated) {
+                this.sendMsg(LVM_DELETEITEM, index, 0);
+            }
+            this.mItems.remove(index);
         }
 
         /// Set the image list for list view.
@@ -483,13 +517,14 @@ class ListView: Control
             ListViewColumn[] mColumns;
             ListViewItem[] mItems;
             ColAndIndex[] mCIList;
-            int mColIndex;
+    
             int mOldHotHdrIndx = -1;// useless
             int mHotHdr = -1;
             int mHdrHeight;
             int mSelItemIndx;
             int mSelSubIndx;
-            int stColIndex;
+            int mColIndexCounter = -1;
+            int mItemIndexCounter = -1;
             static int lvNumber;
             Color mHdrBackColor;
             Color mHdrForeColor;
@@ -506,64 +541,85 @@ class ListView: Control
             return indices;
         }
 
+        void tryAddColumn(ListViewColumn pLvc) 
+        {
+            this.mColIndexCounter += 1;
+            pLvc.mIndex = this.mColIndexCounter;			
+            this.mColumns ~= pLvc;
+            if (this.mIsCreated) this.addColumnInternal(pLvc);  
+            // ptf("try add col: %s, indx: %d", pLvc.text, pLvc.index);          
+        }
+
         void addColumnInternal(ListViewColumn lvCol)  // Private
         {
-            lvCol.setIndex(this.stColIndex);
-            LVCOLUMNW lvc;
-            lvc.mask = LVCF_FMT | LVCF_TEXT  | LVCF_WIDTH  | LVCF_SUBITEM;//| LVCF_ORDER;
-            lvc.fmt = lvCol.alignment;
-            lvc.cx = lvCol.width;
-            lvc.pszText = cast(wchar*) lvCol.text.toUTF16z;
+            // lvCol.setIndex(this.mColIndexCounter);
+            LVCOLUMNW tagLVC;
+            tagLVC.mask = LVCF_FMT | LVCF_TEXT  | LVCF_WIDTH  | LVCF_SUBITEM;//| LVCF_ORDER;
+            tagLVC.fmt = lvCol.alignment;
+            tagLVC.cx = lvCol.width;
+            tagLVC.pszText = cast(wchar*) lvCol.text.toUTF16z;
 
             if (lvCol.hasImage) {
-                lvc.mask |= LVCF_IMAGE;
-                lvc.fmt |= LVCFMT_COL_HAS_IMAGES | LVCFMT_IMAGE;
-                lvc.iImage = lvCol.imageIndex;
-                if (lvCol.imageOnRight) lvc.fmt |= LVCFMT_BITMAP_ON_RIGHT;
+                tagLVC.mask |= LVCF_IMAGE;
+                tagLVC.fmt |= LVCFMT_COL_HAS_IMAGES | LVCFMT_IMAGE;
+                tagLVC.iImage = lvCol.imageIndex;
+                if (lvCol.imageOnRight) tagLVC.fmt |= LVCFMT_BITMAP_ON_RIGHT;
             }
 
-            lvCol.pLvc = lvc;
-
-            if (this.mIsCreated) {
-                this.sendMsg(LVM_INSERTCOLUMNW, lvCol.index, &lvc);
-                // We need this to do the painting in wm notify.
-               // if (!this.mDrawColumns && lvCol.mDrawNeeded) this.mDrawColumns = true;
-            } //else {
-                // We need to collect this info in mCIList.
-                // This list contains LVCOLUMNW struct and index of the column.
-                // We can insert these items right after we create the lv handle.
-                //this.mCIList ~= ColAndIndex(lvCol.index, lvc);
-
-            this.mColumns ~= lvCol;
-            this.stColIndex += 1;
+            lvCol.pLvc = tagLVC;
+            auto t = this.sendMsg(LVM_INSERTCOLUMNW, lvCol.mIndex, &tagLVC);
+            // ptf("ins col res: %d, err: %d, indx: %d", t, GetLastError(), lvCol.mIndex);
         }
 
         void addItemInternal(ListViewItem item)  // Private
         {
-            LVITEMW lvi;
-            lvi.mask = LVIF_TEXT | LVIF_PARAM | LVIF_STATE;
-            if (item.imageIndex != -1) lvi.mask |= LVIF_IMAGE;
-            lvi.state = 0;
-            lvi.stateMask = 0;
-            lvi.iItem = item.index;
-            lvi.iSubItem = 0;
-            lvi.iImage = item.imageIndex;
-            lvi.pszText = cast(wchar*) item.text.toUTF16z;
-            lvi.cchTextMax = cast(int)item.text.length;
-            lvi.lParam = cast(LPARAM) &item;
-            this.sendMsg(LVM_INSERTITEMW, 0, &lvi);
-            this.mItems ~= item;
+            LVITEMW tagLVI;
+            tagLVI.mask = LVIF_TEXT | LVIF_PARAM | LVIF_STATE;
+            if (item.imageIndex != -1) tagLVI.mask |= LVIF_IMAGE;
+            tagLVI.state = 0;
+            tagLVI.stateMask = 0;
+            tagLVI.iItem = item.index;
+            tagLVI.iSubItem = 0;
+            tagLVI.iImage = item.imageIndex;
+            tagLVI.pszText = item.wtext;
+            tagLVI.cchTextMax = 0;
+            tagLVI.lParam = cast(LPARAM) &item;
+            this.sendMsg(LVM_INSERTITEMW, 0, &tagLVI);
+            if (item.mSubItems.length > 0) {
+                SetLastError(0); 
+                foreach (ref subItem; item.mSubItems) {                    
+                    this.addSubItemInternal(subItem, item.index);    
+                }
+            }
         }
 
-        void addSubItemInternal(string sItem, int itemIndx, int subIndx, int imgIndx = -1)
+        void addSubItemInternal(ListViewSubItem sitem, int itemIndx)  // Private
+        {   
+            LVITEMW tagLVI;
+            tagLVI.iSubItem = sitem.index;
+            tagLVI.pszText = sitem.wtext;
+            tagLVI.iImage = sitem.imageIndex;
+            this.sendMsg(LVM_SETITEMTEXT, itemIndx, &tagLVI);
+        }
+
+        ListViewItem getItem(T)(T obj)
         {
-            LVITEMW lw;
-            lw.iSubItem = subIndx;
-            auto x = sItem.toUTF16z;
-            lw.pszText = cast(LPWSTR) x;
-            lw.iImage = imgIndx;
-            this.sendMsg(LVM_SETITEMTEXT, itemIndx, &lw);
-            this.mItems[itemIndx].addSubItem(sItem);
+            ListViewItem itemObj = null;
+            static if (is(T == ListViewItem)) {
+                itemObj = obj;
+            } else static if (is(T == int)) {
+                if (this.mItems.length > 0) {
+                    int itemIndex = obj;
+                    if (itemIndex < 0 || itemIndex >= this.mItems.length) {
+                        throw new Exception("Invalid item index");
+                    }
+                    itemObj = this.mItems[itemIndex];
+                }
+            } else static if (is(T == string)) {
+                auto found = this.mItems.find!(i => i.text == obj);
+                if (found) itemObj = found[0];
+            } 
+            return itemObj;
         }
 
         void adjustLVStyles() // Private
@@ -719,10 +775,17 @@ class ListView: Control
                     goto case;
                 case NM_CLICK:                    
                     auto nmia = cast(NMITEMACTIVATE *)lpm;
-                    auto lviea = new LVItemEventArgs(this.mItems[nmia.iItem],
-                                                     nmia.iItem);
-                    if (this.onItemClicked) this.onItemClicked(this, lviea);
-                    if (this.onItemDoubleClicked) this.onItemDoubleClicked(this, lviea);
+                    if (nmia.iItem >= 0 && nmia.iItem < this.mItems.length) {
+                        auto lviea = new LVItemEventArgs(
+                            this.mItems[nmia.iItem],
+                            nmia.iItem);
+
+                        if (this.onItemClicked)
+                            this.onItemClicked(this, lviea);
+
+                        if (this.onItemDoubleClicked)
+                            this.onItemDoubleClicked(this, lviea);
+                    }
                 break;
                 // case NM_HOVER:
                 //     // print("hover test");
@@ -798,6 +861,8 @@ class ListViewColumn
     mixin finalProperty!("imageIndex", this.mImgIndex);
     mixin finalProperty!("alignment", this.mColAlign);
     mixin finalProperty!("imageOnRight", this.mImgOnRight);
+    // mixin finalProperty!("index", this.mIndex);
+
 
     final Alignment headerAlign() {return this.mHdrTxtAlign;}
     final void headerAlign(Alignment value)
@@ -823,12 +888,13 @@ class ListViewColumn
     package:
         bool mDrawNeeded;
         bool mIsHotItem;
+        int mIndex = -1;
+        int mImgIndex = -1;
 
     private:
         string mText;
         int mWidth;
-        int mIndex = -1;
-        int mImgIndex = -1;
+        
         int mOrder;
         Color mBackColor;
         Color mForeColor;
@@ -838,11 +904,7 @@ class ListViewColumn
         Alignment mHdrTxtAlign;
         DWORD mHdrTxtFlag;
         LVCOLUMN pLvc;
-    
-        void setIndex(int index) 
-        {
-            this.mIndex = index; 
-        }
+
 
 } // End of ListViewColumn class
 
@@ -869,6 +931,7 @@ class ListViewItem
     //mixin finalProperty!("backColor", this.mBkClr.value);     IMPORTANT:: Re-Write this as normal props
     //mixin finalProperty!("foreColor", this.mFrClr.value);
     mixin finalProperty!("font", this.mFont);
+    final LPWSTR wtext() {return this.mText.toLPWSTR;}
 
     void backColor(T)(T clr)
     {
@@ -905,8 +968,11 @@ class ListViewItem
     }
 
     final int index() {return this.mIndex;}
-    final void addSubItem(string subItm) { this.mSubItems ~= subItm; }
-    final string[] subItems() {return this.mSubItems;}
+    // final void addSubItem(string subItm) 
+    // { 
+    //     this.mSubItems ~= new ListViewSubItem(subItm, this.mSubItems.length); 
+    // }
+    final ListViewSubItem[] subItems() {return this.mSubItems;}
 
     private:
         int mIndex;
@@ -918,12 +984,44 @@ class ListViewItem
         Color mFrClr;
         Font mFont;
         string mText;
-        string[] mSubItems;
+        ListViewSubItem[] mSubItems;
         static int mStIndex;
         HWND mPHwnd;
 
 } // ListViewItem class
 
+class ListViewSubItem 
+{
+    this(string txt, int sIndex, int imgIndex = 1, uint bgc = 0xFFFFFF, uint fgc = 0x000000)
+    {
+        this.mText = txt;
+        // this.mBkClr(bgc);
+        // this.mFrClr(fgc);
+        this.mImgIndex = imgIndex;
+        this.mIndex = sIndex;
+    }
+
+    final int index() {return this.mIndex;}
+    final LPWSTR wtext() {return this.mText.toLPWSTR;}
+    final int imageIndex() {return this.mImgIndex;}
+    final string text() {return this.mText;}
+
+     void backColor(T)(T clr)
+    {
+        static if (is(T == uint)) {
+            this.mBkClr(clr);
+        } else static if (is(T == Color)) {
+            this.mBkClr = clr;
+        }
+    }
+    private:
+        string mText;
+        Font mFont;
+        uint mBkClr;
+        uint mFrClr;
+        int mIndex;
+        int mImgIndex;
+}
 
 
 struct MyHdItem
@@ -976,7 +1074,7 @@ private LRESULT lvWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             return cast(LRESULT) res;
         }
         switch (message) {
-            case WM_DESTROY: 
+            case WM_NCDESTROY: 
                 self.finalize(scID); 
             break;
             case WM_PAINT: 

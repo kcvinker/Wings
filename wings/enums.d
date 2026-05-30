@@ -53,10 +53,10 @@ enum MouseButtonState {released, pressed }
 
 /// Public enum for describing control types
 enum ControlType {
-    none, window, button, contextMenu, calendar, checkBox, 
+    form, button, calendar, checkBox, 
     comboBox, dateTimePicker, groupBox, label, listBox, 
     listView, numberPicker, panel, pictureBox, progressBar, 
-    radioButton, textBox, treeView, trackBar, upDown
+    radioButton, textBox, trackBar, treeView
 }
 
 // Used for WM_SIZE and WM_SIZING message handlers
@@ -135,6 +135,8 @@ enum PictureSizeMode {
 }
 
 enum MsgHandlerResult { returnZero, returnOne, callDefProc, proceedFunc}
+
+enum BackColorMode {none, inherit, white}
 
 enum Key {
     modifier = -65_536,

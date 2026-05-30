@@ -2,8 +2,8 @@
 /*==============================================ProgressBar Docs=====================================
     Constructor:            
         this(Form parent) 
-        this(Form parent, int x, int y)   
-        this(Form parent, int x, int y, int w, int h)
+        this (Control parent, int x, int y)   
+        this (Control parent, int x, int y, int w, int h)
 
     Properties:
         ProgressBar inheriting all Control class properties    
@@ -44,14 +44,10 @@ enum ProgressBarStyle {blockStyle, marqueeStyle}
 
 class ProgressBar : Control
 {
-    this(Form parent, int x, int y, int w, int h)
+    this (Control parent, int x, int y, int w, int h)
     {
-        mixin(repeatingCode);
-        ++pgbNumber;
         mControlType = ControlType.progressBar;
-        this.mFont = new Font(parent.font);
-        mStyle = pgbStyle; 
-        mExStyle = pgbExStyle; 
+        this.initControl(parent, x, y, w, h, &pgbNumber); 
 		mBarStyle = ProgressBarStyle.blockStyle;
         mState = ProgressBarState.normal;
 		mMinValue = 0;
@@ -60,22 +56,16 @@ class ProgressBar : Control
         mSpeed = 30;
         this.percFmt = "%d%%";
         this.mDeciPrec = 0;
-        mForeColor(0x000000);
-        this.mName = format("%s_%d", "ProgressBar_", pgbNumber);
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        ++Control.stCtlId;
-        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, int x, int y) { this(parent, x, y, 180, 25);}
+    this (Control parent, int x, int y) { this(parent, x, y, 180, 25);}
     this(Form parent) { this(parent, 20, 20, 180, 25);}
 
     override void createHandle()
     {
 		if (this.mBarStyle == ProgressBarStyle.marqueeStyle) this.mStyle |= PBS_MARQUEE;
 		if (this.mVertical) this.mStyle |= PBS_VERTICAL;
-        this.createHandleInternal(mClassName.ptr);
+        this.createHandleInternal();
         if (this.mHandle) {
             this.setSubClass(&pgbWndProc);
             if (this.mMinValue != 0 || this.mMaxValue != 100) {

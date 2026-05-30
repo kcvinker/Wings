@@ -1,8 +1,8 @@
 // Created on - 27-July-2022 07:41 AM
 /*==============================================TextBox Docs=====================================
     Constructor:
-        this (Form parent, int x, int y)
-        this (Form parent, int x, int y, int w, int h)
+        this (Control parent, int x, int y)
+        this (Control parent, int x, int y, int w, int h)
 
 	Properties:
 		TextBox inheriting all Control class properties	
@@ -31,37 +31,24 @@ enum DWORD tbExStyle = WS_EX_LEFT|WS_EX_LTRREADING|WS_EX_CLIENTEDGE;
 class TextBox: Control
 {
     EventHandler onTextChanged;
-    this (Form parent, int x, int y, int w, int h)
+    this (Control parent, int x, int y, int w, int h)
     {
-        mixin(repeatingCode);
-        ++tbNumber;
         this.mControlType = ControlType.textBox;
-        this.mFont = new Font(parent.font);
-        this.mName = format("%s_%d", "Textbox_", tbNumber);
-        this.mStyle = tbStyle;  
-        this.mExStyle = tbExStyle;
-        this.mBackColor(0Xffffff); // White
-        this.mForeColor(0x000000); // Black
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        this.mHasFont = true;
-        ++Control.stCtlId;
+        this.initControl(parent, x, y, w, h, &tbNumber);
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
-        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this (Form parent, int x, int y) {this(parent, x, y, 120, 25); }
-    //this (Form parent, int x, int y, int w, int h) {this(parent, "", x, y, w, h);}
+    this (Control parent, int x, int y) {this(parent, x, y, 120, 25); }
+    //this (Control parent, int x, int y, int w, int h) {this(parent, "", x, y, w, h);}
 
     override void createHandle()
     {
     	this.setTbStyle();
         // printf("textbox style %X", this.mStyle);
-    	this.createHandleInternal(tbClsName.ptr);
+    	this.createHandleInternal();
     	if (this.mHandle) {
             this.setSubClass(&tbWndProc);
-            this.createLogFontInternal();
-            if (this.mCue.length > 0) this.sendMsg(EM_SETCUEBANNER, 0x0001, this.mCue.ptr);
+            if (this.mCue.length > 0) this.sendMsg(EM_SETCUEBANNER, 0x0001, this.mCue.toUTF16z);
             // if (this.mReadOnly) this.sendMsg(EM_SETREADONLY, 1, 0);
             // Without this line, textbox looks ugly style. It won't receive WM_NCPAINT message.
             // So we just redraw the non client area and it will receive WM_NCPAINT
@@ -70,6 +57,12 @@ class TextBox: Control
     }
 
     mixin finalProperty!("readOnly", this.mReadOnly);
+    final void cueBanner(string text) {
+        this.mCue = text;
+        if (this.mHandle) this.sendMsg(EM_SETCUEBANNER, 0x0001, this.mCue.toUTF16z);
+    }
+
+    final string cueBanner() { return this.mCue; }
 
     private:
         Alignment mTxtPos;
@@ -80,7 +73,7 @@ class TextBox: Control
         bool mReadOnly;
         bool mDrawFocus;
         bool mDrawBkClr = true;
-        wstring mCue;
+        string mCue;
         static int tbNumber;
 
 

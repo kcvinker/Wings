@@ -2,9 +2,9 @@
 /*==============================================NumberPicker Docs=====================================
     Constructor:        
         this(Form parent)
-        this(Form parent, int x, int y, bool btnLeft)
-        this(Form parent, int x, int y, EventHandler evntFn = null )
-        this(Form parent, int x, int y, int w, int h, bool btnLeft = false, EventHandler evtFn = null)
+        this (Control parent, int x, int y, bool btnLeft)
+        this (Control parent, int x, int y, EventHandler evntFn = null )
+        this (Control parent, int x, int y, int w, int h, bool btnLeft = false, EventHandler evtFn = null)
 
 	Properties:
 		NumberPicker inheriting all Control class properties	
@@ -52,7 +52,7 @@ DWORD swp_flag = SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOZORDER;
 
 class NumberPicker: Control
 {
-    this(Form parent, int x, int y, int w, int h, bool btnLeft = false, EventHandler evtFn = null)
+    this (Control parent, int x, int y, int w, int h, bool btnLeft = false, EventHandler evtFn = null)
     {
         if (!isNpCreated) {
             isNpCreated = true;
@@ -60,38 +60,26 @@ class NumberPicker: Control
             InitCommonControlsEx(&appData.iccEx);
         }
 
-        mixin(repeatingCode);
-        ++npNumber;
-        mControlType = ControlType.numberPicker;
-        this.mFont = new Font(parent.font);
-        mBtnLeft = btnLeft;
-        mMaxRange = 100;
-        mMinRange = 0;
-        mDeciPrec = 2;
-        mStep = 1;
-        mStyle = npStyle;
-        mExStyle = 0x00000000;//WS_EX_LTRREADING | WS_EX_RTLREADING | WS_EX_CLIENTEDGE;   ES_LEFT:= 0x0
-        mBuddyStyle = buddyStyle; 
-        mBuddyExStyle = buddyExStyle;
-        mBackColor(defBackColor);
-        mForeColor(defForeColor);
-        this.mHasFont = true;
-        mFmtStr = "%.02f";
-        mValue = mMinRange;
-        this.mName = format("%s_%d", "NumberPicker_", npNumber);
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        ++Control.stCtlId;
+        this.mControlType = ControlType.numberPicker;
+        this.initControl(parent, x, y, w, h, &npNumber);
+        this.mBtnLeft = btnLeft;
+        this.mMaxRange = 100;
+        this.mMinRange = 0;
+        this.mDeciPrec = 2;
+        this.mStep = 1;
+        this.mBuddyStyle = buddyStyle; 
+        this.mBuddyExStyle = buddyExStyle;
+        this.mFmtStr = "%.02f";
+        this.mValue = this.mMinRange;
         if (evtFn != null) this.onValueChanged = evtFn;
-        if (parent.mAutoCreate) this.createHandle();
     }
 
     this(Form parent) {this(parent, 10, 10, 100, 27);}
-    this(Form parent, int x, int y, EventHandler evntFn = null )
+    this (Control parent, int x, int y, EventHandler evntFn = null )
     {
         this(parent, x, y, 70, 27, false, evntFn);
     }
-    this(Form parent, int x, int y, bool btnLeft)
+    this (Control parent, int x, int y, bool btnLeft)
     {
          this(parent, x, y, 70, 27, btnLeft);
     }

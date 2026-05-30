@@ -4,7 +4,7 @@
 Constructor:
     this(Form p )
     this(Form p, int x, int y ) 
-    this(Form parent, int x, int y, int w, int h)
+    this (Control parent, int x, int y, int w, int h)
 
 	Properties:
 		DateTimePicker inheriting all Control class properties	
@@ -88,26 +88,18 @@ class DateTimePicker: Control
 	EventHandler onCalendarClosed;
 	DateTimeEventHandler onTextChanged;
 
-	this(Form parent, int x, int y, int w, int h)
+	this (Control parent, int x, int y, int w, int h)
     {
         if (!appData.isDtpInit) {
             appData.isDtpInit = true;
             appData.iccEx.dwICC = ICC_DATE_CLASSES;
             InitCommonControlsEx(&appData.iccEx);
         }
-
-        mixin(repeatingCode);
-        mControlType = ControlType.dateTimePicker;
-        this.mFont = new Font(parent.font);
-        this.mExStyle = 0;
+        
+        this.mControlType = ControlType.dateTimePicker;
+        this.initControl(parent, x, y, w, h, &dtpNumber);
         this.mFormat = DtpFormat.custom;
         this.mFormatString = " dd-MMM-yyyy";
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        this.mHasFont = true;
-        ++Control.stCtlId;
-        ++dtpNumber;
-        if (parent.mAutoCreate) this.createHandle();
     }
 
     this(Form p ) { this(p, 20, 20, 140, 25); }
@@ -116,7 +108,7 @@ class DateTimePicker: Control
     override void createHandle()
     {
     	this.setDtpStyles();
-        this.createHandleInternal(mClassName.ptr);
+        this.createHandleInternal();
         if (this.mHandle) {
             this.setSubClass(&dtpWndProc);
             this.afterCreationStyling();

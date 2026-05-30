@@ -1,9 +1,9 @@
 /*==============================================CheckBox Docs=====================================
 Constructor:
-    this(Form parent, EventHandler checkFn = null)
-    this(Form parent, string txt, EventHandler checkFn = null)
-    this (Form parent, string txt, int x, int y, EventHandler checkFn = null)
-    this(Form parent, string txt, int x, int y, int w, int h, EventHandler checkFn = null)
+    this (Control parent, EventHandler checkFn = null)
+    this (Control parent, string txt, EventHandler checkFn = null)
+    this (Control parent, string txt, int x, int y, EventHandler checkFn = null)
+    this (Control parent, string txt, int x, int y, int w, int h, EventHandler checkFn = null)
 
 	Properties:
 		CheckBox inheriting all Control class properties		
@@ -40,39 +40,26 @@ class CheckBox : Control
 
     EventHandler onCheckedChanged;
 
-	this(Form parent, string txt, int x, int y, int w, int h, EventHandler checkFn = null)
+	this (Control parent, string txt, int x, int y, int w, int h, EventHandler checkFn = null)
     {
-        mixin(repeatingCode);
-        ++cbNumber;
-        mAutoSize = true;
-        mControlType = ControlType.checkBox;
-        mText = txt;
-        mStyle = WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX;
-        mExStyle = WS_EX_LTRREADING | WS_EX_LEFT;
-        mTxtStyle = DT_SINGLELINE | DT_VCENTER;
-        mBackColor = parent.mBackColor;
-        this.mFont = new Font(parent.font);
-        this.mName = format("%s_%d", "CheckBox_", cbNumber);
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        this.mTextable = true;
-        this.mHasFont = true;
-        ++Control.stCtlId;        
+        
+        this.mControlType = ControlType.checkBox;
+        this.mAutoSize = true;
+        this.initControl(parent, x, y, w, h, &cbNumber, txt);       
         if (checkFn) this.onClick = checkFn;
-        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, EventHandler checkFn = null) {
+    this (Control parent, EventHandler checkFn = null) {
     	string txt = format("CheckBox_%s", cbNumber);
     	this(parent, txt, 20, 20, 50, 20, checkFn);
     }
 
-    this(Form parent, string txt, EventHandler checkFn = null)
+    this (Control parent, string txt, EventHandler checkFn = null)
     {
         this(parent, txt, 20, 20, 50, 20, checkFn);
     }
 
-    this (Form parent, string txt, int x, int y, EventHandler checkFn = null)
+    this (Control parent, string txt, int x, int y, EventHandler checkFn = null)
     {
         this(parent, txt, x, y, 50, 20, checkFn);
     }
@@ -82,7 +69,7 @@ class CheckBox : Control
     {
         import wings.buttons: btnClassName;
     	this.setCbStyles();
-        this.createHandleInternal(btnClassName.ptr);
+        this.createHandleInternal();
         if (this.mHandle) {
             this.setSubClass(&cbWndProc);
             this.setCbSize();

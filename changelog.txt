@@ -1,13 +1,27 @@
 Wings changelog
 
-1.0.072 (7-Apr-2026)
+Version 1.1.073 (-May-2026)
+    Lazy control handle creation has been implemented:
+        Previously, users needed to call the createHandle function for Forms and controls. We have removed this redundancy, which solved many design issues and brought more convenience. We can now reduce the number of parameters for constructors. We can now use struct members like properties. So createHandle function just 
+        vanished.
+
+    GroupBox is now parent to other controls.
+        Previously, GroupBox was not a parent for other controls. Now, Form & GroupBox can be parents to 
+        other controls.
+
+    Controls now have a metadata which contains control specific info.
+
+Version 1.0.073
+    Improved Control click event----
+
+Version 1.0.072 (7-Apr-2026)
     Fixed a bug NumberPicker mouse enter & mouse leave events.
         Now, mouse enter & mouse leave events uses overrided functions. 
 
-1.0.071 (5-Apr-2026)
+Version 1.0.071 (5-Apr-2026)
     Fixed bug in ComboBox mouse enter & mouse leave events.
 
-1.0.070 (4-Apr-2026)
+Version 1.0.070 (4-Apr-2026)
     Removed redundant code.
         Implemented centralized message handling system and removed hundreds of redundant code.
         Now, base class Control provides centralized message handling function for common messages.

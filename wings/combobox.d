@@ -2,8 +2,8 @@
 /*==============================================ComboBox Docs=====================================
 Constructor:
     this(Form parent)
-    this (Form parent, int x, int y)
-    this(Form parent, int x, int y, int w, int h)
+    this (Control parent, int x, int y)
+    this (Control parent, int x, int y, int w, int h)
 
 	Properties:
 		ComboBox inheriting all Control class properties
@@ -62,28 +62,15 @@ private int editSubClsID = 4000;
  */
 class ComboBox: Control
 {
-    this(Form parent, int x, int y, int w, int h)
+    this (Control parent, int x, int y, int w, int h)
     {
-        mixin(repeatingCode);
-        ++cmbNumber;
-        mControlType = ControlType.comboBox;
-        mStyle = WS_CHILD | WS_VISIBLE;
-        mExStyle = WS_EX_CLIENTEDGE;
-        mBackColor(defBackColor);
-        mForeColor(defForeColor);
-        this.mFont = new Font(parent.font);
-        mSelIndex = -1;
-        this.mName = format("%s_%d", "ComboBox_", cmbNumber);
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        this.mHasFont = true;
-        // this.mSpMLeaveProc = (ctl) => specialMouseLeaveMsgHanlder(cast(ComboBox) ctl);
-        ++Control.stCtlId;        
-        if (parent.mAutoCreate) this.createHandle();
+        this.mControlType = ControlType.comboBox;
+        this.mSelIndex = -1;
+        this.initControl(parent, x, y, w, h, &cmbNumber);
     }
 
     this(Form parent) { this(parent, 20, 20, 150, 30); }
-    this (Form parent, int x, int y) { this(parent, x, y, 150, 30); }
+    this (Control parent, int x, int y) { this(parent, x, y, 150, 30); }
 
     /// Returns the items collection of ComboBox
 	final string[] items() {return this.mItems;}
@@ -246,33 +233,12 @@ class ComboBox: Control
         We are not using the base class function here.
         Because, we sometimes need to create the hwnd for existing combo.
         -------------------------------------------------------------------*/ 
-        if (!this.mRecreateEnabled) {
-            this.ctlId = Control.stCtlId;
-            this.mBkBrush = this.mBackColor.getBrush();
-        }
-        if (this.mCmbStyle == DropDownStyle.labelCombo) {
-            this.mStyle |= CBS_DROPDOWNLIST;
-        } else {
-            this.mStyle |= CBS_DROPDOWN;
-        }
-        
-        this.mHandle = CreateWindowEx(  this.mExStyle,
-                                        this.mClassName.ptr,
-                                        this.mText.toUTF16z,
-                                        this.mStyle,
-                                        this.mXpos,
-                                        this.mYpos,
-                                        this.mWidth,
-                                        this.mHeight,
-                                        this.mParent.handle,
-                                        cast(HMENU) this.ctlId,
-                                        appData.hInstance,
-                                        null);
+        this.setCmbStyles();        
+        this.createHandleInternal();
         if (this.mHandle) {
             this.mIsCreated = true;
             this.mOldHwnd = this.mHandle;
             this.setSubClass(&cmbWndProc);
-            this.setFontInternal();
         	this.getComboInfo();
             insertItems();
             if (this.mSelIndex > -1) this.sendMsg(CB_SETCURSEL, this.mSelIndex, 0);
@@ -292,7 +258,7 @@ class ComboBox: Control
 		int mVisItemCount;
 		int mSelIndex = -1;
         int ctlId;
-		bool mRecreateEnabled;
+		bool mRecreateEnabled, mHasInput;
         bool tbMLDownHappened, tbMRDownHappened;
 		HWND mOldHwnd;
         static wchar[] mClassName = ['C', 'o', 'm', 'b', 'o', 'B', 'o', 'x', 0];
@@ -307,7 +273,7 @@ class ComboBox: Control
 			COMBOBOXINFO cmbInfo;
 			cmbInfo.cbSize = cmbInfo.sizeof;
 			this.sendMsg(CB_GETCOMBOBOXINFO, 0, &cmbInfo);
-            this.mParent.cmb_dict[cmbInfo.hwndList] = this.mHandle; // Put the handle in parent's dic
+            this.mOwnerForm.cmb_dict[cmbInfo.hwndList] = this.mHandle; // Put the handle in parent's dic
             SetWindowSubclass(  cmbInfo.hwndItem,
                                 &cmbEditWndProc,
                                 UINT_PTR(editSubClsID),
@@ -338,6 +304,30 @@ class ComboBox: Control
             GetWindowRect(hw, &rc);
             getMousePoints(pts);
             return PtInRect(&rc, pts);
+        }
+
+        void setCmbStyles()
+        {
+            bool hasInput = this.mCmbStyle == DropDownStyle.textCombo;
+            if (this.mRecreateEnabled) {
+                if (hasInput) {
+                    if ((this.mStyle & CBS_DROPDOWNLIST) == CBS_DROPDOWNLIST) {
+                        this.mStyle = this.mStyle ^ CBS_DROPDOWNLIST;
+                    }
+                    // Add CBS_DROPDOWN
+                    this.mStyle = this.mStyle | CBS_DROPDOWN;
+                } else {
+                    if ((this.mStyle & CBS_DROPDOWN) == CBS_DROPDOWN) {
+                        this.mStyle = this.mStyle ^ CBS_DROPDOWN;
+                    }
+                    // Add CBS_DROPDOWNLIST
+                    this.mStyle = this.mStyle | CBS_DROPDOWNLIST;
+                }
+            } else {
+                this.mStyle = hasInput ? (this.mStyle | CBS_DROPDOWN) : (this.mStyle | CBS_DROPDOWNLIST);
+            }
+    
+            this.mBkBrush = this.mBackColor.getBrush();
         }
 
         void finalize(UINT_PTR scID) // Private

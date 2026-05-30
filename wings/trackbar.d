@@ -1,8 +1,8 @@
 module wings.trackbar;
 /*==============================================TrackBar Docs=====================================
     Constructor:
-        this (Form parent, int x, int y)
-        this (Form parent, int x, int y, int w, int h, bool cdraw = false, 
+        this (Control parent, int x, int y)
+        this (Control parent, int x, int y, int w, int h, bool cdraw = false, 
                 EventHandler evtFn = null, bool vertical = false )
 
 	Properties:
@@ -72,40 +72,31 @@ class TicData
 
 class TrackBar: Control
 {
-    this (Form parent, int x, int y, int w, int h, bool cdraw = false, 
+    this (Control parent, int x, int y, int w, int h, bool cdraw = false, 
                 EventHandler evtFn = null, bool vertical = false )
     {
-        mixin(repeatingCode); // Setting size, position, parent & font
-        ++tkbNumber;
-        mName = format("TrackBar_%d", tkbNumber);
         mControlType = ControlType.trackBar;
-        mStyle = tkbStyle;
-        mExStyle = tkbExStyle;
-        mBackColor = parent.mBackColor;
-        mVertical = vertical;
-        mTicWidth = 1;
-        mTicLen = 4;
-        mTicPos = TicPosition.downSide;
-        mLineSize = 1;
-        mChannelSTyle = ChannelStyle.classic;
-        mTrackChange = TrackChange.none;
-        mMinRange = 0;
-        mMaxRange = 100;
-        mFrequency = 10;
-        mPageSize = 10;
+        this.initControl(parent, x, y, w, h, &tkbNumber);
+        this.mVertical = vertical;
+        this.mTicWidth = 1;
+        this.mTicLen = 4;
+        this.mTicPos = TicPosition.downSide;
+        this.mLineSize = 1;
+        this.mChannelSTyle = ChannelStyle.classic;
+        this.mTrackChange = TrackChange.none;
+        this.mMinRange = 0;
+        this.mMaxRange = 100;
+        this.mFrequency = 10;
+        this.mPageSize = 10;
         this.mCustDraw = cdraw;
-        mChannelColor(0xc2c2a3);
-        mSelColor(0x99ff33);
-        mTicColor(0x3385ff);
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        ++Control.stCtlId;
+        this.mChannelColor = Color(0xc2c2a3);
+        this.mSelColor = Color(0x99ff33);
+        this.mTicColor = Color(0x3385ff);
         if (vertical) this.mTicPos = TicPosition.leftSide;
         if (evtFn != null) this.onValueChanged = evtFn;
-        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this (Form parent, int x, int y) {this(parent, x, y, 150, 24);}
+    this (Control parent, int x, int y) {this(parent, x, y, 150, 24);}
 
     // Events
     EventHandler onValueChanged,onDragging,onDragged;
@@ -180,7 +171,7 @@ class TrackBar: Control
     {
         // import std.stdio;
     	this.setTkbStyle();
-    	this.createHandleInternal(mClassName.ptr);
+    	this.createHandleInternal();
     	if (this.mHandle) {
             this.setSubClass(&tkbWndProc);
             if (this.mCustDraw) this.prepareForCustDraw();

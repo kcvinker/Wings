@@ -2,10 +2,10 @@
 /*==============================================Label Docs=====================================
     Constructor:        
         this(Form parent)
-        this(Form parent, string txt)
-        this(Form parent, int x, int y)
-        this(Form parent, string txt, int x, int y)
-        this(Form parent, string txt, int x, int y, int w, int h)
+        this (Control parent, string txt)
+        this (Control parent, int x, int y)
+        this (Control parent, string txt, int x, int y)
+        this (Control parent, string txt, int x, int y, int w, int h)
 
 	Properties:
 		Label inheriting all Control class properties	
@@ -28,35 +28,21 @@ enum DWORD lbStyle = WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS |
 
 class Label: Control
 {
-    this(Form parent, string txt, int x, int y, int w, int h)
+    this (Control parent, string txt, int x, int y, int w, int h)
     {
-        mixin(repeatingCode);
-        mText = txt;
-        ++lblNumber;
         mControlType = ControlType.label;
-        this.mFont = new Font(parent.font);
+        this.initControl(parent, x, y, w, h, &lblNumber, txt);
         mTxtAlign = TextAlignment.midLeft;
-        mStyle = lbStyle;
-        mExStyle = 0;
         mAutoSize = true;
-        mBackColor = parent.mBackColor;
-        mForeColor(defForeColor);
-        this.mName = format("%s_%d", "Label+", lblNumber);
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        this.mHasFont = true;
-        ++Control.stCtlId;
-        if (parent.mAutoCreate) this.createHandle();
-        //mBorder = LabelBorder.singleLine;
     }
 
     this(Form parent) { this(parent, format("Label_", lblNumber), 20, 20, 0, 0); }
-    this(Form parent, int x, int y)
+    this (Control parent, int x, int y)
     {
         this(parent, format("Label_", lblNumber), x, y, 0, 0);
     }
-    this(Form parent, string txt) { this(parent, txt, 20, 20, 0, 0); }
-    this(Form parent, string txt, int x, int y)
+    this (Control parent, string txt) { this(parent, txt, 20, 20, 0, 0); }
+    this (Control parent, string txt, int x, int y)
     {
         this(parent, txt, x, y, 0, 0);
     }
@@ -66,7 +52,7 @@ class Label: Control
         if (this.mBorder != LabelBorder.noBorder) adjustBorder();
         this.mBkBrush = CreateSolidBrush(this.mBackColor.cref);
         this.checkForAutoSize();
-        this.createHandleInternal(mClassName.ptr);
+        this.createHandleInternal();
         if (this.mHandle) {
             if (this.mAutoSize) this.calculateAutoSize();
             this.setSubClass(&lblWndProc);

@@ -120,7 +120,7 @@ class Form : Control
         this.mWinStyle = FormStyle.normalWin;
         this.mBkDrawMode = FormBkMode.normal;
         this.mFont = new Font(appData.appFont);
-        this.controlType = ControlType.window;
+        this.controlType = ControlType.form;
         this.mBackColor = appData.appColor; // using opCall feature
         mFormCount += 1; // Incrementing private static variable
     }
@@ -185,6 +185,7 @@ class Form : Control
     /// This will show the form on the screen
     final void show(DWORD swParam = SW_SHOW)
     {
+        this.createHandle();
         this.createControlHandles();
         ShowWindow(this.mHandle, swParam);
         UpdateWindow(this.mHandle);
@@ -212,6 +213,7 @@ class Form : Control
     final void enablePrintPoint()
     {
         import std.functional;
+        this.mEnablePrintPoint = true;
         this.onMouseUp = toDelegate(&printFormPoints);
     }
 
@@ -271,6 +273,7 @@ class Form : Control
         bool mSizingStarted;
         bool mMenubarCreated;
         bool mAutoCreate;
+        bool mEnablePrintPoint;
         FormBkMode mBkDrawMode;
         HWND[HWND] cmb_dict;
         Font mMenuFont;
@@ -492,8 +495,7 @@ void printFormPoints(Object sender, MouseEventArgs e)
 {
     import std.stdio;
     static int x = 1;
-    writefln("[%s] X : %s, Y : %s", x, e.xPos, e.yPos);
-    ++x;
+    writefln("[%s] X : %s, Y : %s", x++, e.xPos, e.yPos);
     stdout.flush();
 }
 

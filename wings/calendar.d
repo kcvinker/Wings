@@ -1,7 +1,7 @@
 
 /*==============================================Calendar Docs=====================================
 Constructor:
-    this(Form parent, int x, int y, int w, int h)
+    this (Control parent, int x, int y, int w, int h)
     this(Form p, int x, int y) 
 
 	Properties:
@@ -92,34 +92,23 @@ class Calendar : Control
 
     EventHandler valueChanged, selectionChanged, viewChanged;
 
-	 this(Form parent, int x, int y, int w, int h)
-     {
+	this (Control parent, int x, int y)
+    {
         if (!appData.isDtpInit) {
             appData.isDtpInit = true;
             appData.iccEx.dwICC = ICC_DATE_CLASSES;
             InitCommonControlsEx(&appData.iccEx);
         }
 
-        mixin(repeatingCode);
         mControlType = ControlType.calendar;
-        this.mStyle = WS_CHILD | WS_VISIBLE;
-        this.mExStyle = 0;
-        this.mName = format("%s_%d", "Calendar_", calNumber);
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        
-        ++Control.stCtlId;
-        ++calNumber;
-        if (parent.mAutoCreate) this.createHandle();
+        this.initControl(parent, x, y, 0, 0, &calNumber);
         // writefln("mcn first %d, mcn sel changed %d, mcn vew changed %d", MCN_FIRST, MCN_SELCHANGE, MCN_VIEWCHANGE);
     }
-
-    this(Form p, int x, int y) { this(p, x, y, 0, 0); }
 
     override void createHandle()
     {
     	this.setCalenderStyles();
-        this.createHandleInternal(mClassName.ptr);        // Calling base function
+        this.createHandleInternal();        // Calling base function
         if (this.mHandle) {
             this.setSubClass(&calWndProc);
             RECT rct;

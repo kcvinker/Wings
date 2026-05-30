@@ -3,8 +3,8 @@
 /*==============================================ListBox Docs=====================================
     Constructor:
         this(Form parent)
-        this(Form parent, int x, int y)
-        this(Form parent, int x, int y, int w, int h)
+        this (Control parent, int x, int y)
+        this (Control parent, int x, int y, int w, int h)
 
 	Properties:
 		ListBox inheriting all Control class properties	
@@ -48,26 +48,14 @@ enum DWORD lbxStyle = WS_VISIBLE | WS_CHILD | WS_BORDER  | LBS_NOTIFY | LBS_HASS
 
 class ListBox: Control {
 
-    this(Form parent, int x, int y, int w, int h)
+    this (Control parent, int x, int y, int w, int h)
     {
-        mixin(repeatingCode);
-        ++lbxNumber;
         mControlType = ControlType.listBox;
-        this.mFont = new Font(parent.font);
-        mStyle = lbxStyle;
-        mExStyle = 0;
-        mBackColor(defBackColor);
-        mForeColor(defForeColor);
-        this.mName = format("%s_%d", "ListBox_", lbxNumber);
-        this.mParent.mControls ~= this;
-        this.mHasFont = true;
-        this.mCtlId = Control.stCtlId;
-        ++Control.stCtlId;
-        if (parent.mAutoCreate) this.createHandle();
+        this.initControl(parent, x, y, w, h, &lbxNumber);
     }
 
     this(Form parent) { this(parent, 20, 20, 180, 200); }
-    this(Form parent, int x, int y) { this(parent, x, y, 180, 200);}
+    this (Control parent, int x, int y) { this(parent, x, y, 180, 200);}
 
 
     mixin finalProperty!("hasHScroll", this.mUseHscroll);
@@ -244,7 +232,7 @@ class ListBox: Control {
     override void createHandle()
     {
     	this.setLboxStyles();
-        this.createHandleInternal(mClassName.ptr);
+        this.createHandleInternal();
         if (this.mHandle) {
             this.setSubClass(&lbxWndProc);
             if (this.mItems.length > 0) {

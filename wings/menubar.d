@@ -6,7 +6,7 @@
     (2) MenuBar:
             Constructor:
                 this (Form parent)
-                this(Form parent, string[] menuNames ...)
+                this (Control parent, string[] menuNames ...)
 
             Properties:
                 menus   : MenuItem[]
@@ -67,7 +67,7 @@ class MenuBar : MenuBase
         parent.mMenubar = this;
     }
 
-    this(Form parent, bool cdraw, string[] menuNames ...)
+    this (Form parent, bool cdraw, string[] menuNames ...)
     {
         this(parent, cdraw);
         this.addItems(menuNames);

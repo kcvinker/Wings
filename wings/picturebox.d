@@ -16,28 +16,21 @@ private static int pbxNumber = 1;
 
 class PictureBox : Control
 {
-    this(Form parent, int x, int y, int w, int h, 
+    this (Control parent, int x, int y, int w, int h, 
             string imagePath = null, PictureSizeMode sizeMode = PictureSizeMode.normal)
     {
         registerPBoxClass();
-        this.mName = format("%s_%d", "PictureBox", pbxNumber);
-        mixin(repeatingCode);
+        this.mControlType = ControlType.pictureBox;
+        this.initControl(parent, x, y, w, h, &pbxNumber);
         this.mSizeMode = sizeMode;
         this.mImgPath = imagePath;        
-        mControlType = ControlType.pictureBox;
-        mStyle = WS_CHILD | WS_TABSTOP | WS_VISIBLE;
-        mExStyle = 0;
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        ++Control.stCtlId;
-        ++pbxNumber;
     }
 
     override void createHandle()
     {   
         this.mSize = SIZE(this.mWidth, this.mHeight);
         if (this.mImgPath.length > 0) this.setImage(this.mImgPath);
-        this.createHandleInternal(pBoxClass.ptr);
+        this.createHandleInternal();
         if (this.mHandle) {
             // ptf("PictureBox handle created:", this.mHandle);
             // setThisPtrOnWindows(this, this.mHandle,);

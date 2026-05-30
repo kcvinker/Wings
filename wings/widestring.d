@@ -4,6 +4,8 @@ module wings.widestring;
 
 import core.sys.windows.windows;
 import std.stdio;
+import wings.commons: ptf;
+
 
 
 class WideString {
@@ -17,6 +19,7 @@ class WideString {
         } else {
             writeln("Can't create WideString, txt is empty");
         }
+        // ptf("wide: %s", txt);
     }
 
     this(WideString src) {

@@ -70,7 +70,16 @@ package {
         SetWindowLongPtrW(hw, GWLP_USERDATA, cast(LONG_PTR) cast(void*) obj);
     }
 
+    pragma(inline, true) // Convert the immutable wchar to mutable.
+    LPWSTR toLPWSTR(string value)
+    {
+        return cast(wchar*) value.toUTF16z;
+    }
 
+     void setWindowUserData(HWND hw, Object obj)
+    {
+        SetWindowLongPtrW(hw, GWLP_USERDATA, cast(LONG_PTR) cast(void*) obj);
+    }
     
     //alias Wstring = const(wchar)*;
     enum uint defBackColor = 0xFFFFFF;
@@ -226,7 +235,7 @@ package {
     }
 
     // Message Constants - Wing's own messages
-        enum uint MSG_BASE = WM_APP + 1;
+        enum uint MSG_BASE = WM_APP + 1; // 32768 + 1
         enum uint CM_LEFTCLICK = MSG_BASE;
         enum uint CM_RIGHTCLICK = MSG_BASE + 1;
         enum uint CM_NOTIFY = MSG_BASE + 2;

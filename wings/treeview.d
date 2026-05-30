@@ -2,8 +2,8 @@ module wings.treeview; // Created on 27-July-2022 02:25 PM
 /*==============================================TreeView Docs=====================================
     TreeView Class
         Constructor:
-            this (Form parent, int x, int y)
-            this (Form parent, int x, int y, int w, int h)
+            this (Control parent, int x, int y)
+            this (Control parent, int x, int y, int w, int h)
 
         Properties:
             TreeView inheriting all Control class properties	
@@ -58,60 +58,94 @@ private wchar[] mClassName = ['S','y','s','T','r','e','e','V','i','e','w','3','2
 class TreeView: Control
 {
 
-    this (Form parent, int x, int y, int w, int h)
+    this (Control parent, int x, int y, int w, int h)
     {
-        mixin(repeatingCode);
-        ++tvNumber;
-        mControlType = ControlType.treeView;
-        this.mFont = new Font(parent.font);
-        mStyle = tvStyle;
-        mExStyle = 0;// | WS_EX_LEFT;
-        mBackColor(0xFFFFFF);
-        mForeColor(defForeColor);
-        mLineClr(defForeColor);
-        this.mName = format("%s_%d", "TreeView_", tvNumber);
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        this.mHasFont = true;
-        ++Control.stCtlId;
-        if (parent.mAutoCreate) this.createHandle();
+        this.mControlType = ControlType.treeView;
+        this.initControl(parent, x, y, w, h, &tvNumber);
+        this.mLineClr = Color(defForeColor);
     }
 
-    this (Form parent, int x, int y) {this(parent, x, y, 250, 200);}
-   // this (Form parent, int x, int y) {this(parent, x, y, 250, 200);}
+    this (Control parent, int x, int y) {this(parent, x, y, 250, 200);}
+   // this (Control parent, int x, int y) {this(parent, x, y, 250, 200);}
 
     override void createHandle()
     {
     	this.setTvStyle();
-    	this.createHandleInternal(mClassName.ptr);
+    	this.createHandleInternal();
     	if (this.mHandle) {
             this.setSubClass(&tvWndProc);
             if (this.mBackColor.value != 0xFFFFFF) this.sendMsg(TVM_SETBKCOLOR, 0, this.mBackColor.cref);
             if (this.mForeColor.value != defForeColor) this.sendMsg(TVM_SETTEXTCOLOR, 0, this.mForeColor.cref);
             if (this.mLineClr.value != defForeColor) this.sendMsg(TVM_SETLINECOLOR, 0, this.mLineClr.cref);
+            if (this.mNodes.length > 0) {
+                foreach (node; this.mNodes) {
+                    this.insertAllNodes(node);
+                }
+            }   
         }
     }
 
-    final void addNode(TreeNode node) { this.addNodeInternal(NodeOps.addNode, node); }
-
-    final void addNodes(TreeNode[] nodes...)
-    {
-        foreach (node; nodes) {this.addNodeInternal(NodeOps.addNode, node); }
+    void addNode(T)(T node) { 
+        auto tnode = this.getNode(node);
+        this.insertNodeGeneric(this, tnode, 0, NodeOps.addNode);        
     }
 
-    final void insertNode(TreeNode node, int index) { this.addNodeInternal(NodeOps.insertNode, node, null, index); }
-
-    final void addChildNode(TreeNode parent, TreeNode node) { this.addNodeInternal(NodeOps.addChild, node, parent); }
-
-    final void addChildNodes(TreeNode parent, TreeNode[] nodes...)
+    void addNodeWithChildren(T, U...)(T node, U children)
     {
-        foreach (node; nodes) { this.addNodeInternal(NodeOps.addChild, node, parent);}
+        auto tnode = this.getNode(node);
+        this.insertNodeGeneric(this, tnode, 0, NodeOps.addNode);
+        if (children.length > 0) {
+            foreach (child; children) {
+                auto cnode = this.getNode(child);
+                this.insertNodeGeneric(tnode, cnode, 0, NodeOps.addChild);
+            }
+        }
     }
 
-    final void insertChildNode(TreeNode parent, TreeNode node, int index)
+    void addNodes(T...)(T[] nodes)
     {
-        // foreach (nod; parent.mNodes) {print("child ", nod.text);}
-        this.addNodeInternal(NodeOps.insertChild, node, parent, index);
+        foreach (node; nodes) {
+            auto tnode = this.getNode(node);
+            this.insertNodeGeneric(this, tnode, 0, NodeOps.addNode); 
+        }
+    }
+
+
+    void insertNode(T)(T node, int index) 
+    { 
+        auto tnode = this.getNode(node);
+        this.insertNodeGeneric(this, tnode, index, NodeOps.insertNode);        
+    }
+
+    void addChildNode(T, U)(T parent, U node) 
+    { 
+        auto pnode = this.getNode(parent);
+        auto cnode = this.getNode(node);
+        if (pnode && cnode) {
+            this.insertNodeGeneric(pnode, cnode, 0, NodeOps.addChild);
+        }         
+    }
+
+
+    void addChildNodes(T, U)(T parent, U nodes...)
+    {
+        auto pnode = this.getNode(parent);
+        if (pnode) {
+            foreach (item; nodes) { 
+                auto cnode = this.getNode(item);
+                this.insertNodeGeneric(pnode, cnode, 0, NodeOps.addChild);
+            }
+        }
+        
+    }
+
+    void insertChildNode(T, U)(T parent, U node, int index)
+    {
+        auto pnode = this.getNode(parent);
+        auto cnode = this.getNode(node);
+        if (pnode && cnode) {
+            this.insertNodeGeneric(pnode, cnode, index, NodeOps.insertChild);
+        }
     }
 
     // Properties============================= 
@@ -122,7 +156,37 @@ class TreeView: Control
         mixin finalProperty!("editableLabel", this.mEditable);
         mixin finalProperty!("showSelection", this.mShowSel);
         mixin finalProperty!("lineColor", this.mLineClr);
-        TreeNode selectedNode() {return this.mSelNode;}
+        
+        TreeNode selectedNode() {
+            if (!this.mIsCreated) return null;
+            auto hSelItem = cast(HTREEITEM) this.sendMsg(TVM_GETNEXTITEM, TVGN_CARET, 0);
+            if (hSelItem) {
+                auto tvi = TVITEMEXW();
+                tvi.hItem = hSelItem;
+                tvi.mask = TVIF_PARAM;
+                if (this.sendMsg(TVM_GETITEMW, 0, &tvi)) {
+                    this.mSelNode = cast(TreeNode) cast(void*) tvi.lParam;
+                    return this.mSelNode;
+                }
+            }
+            return null;
+        }
+
+        void selectedNode(TreeNode node)
+        {
+            if (!this.mIsCreated) return;
+
+            // If passing null, clear the selection entirely
+            if (node is null) {
+                this.sendMsg(TVM_SELECTITEM, TVGN_CARET, cast(LPARAM)null);
+                return;
+            }
+            if (node && node.mHandle) {
+                this.sendMsg(TVM_SELECTITEM, TVGN_CARET, cast(LPARAM) node.mHandle);
+                this.mSelNode = node;
+            }
+        }
+
         TreeNode[] nodes() {return this.mNodes;}        
     // End of Properties================================
     
@@ -156,60 +220,129 @@ class TreeView: Control
             // this.log(LONG.sizeof, "  Size of ULONG");
         }
 
-        TVITEMEXW makeTVitem(TreeNode node)
+        TreeNode getNode(T)(T obj)
         {
-            auto tvi = TVITEMEXW();
-            tvi.mask = TVIF_TEXT | TVIF_PARAM;
-            tvi.pszText = cast(LPWSTR) node.text.toUTF16z();
-            tvi.cchTextMax = cast(int) node.text.length;
-            tvi.iImage = node.imageIndex;
-            tvi.iSelectedImage = node.selectedImageIndex;
-            tvi.stateMask = TVIS_USERMASK;
-            if (node.imageIndex > -1) tvi.mask |= TVIF_IMAGE;
-            if (node.selectedImageIndex > -1) tvi.mask |= TVIF_SELECTEDIMAGE;
-            // if (node.foreColor.value != 0x000000) self._node_clr_change = True;
-            return tvi;
+            TreeNode result = null;
+            static if (is(T == TreeNode)) {
+                result = obj;
+            } else static if (is(T == string)) {
+                result = new TreeNode(obj);
+            } else {
+                result = new TreeNode(to!string(obj));
+            }
+            return result;
         }
 
-        void addNodeInternal(NodeOps nop, TreeNode node, TreeNode pnode = null, int pos = -1)
+        // void tryAddNode(TreeNode node)
+        // {
+        //     node.mNodeOp = NodeOps.addNode;
+        //     node.mInsAfter = TVI_LAST;
+        //     node.mIndex = this.mNodeCount;
+        //     node.mIsRoot = true;
+        //     this.mNodeCount += 1;
+        //     this.mNodes ~= node;
+        //     node.mInList = true;
+        //     if (this.handle) this.addNodeInternal(node);
+        // }
+
+        /* Use this function to add/insert root nodes and child nodes.
+         * If it is insert operation, pos is valid, otherwise pos has no significance.
+         * You can pass any value as pos if it is an add operation*/
+        void insertNodeGeneric(T)(T container, TreeNode node, int pos, NodeOps nop)
         {
-            if (!this.mIsCreated) new Exception("TreeView's handle is not created");
+            // If insertion is the task, we need to check the pos carefully.
+            if (nop == NodeOps.insertNode || nop == NodeOps.insertChild) {
+                if (pos < 0 || pos >= container.mNodes.length) {
+                    new Exception("Index is out of range!");
+                } 
+            }
+            
+            static if (is(T == TreeView)) {
+                node.mIndex = this.mNodeCount;
+                this.mNodeCount += 1;
+
+            } else static if (is(T == TreeNode)) {
+                node.mIndex = container.mChildCount;
+                container.mChildCount += 1;
+
+            } else {
+                static assert(false, "Invalid type for container!");
+            }
+      
+            node.mNodeOp = nop;
+            if (nop == NodeOps.insertNode || nop == NodeOps.insertChild) {
+                node.mInsAfter = pos == 0 ? TVI_FIRST : container.mNodes[pos - 1].mHandle;
+            } else {
+                node.mInsAfter = TVI_LAST;
+            }            
+
+            // Update counts and append to the specific container    
+            container.mNodes ~= node;
+            node.mInList = true;
+
+            // Finalize the underlying Win32/internal tree structure
+            if (this.mIsCreated) {
+                static if (is(T == TreeView)) {
+                    this.addNodeInternal(node);
+                } else {
+                    this.addNodeInternal(node, container);
+                }
+            }
+        }
+
+
+        void insertAllNodes(TreeNode node, TreeNode pnode = null) 
+        {
+            this.addNodeInternal(node, pnode);
+            if (node.mNodes.length > 0) {
+                foreach (tn; node.mNodes) {
+                    this.insertAllNodes(tn, node);
+                }
+            }
+        }
+    
+
+
+        void addNodeInternal(TreeNode node, TreeNode pnode = null)
+        {
             node.mIsCreated = true;
             node.mNotifyHandler = &(this.nodeNotifyHandler);
             node.mTreeHwnd = this.mHandle;
-            node.mIndex = this.mNodeCount;
             node.mNodeID = this.mUniqNodeID; // We can identify any node with this
 
-            auto tvi = this.makeTVitem(node);
+            auto tvi = TVITEMEXW();
+            tvi.mask = TVIF_TEXT | TVIF_PARAM;
+            tvi.pszText = node.wtext;
+            tvi.cchTextMax = 0;
+            tvi.iImage = node.mImgIndx;
+            tvi.iSelectedImage = node.mSelImgIndx;
+            tvi.stateMask = TVIS_USERMASK;
+            if (node.mImgIndx > -1) tvi.mask |= TVIF_IMAGE;
+            if (node.mSelImgIndx > -1) tvi.mask |= TVIF_SELECTEDIMAGE;
+
             auto tis = TVINSERTSTRUCT();
             tis.itemex = tvi;
             tis.itemex.lParam = cast(LPARAM)(cast(void*) node);
+            tis.hInsertAfter = node.mInsAfter;
             bool isRootNode = false;
             string errMsg = "Can't Add";
 
-            switch(nop) {
+            switch(node.mNodeOp) {
                 case NodeOps.addNode:
-                    tis.hParent = TVI_ROOT;
-                    tis.hInsertAfter = this.mNodeCount > 0 ? this.mNodes[this.mNodeCount - 1].mHandle: TVI_FIRST;
-                    isRootNode = true;
+                    tis.hParent = TVI_ROOT;                    
                 break;
-
                 case NodeOps.insertNode:
                     tis.hParent = TVI_ROOT;
-                    tis.hInsertAfter = pos == 0 ? TVI_FIRST: this.mNodes[pos - 1].mHandle;
-                    isRootNode = true;
                     errMsg = "Can't Insert";
                 break;
                 case NodeOps.addChild:
-                    tis.hInsertAfter = TVI_LAST;
                     tis.hParent = pnode.mHandle;
-                    node.mParentNode = &pnode;
+                    node.mParentNode = pnode;
                     errMsg = "Can't Add Child";
                 break;
                 case NodeOps.insertChild:
                     tis.hParent = pnode.mHandle;
-                    tis.hInsertAfter = pos == 0 ? TVI_FIRST: pnode.mNodes[pos - 1].mHandle;
-                    node.mParentNode = &pnode;
+                    node.mParentNode = pnode;
                     errMsg = "Can't Insert Child";
                 break;
                 default: break;
@@ -219,13 +352,6 @@ class TreeView: Control
             if (hItem) {
                 node.mHandle = hItem;
                 this.mUniqNodeID += 1;
-                if (isRootNode) {
-                    this.mNodes ~= node;
-                    this.mNodeCount += 1;
-                } else {
-                    pnode.mNodes ~= node;
-                    pnode.mNodeCount += 1;
-                }
             } else {
                 new Exception(format("%s node!, Error - %d", errMsg, GetLastError()));
             }
@@ -256,30 +382,40 @@ class TreeNode
     final int childCount() {return this.mChildCount;}
     final Color backColor() {return this.mBackClr;}
     final Color foreColor() {return this.mForClr;}
+    final LPWSTR wtext() {return this.mTxt.toLPWSTR();}
     // final Color is() {return this.mForClr;}
 
-    private
-    {
-        HTREEITEM mHandle;
-        HWND mTreeHwnd;
-        TreeNode* mParentNode;
-        TreeNode[] mNodes;
+    package:
         int mImgIndx;
         int mSelImgIndx;
         int mChildCount;
         int mIndex;
         int mNodeID;
         int mNodeCount;
+        int mInsertPos;
+        HTREEITEM mHandle;
+        HTREEITEM mInsAfter;
+        HWND mTreeHwnd;
+        TreeNode mParentNode;
+        TreeNode[] mNodes;
         Color mForClr;
         Color mBackClr;
         bool mChecked;
         bool mIsCreated;
+        bool mInList;
+        bool mIsRoot;
         string mTxt;
         int mNodeId;
+        NodeOps mNodeOp;
+
+    private:           
+
         TreeNodeNotifyHandler mNotifyHandler;
-    }
+    
 
 } // End of TreeNode Class
+
+
 
 mixin template msdown(alias ctl)
 {

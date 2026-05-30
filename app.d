@@ -6,20 +6,16 @@ import wings;
 // We can wrap up the entire app in a class. It's handy.
 class App {
 	// import wings.commons: log;
-	
-
-	this() 
-	{
+	this() {
 		this.createControls();
 		this.setControlProps();		
 	}
 
-	void createControls()
-	{
+	void createControls() {
 		// First of all, create the form aka window.
 		frm = new Form("Wing window in D Lang", 900, 500);
 		frm.enablePrintPoint();
-		frm.createHandle();
+		// frm.createHandle();
 
 		//Let's create a tray icon for this program.
 		tic = new TrayIcon("Wings tray icon!", "wings_icon.ico");
@@ -43,18 +39,19 @@ class App {
 		dtp = new DateTimePicker(frm, cmb.right!10, 10); 
 
 		gb1 = new GroupBox(frm, "Compiler Options", 10, btn1.bottom!10, 200, 170);
-		cb1 = new CheckBox(frm, "Profile", 15, btn1.bottom!40);
-		cb2 = new CheckBox(frm, "Low Mem", 15, cb1.bottom!10);
-		rb1 = new RadioButton(frm, "Console App", 15, cb2.bottom!10);
-		rb2 = new RadioButton(frm, "Windowed App", 15, rb1.bottom!10);
+		cb1 = new CheckBox(gb1, "Profile", 15, 35);
+		cb2 = new CheckBox(gb1, "Low Mem", 15, 65);
+		rb1 = new RadioButton(gb1, "Console App", 15, 95);
+		rb2 = new RadioButton(gb1, "Windowed App", 15, 125);
+		rb2.checked = true;
 
-		gb2 = new GroupBox(frm, "Project Data", 10, gb1.bottom!10, 220, 100);
-		lb1 = new Label(frm, "Line Space", gb2.left!10, gb2.top!30);
-		lb2 = new Label(frm, "Thread Count", gb2.left!10, lb1.bottom!10);
+		gb2 = new GroupBox(frm, "Project Settings", 10, gb1.bottom!10, 220, 100);
+		lb1 = new Label(gb2, "Line Space", 10, 35);
+		lb2 = new Label(gb2, "Thread Count", 10, 65);
 
 		// NumberPicker aka NumericUpdown in .NET
-		np1 = new NumberPicker(frm, lb1.right!33, gb2.top!25);	
-		np2 = new NumberPicker(frm, lb2.right!10, gb2.top!57, btnLeft : true);
+		np1 = new NumberPicker(gb2, 100, 30);	
+		np2 = new NumberPicker(gb2, 100, 60, btnLeft : true);
 
 		pgb = new ProgressBar(frm, 10, gb2.bottom!10, 204, 25);
 		// auto catimage = "D:\\Downloads_Ex\\2026\\nvidia-com.png";
@@ -64,8 +61,7 @@ class App {
 		lbx = new ListBox(frm, gb1.right!10, btn1.bottom!15, 120, 160);
 
 		// ListView ctor takes an array for items and another for col widths.
-		lv = new ListView(frm, lbx.right!10, btn1.bottom!15, 300, 180,
- 					 ["Windows", "Linux", "MacOS"], [80, 120, 100] );
+		lv = new ListView(frm, lbx.right!10, btn1.bottom!15, 300, 180);
 
 		// Trackbar ctor takes a delegate for onValueChanged event.
 		tkb1 = new TrackBar(frm, dtp.right!10, 10, 150, 40, true, &this.onTrackValueChanged);
@@ -82,8 +78,7 @@ class App {
 		tmr = frm.addTimer(&this.timerTickHandler, 800);
 	}
 
-	void setControlProps()
-	{	
+	void setControlProps() {	
 		// Set some properties of our controls.
 		btn1.onClick = &this.btn1OnClick;
 		btn1.font.name = "Blackadder ITC";
@@ -99,33 +94,28 @@ class App {
 		np2.decimalPrecision = 0;
 		np2.backColor = 0xcaffbf; 
 		pgb.showPercentage = true;
-		tb.foreColor = 0xff0000;    
-		lbx.addRange("Windows", "Linux", "MacOS", "ReactOS");	
+		tb.foreColor = 0xff0000;
+		tb.cueBanner = "Type something here...";   
+		tkb1.onValueChanged = &this.onTrackValueChanged;
+		 
+		lbx.addRange("Windows", "Linux", "MacOS", "ReactOS");
+
+		lv.addColumns(["Windows",  "MacOS", "Linux"], [80, 120, 100]);
 		lv.addRow("XP", "Mountain Lion", "RedHat");
 		lv.addRow("Vista", "Mavericks", "Mint");
 		lv.addRow("Win7", "Mavericks", "Ubuntu");
 		lv.addRow("Win8", "Catalina", "Debian");
 		lv.addRow("Win10", "Big Sur", "Kali");
-		lv.addContextMenu("Windows", "Linux", "|", "MacOS");
-		tv.backColor = 0xddddbb;
-		auto n1 = new TreeNode("Windows");
-		auto n2 = new TreeNode("Linux");
-		auto n3 = new TreeNode("MacOS");
-		auto n4 = new TreeNode("ReactOS");
-		tv.addNodes(n1, n2, n3, n4);
-		auto wn1 = new TreeNode("Win 11");
-		auto wn2 = new TreeNode("Win 10");
-		auto wn3 = new TreeNode("Win 8");	
-		tv.addChildNodes(n1, wn1, wn2, wn3);
-		auto ln1 = new TreeNode("Ubuntu");
-		auto ln2 = new TreeNode("Debian");
-		auto ln3 = new TreeNode("Fedora");
-		tv.addChildNodes(n2, ln1, ln2, ln3);
-		auto mn1 = new TreeNode("Monterey");
-		auto mn2 = new TreeNode("Catalina");
-		auto mn3 = new TreeNode("Mojave");
-		tv.addChildNodes(n3, mn1, mn2, mn3);
 
+		// lv.createHandle();
+		lv.addContextMenu("Windows", "Linux", "|", "MacOS");
+
+
+		tv.backColor = 0xddddbb;
+		tv.addNodeWithChildren("Windows", "Win 11", "Win 10", "Win 8");
+		tv.addNodeWithChildren("Linux", "Ubuntu", "Debian", "Fedora");
+		tv.addNodeWithChildren("MacOS", "Monterey", "Catalina", "Big Sur");
+		// tv.createHandle();
 		// Add menu items for our main menus.
 		mb["Windows"].addItems("Windows 8", "|", "Windows 10",  "Windows 11");
 		mb["Linux"].addItems("Ubuntu", "Debian", "Kali");
@@ -157,7 +147,7 @@ class App {
 
 	// ProgressBar will show the track bar values.
 	void onTrackValueChanged(Object c, EventArgs e) {
-		// pgb.value = tkb1.value;
+		pgb.value = tkb1.value;
 	}
 
 	void onContextMenuClick(Object m, EventArgs e) {
@@ -209,6 +199,7 @@ void main()
 {
 	import core.sys.windows.windows;
 	auto app = new App();	
+	app.btn1.tpr();
 	app.display();
 	
 }

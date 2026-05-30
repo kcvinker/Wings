@@ -1,9 +1,9 @@
 /*==============================================Button Docs=====================================
 Constructor:
     this(Form parent)
-    this(Form parent, string txt)
-    this(Form parent, string txt, int x, int y, EventHandler clickFn = null)
-    this(Form parent, int x, int y, int w, int h, EventHandler clickFn = null)
+    this (Control parent, string txt)
+    this (Control parent, string txt, int x, int y, EventHandler clickFn = null)
+    this (Control parent, int x, int y, int w, int h, EventHandler clickFn = null)
 
 	Properties:
 		Button inheriting all Control class properties		
@@ -105,51 +105,35 @@ class Button : Control
 // End of Properties
 
 // Ctors
-    private this(Form parent, string txt, int x, int y, int w, int h)
+    private this (Control parent, string txt, int x, int y, int w, int h)
     {
-        this.mName = format("%s_%d", "Button", btnNumber);
-        mixin(repeatingCode);
         mControlType = ControlType.button;
-        mText = txt;
-        mStyle = WS_CHILD | BS_NOTIFY | WS_TABSTOP | WS_VISIBLE | BS_PUSHBUTTON;
-        mExStyle = 0;
-        this.mFont = new Font(parent.font);
-        SetRect(&this.mRect, x, y, w, h);
-        this.mParent.mControls ~= this;
-        this.mCtlId = Control.stCtlId;
-        this.mTextable = true;
-        this.mHasFont = true;
-        ++Control.stCtlId;
-        ++btnNumber;
-
+        this.initControl(parent, x, y, w, h, &btnNumber, txt);
+        SetRect(&this.mRect, x, y, w, h); 
     }
 
     this(Form parent)
     {
         string btxt = format("%s_%d", "Button", btnNumber);
         this(parent, btxt, 20, 20, 120, 35);
-        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, string txt)
+    this (Control parent, string txt)
     {
         this(parent, txt, 20, 20, 120, 35);
-        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, string txt, int x, int y, EventHandler clickFn = null)
+    this (Control parent, string txt, int x, int y, EventHandler clickFn = null)
     {
         this(parent, txt, x, y, 120, 35);
         if (clickFn) this.onClick = clickFn;
-        if (parent.mAutoCreate) this.createHandle();
     }
 
-    this(Form parent, int x, int y, int w, int h, EventHandler clickFn = null)
+    this (Control parent, int x, int y, int w, int h, EventHandler clickFn = null)
     {
         string btxt = format("%s_%d", "Button", btnNumber);
         this(parent, btxt, x, y, w, h);
         if (clickFn) this.onClick = clickFn;
-        if (parent.mAutoCreate) this.createHandle();
     }
 // End of Ctors
 
@@ -158,7 +142,7 @@ class Button : Control
     /// Create the button handle
     override void createHandle()
     {
-        this.createHandleInternal(btnClassName.ptr);
+        this.createHandleInternal();
         if (this.mHandle) {
             this.setSubClass(&btnWndProc);
         }
