@@ -584,7 +584,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
             break;
             case WM_NOTIFY:
                 auto nm = cast(NMHDR*) lParam;
-                // writefln("WM_NOTIFY nmhdr.hwndFrom: %d, nmhdr.idFrom: %d, nmhdr.code: %d", nm.hwndFrom, nm.idFrom, nm.code);
+                // writefln("WM_NOTIFY nmhdr.hwndFrom: %s\n", nm.hwndFrom);
                 return SendMessageW(nm.hwndFrom, CM_NOTIFY, wParam, lParam);
             break;
             case WM_CTLCOLOREDIT:

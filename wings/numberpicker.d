@@ -43,8 +43,8 @@ import std.stdio;
 import std.datetime.stopwatch;
 
 
-enum DWORD buddyStyle = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP| WS_BORDER;
-enum DWORD buddyExStyle = WS_EX_LEFT | WS_EX_LTRREADING;
+enum DWORD buddyStyle = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP;
+enum DWORD buddyExStyle = WS_EX_LEFT;
 bool isNpCreated;
 DWORD npStyle = WS_VISIBLE | WS_CHILD | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_HOTTRACK;
 DWORD mTxtFlag = DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX;
@@ -74,56 +74,44 @@ class NumberPicker: Control
         if (evtFn != null) this.onValueChanged = evtFn;
     }
 
-    this(Form parent) {this(parent, 10, 10, 100, 27);}
+    this(Form parent) {this(parent, 10, 10, 100, 23);}
     this (Control parent, int x, int y, EventHandler evntFn = null )
     {
-        this(parent, x, y, 70, 27, false, evntFn);
+        this(parent, x, y, 70, 23, false, evntFn);
     }
     this (Control parent, int x, int y, bool btnLeft)
     {
-         this(parent, x, y, 70, 27, btnLeft);
+         this(parent, x, y, 70, 23, btnLeft);
     }
 
     override void createHandle()
     {        
     	this.adjustNpStyles();
-        this.createUpdown();
+        this.createHandleInternal();
         this.createBuddy();
         if (this.mHandle && this.mBuddyHandle) {
-
-            auto oldBuddy = cast(HWND)this.sendMsg(UDM_SETBUDDY, this.mBuddyHandle, 0); // set the edit as updown's buddy.
+            this.setSubClass(&npWndProc);
+            this.sendMsg(UDM_SETBUDDY, this.mBuddyHandle, 0); // set the edit as updown's buddy.
             this.sendMsg(UDM_SETRANGE32, cast(WPARAM) this.mMinRange, cast(LPARAM) this.mMaxRange);
 
             // Collecting both controls rects
             GetClientRect(this.mBuddyHandle, &this.mTBRect);
             GetClientRect(this.mHandle, &this.mUDRect);
-            this.resizeBuddy();
-            SendMessageW(oldBuddy, CM_BUDDY_RESIZE, 0, 0);
             this.mSpRect = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
             this.getRightAndBottom();
-
-            /*==================================================================
-            This thing is a hack. The edit control is not turned on the...
-            vertical alignment without setting the WS_BORDER style.
-            But if we set that style, it will create a border around the edit.
-            However, when we draw edges of the edit, 3 of the borders will be deleted.
-            But, we need to manually erase the forth one.
-            And drawing a line with background color is the hack. 
-            =========================================================================*/
-            //test_tb_rect();
+            this.setBorderPoints();
             this.displayValue;
-            ++Control.stCtlId;
-            ++Control.mSubClassId;
+            ptf("number picker created with handle %s", this.mHandle);
         }
     }
 
-    void test_tb_rect()
-    {
-        RECT rc;
-        SendMessage(this.mBuddyHandle, EM_GETRECT, 0, cast(LPARAM) &rc);
-        rc.top = 6;
-        SendMessage(this.mBuddyHandle, EM_SETRECT, 0, cast(LPARAM) &rc);
-    }
+    // void test_tb_rect()
+    // {
+    //     RECT rc;
+    //     SendMessage(this.mBuddyHandle, EM_GETRECT, 0, cast(LPARAM) &rc);
+    //     rc.top = 6;
+    //     SendMessage(this.mBuddyHandle, EM_SETRECT, 0, cast(LPARAM) &rc);
+    // }
 
     //region properties
 
@@ -231,29 +219,6 @@ class NumberPicker: Control
 
         mixin finalProperty!("hideCaret", this.mHideCaret);
 
-        /+++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
-        Since, we are handling the mouse leave event specially,
-        We need to use these three event handler props individually.
-        We can't use parent's methods for these. 
-        ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++/
-        // final void onMouseEnter(EventHandler value)
-        // {
-        //     this.mOnMouseEnter = value;
-        //     this.mTrackMouseLeave = true;
-        // }
-
-        // final void onMouseLeave(EventHandler value)
-        // {
-        //     this.mOnMouseLeave = value;
-        //     this.mTrackMouseLeave = true;
-        // }
-
-        // final void onMouseMove(MouseEventHandler value)
-        // {
-        //     this.mOnMouseMove = value;
-        //     this.mTrackMouseLeave = true;
-        // }
-
         override bool shouldTrackMouse(HWND hWnd)
         {
             return !this.mIsMouseTracking && hWnd == this.mBuddyHandle;
@@ -269,7 +234,12 @@ class NumberPicker: Control
     protected:
         RECT mSpRect;
         mixin SpecialMouseLeaveHandler;
-        
+
+    package:
+        RECT mTbWrc; // This is the rect for drawing line over the border of edit control.
+        POINT[4] mBorderPts; 
+        HPEN mBorderPen;
+
     private:
     // region private members
         bool mEditStarted;
@@ -305,7 +275,7 @@ class NumberPicker: Control
         // EventHandler mOnMouseLeave;
         // EventHandler mOnMouseEnter;
         // MouseEventHandler mOnMouseMove;
-        static wchar[] mUpdClassName = ['m', 's', 'c', 't', 'l', 's', '_', 'u', 'p', 'd', 'o', 'w', 'n', '3', '2', 0];
+        // static wchar[] mUpdClassName = ['m', 's', 'c', 't', 'l', 's', '_', 'u', 'p', 'd', 'o', 'w', 'n', '3', '2', 0];
         static int npNumber;
     // endregion private members
 
@@ -319,7 +289,6 @@ class NumberPicker: Control
                 this.mBotEdgeFlag = BF_BOTTOMRIGHT;
                 if (this.mTxtPos == Alignment.left) this.mTxtPos = Alignment.right;
             }
-            //if (!this.mHasSep) this.mStyle |= UDS_NOTHOUSANDS;
 
             switch (this.mTxtPos) {
                 case Alignment.left: this.mBuddyStyle |= ES_LEFT; break;
@@ -327,28 +296,26 @@ class NumberPicker: Control
                 case Alignment.right: this.mBuddyStyle |= ES_RIGHT; break;
                 default: break;
             }
+            this.mBorderPen = CreatePen(PS_SOLID, 2, getClrRef(0xABADB3));
         }
 
-        void createUpdown()  // Private
+        void setBorderPoints() 
         {
-            // Creating the updown control only.
-            this.mCtlId = Control.stCtlId;
-            this.mHandle = CreateWindowEx( this.mExStyle,
-                                            this.mUpdClassName.ptr,
-                                            null,
-                                            this.mStyle,
-                                            0, 0, 0, 0,
-                                            this.mParent.handle,
-                                            cast(HMENU) this.mCtlId,
-                                            appData.hInstance,
-                                            null);
-            if (this.mHandle) {
-                ++Control.stCtlId; // Increasing protected static member for next control iD
-                this.mIsCreated = true;
-                this.setSubClass(&npWndProc);
-                this.createLogFontInternal();
+            GetWindowRect(this.mBuddyHandle, &this.mTbWrc);
+            OffsetRect(&this.mTbWrc, -this.mTbWrc.left, -this.mTbWrc.top);
+            if (this.mBtnLeft) {  // ⊐
+                this.mBorderPts[1].x = this.mTbWrc.right;
+                this.mBorderPts[2].x = this.mTbWrc.right;
+                this.mBorderPts[2].y = this.mTbWrc.bottom;            
+                this.mBorderPts[3].y = this.mTbWrc.bottom;
+            } else { // ⊏
+                this.mBorderPts[0].x = this.mTbWrc.right;
+                this.mBorderPts[2].y = this.mTbWrc.bottom; 
+                this.mBorderPts[3].x = this.mTbWrc.right;
+                this.mBorderPts[3].y = this.mTbWrc.bottom;
             }
         }
+
 
         void createBuddy()  // Private
         {
@@ -377,20 +344,20 @@ class NumberPicker: Control
             }
         }
 
-        void resizeBuddy()  // Private
-        {
-            // Place the edit control at proper coordinates
-            if (this.mBtnLeft) {
-                this.mLineX = this.mTBRect.left;
-                SetWindowPos(this.mBuddyHandle, HWND_TOP,
-                                (this.mXpos + this.mUDRect.right), this.mYpos,
-                                this.mTBRect.right, this.mTBRect.bottom, swp_flag);
-            } else {
-                this.mLineX = this.mTBRect.right - 3;
-                SetWindowPos(this.mBuddyHandle, HWND_TOP, this.mXpos, this.mYpos,
-                                (this.mTBRect.right - 2), this.mTBRect.bottom, swp_flag);
-            }
-        }
+        // void resizeBuddy()  // Private
+        // {
+        //     // Place the edit control at proper coordinates
+        //     if (this.mBtnLeft) {
+        //         this.mLineX = this.mTBRect.left;
+        //         SetWindowPos(this.mBuddyHandle, HWND_TOP,
+        //                         (this.mXpos + this.mUDRect.right), this.mYpos,
+        //                         this.mTBRect.right, this.mTBRect.bottom, swp_flag);
+        //     } else {
+        //         this.mLineX = this.mTBRect.right - 3;
+        //         SetWindowPos(this.mBuddyHandle, HWND_TOP, this.mXpos, this.mYpos,
+        //                         (this.mTBRect.right - 2), this.mTBRect.bottom, swp_flag);
+        //     }
+        // }
 
         void setValueInternal(int delta)  // Private
         {
@@ -452,6 +419,7 @@ class NumberPicker: Control
         void finalize(UINT_PTR subClsId) // Private
         {
             if (this.mBkBrush) DeleteObject(this.mBkBrush);
+            DeleteObject(this.mBorderPen);
             RemoveWindowSubclass(this.mHandle, &npWndProc, subClsId);
         }
 
@@ -475,7 +443,7 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             return cast(LRESULT) res;
         }
         switch (message) {
-            case WM_DESTROY: 
+            case WM_NCDESTROY: 
                 self.finalize(scID); 
             break;
             case CM_NOTIFY:
@@ -511,32 +479,50 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
             return cast(LRESULT) res;
         }
         switch (message) {
-            case WM_DESTROY: 
+            case WM_NCDESTROY: 
                 RemoveWindowSubclass(hWnd, &buddyWndProc, scID ); 
             break;
-            case WM_PAINT:
-
-                // Let the control paint it's basic stuff.
-                DefSubclassProc(hWnd, message, wParam, lParam);
-
-                /*---------------------------------------------------------------------------- 
-                We need WM_BORDER style to preserve the alignment of text in edit control.
-                But that will cause a border around the edit control and it will separate...
-                the updown and edit visualy. So we need to erase one border. It will be...
-                either right side of the edit or left side of the edit, depends upon where...
-                the bupown button locates. To erase the border, we just draw a line with...
-                edit's back color. 
-                ------------------------------------------------------------------------------*/
-                HDC hdc = GetDC(hWnd);
-                DrawEdge(hdc, &self.mTBRect, BDR_SUNKENOUTER, self.mTopEdgeFlag);
-                DrawEdge(hdc, &self.mTBRect, BDR_RAISEDINNER, self.mBotEdgeFlag);
-                auto fpen = CreatePen(PS_SOLID, 1, self.mBackColor.cref);
-                scope(exit) DeleteObject(fpen);
-                MoveToEx(hdc, self.mLineX, self.mTBRect.top + 1, null);
-                SelectObject(hdc, fpen);
-                LineTo(hdc, self.mLineX, self.mTBRect.bottom - 1);
-                ReleaseDC(hWnd, hdc);
-                return 1;
+            case WM_NCCALCSIZE:
+                /*---------------------------------------------------------------------------------
+                # By default, arrow button has a border on 3 sides.
+                # If we use WS_BORDER style for buddy edit control, we need to...
+                # cover it with unnecessary drawings. So, it's better to make...
+                # room to draw a border and draw it on the 3 sides of buddy edit...
+                # in WM_NCPAINT. So we need to shrink the client area and make room.
+                ----------------------------------------------------------------------------------*/
+                auto nccs = cast(NCCALCSIZE_PARAMS*) lParam;
+                if (wParam == TRUE) {
+                    if (self.mBtnLeft) {
+                        nccs.rgrc[0].left += 2;
+                        nccs.rgrc[0].top += 1;
+                        nccs.rgrc[0].right -= 1;
+                        nccs.rgrc[0].bottom -= 1;
+                    } else {
+                        nccs.rgrc[0].left += 1;
+                        nccs.rgrc[0].top += 1;
+                        nccs.rgrc[0].right -= 2;
+                        nccs.rgrc[0].bottom -= 1;
+                    }
+                }
+                return 0;
+            break;
+            case WM_NCPAINT:
+                /*---------------------------------------------------------------------------------
+                Since we are not using WS_BORDER style, we need to draw the border on 3 sides of the edit control manually. 
+                ----------------------------------------------------------------------------------*/
+                HRGN hrgn = cast(HRGN)wParam;
+                DWORD flags = DCX_WINDOW | DCX_CACHE | DCX_INTERSECTRGN;
+                if (wParam == 1) {
+                    flags = DCX_WINDOW | DCX_CACHE;
+                }
+                HDC hdc = GetDCEx(hWnd, hrgn, flags);
+                scope(exit) ReleaseDC(hWnd, hdc);
+                if (hdc) {       
+                    HGDIOBJ hOldPen = SelectObject(hdc, cast(HGDIOBJ)self.mBorderPen);       
+                    Polyline(hdc, &self.mBorderPts[0], 4);
+                    SelectObject(hdc, hOldPen);
+                }
+                return 0;
             break;
             case EM_SETSEL: return 1; break; // To eliminate the text selection
             case CM_COLOR_EDIT:
@@ -554,16 +540,8 @@ private LRESULT buddyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
                     if (self.mHideCaret) HideCaret(hWnd);
                 }
             break;
-            case CM_BUDDY_RESIZE: 
-                /*---------------------------------------------------------------------------
-                We don't get this msg for the first NumberPicker. We will get this for...
-                each one after the first NumberPicker. This is a fix for a strange problem.
-                After sending the UDM_SETBUDDY message, the previous NumberPicker's buddy...
-                will be sperated from it's updown. So we need to combine them once again. 
-                ----------------------------------------------------------------------------*/
-                self.resizeBuddy(); 
-            break;
-            default: return DefSubclassProc(hWnd, message, wParam, lParam);
+            default: 
+                return DefSubclassProc(hWnd, message, wParam, lParam);
         }
     }
     catch (Exception e) {}

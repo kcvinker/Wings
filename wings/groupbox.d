@@ -290,6 +290,7 @@ private LRESULT gbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             break;
             case WM_NOTIFY:
                 auto nm = cast(NMHDR*) lParam;
+                // ptf("GB notify  handle: %s", nm.hwndFrom);
                 return SendMessageW(nm.hwndFrom, CM_NOTIFY, wParam, lParam);
             break;
             case WM_CTLCOLOREDIT:

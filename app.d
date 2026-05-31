@@ -51,7 +51,7 @@ class App {
 
 		// NumberPicker aka NumericUpdown in .NET
 		np1 = new NumberPicker(gb2, 100, 30);	
-		np2 = new NumberPicker(gb2, 100, 60, btnLeft : true);
+		np2 = new NumberPicker(gb2, 100, 60, btnLeft: true);
 
 		pgb = new ProgressBar(frm, 10, gb2.bottom!10, 204, 25);
 		// auto catimage = "D:\\Downloads_Ex\\2026\\nvidia-com.png";
@@ -90,9 +90,10 @@ class App {
 		cmb.selectedIndex = 4;
 		gb1.foreColor = 0xd90429; // This only works for GroupBox text.
 		np1.foreColor = 0x3f37c9;
+		np1.backColor = 0xee9b00;
 		np1.step = 0.25; 
 		np2.decimalPrecision = 0;
-		np2.backColor = 0xcaffbf; 
+		np2.backColor = 0x2ec4b6; 
 		pgb.showPercentage = true;
 		tb.foreColor = 0xff0000;
 		tb.cueBanner = "Type something here...";   
