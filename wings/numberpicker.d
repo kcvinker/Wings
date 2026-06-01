@@ -41,6 +41,8 @@ import std.algorithm: clamp;
 import wings.controls : specialMouseLeaveMsgHanlder;
 import std.stdio;
 import std.datetime.stopwatch;
+import wings.timer: Timer;
+
 
 
 enum DWORD buddyStyle = WS_CHILD | WS_VISIBLE | ES_NUMBER | WS_TABSTOP;
@@ -98,6 +100,7 @@ class NumberPicker: Control
             GetClientRect(this.mBuddyHandle, &this.mTBRect);
             GetClientRect(this.mHandle, &this.mUDRect);
             this.mSpRect = RECT(this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
+            SetRect(&this.mMLRect, this.mXpos, this.mYpos, (this.mXpos + this.mWidth), (this.mYpos + this.mHeight));
             this.getRightAndBottom();
             this.setBorderPoints();
             this.displayValue;
@@ -224,6 +227,12 @@ class NumberPicker: Control
             return !this.mIsMouseTracking && hWnd == this.mBuddyHandle;
         }
 
+        override void onMouseHover(EventHandler func)
+        {
+            super.onMouseHover(func);
+            if (this.mHoverTimer !is null) this.mHoverTimer.destroy();
+            this.mHoverTimer = new Timer(this.mHandle, 400);
+        }
         
 
     //endregion Properties
@@ -233,12 +242,34 @@ class NumberPicker: Control
     
     protected:
         RECT mSpRect;
-        mixin SpecialMouseLeaveHandler;
+        // mixin SpecialMouseLeaveHandler;
+
+        override void mouseMoveHandler(HWND hw, UINT msg, WPARAM wp, LPARAM lp)
+        {
+            this.fireMouseMoveEvent(msg, wp, lp);    
+            if (this.mMouseEventFlags.hover && !this.mHoverTriggered) {
+                this.mLastMousePt.x = cast(int)(LOWORD(lp));
+			    this.mLastMousePt.y = cast(int)(HIWORD(lp));
+                this.mHoverTimer.restart();
+                this.mHoverTriggered = true;
+            }
+            this.fireMouseEnterEvent();
+        }
+
+        override void mouseLeaveHandler()
+        {
+            specialMouseLeaveHandler!(NumberPicker)(this, this.mParent.mHandle);
+        }
+
 
     package:
         RECT mTbWrc; // This is the rect for drawing line over the border of edit control.
         POINT[4] mBorderPts; 
+        POINT mLastMousePt;
         HPEN mBorderPen;
+        Timer mHoverTimer;
+        bool mHoverTriggered;
+        RECT mMLRect;
 
     private:
     // region private members
@@ -320,12 +351,11 @@ class NumberPicker: Control
         void createBuddy()  // Private
         {
             // Creating buddy edit control
-            import wings.textbox: tbClsName;
+            import wings.ctl_static_data: WCNEDIT;
 
-            this.mBuddyCid = Control.stCtlId;
-            if (this.mBtnLeft) this.mWidth -= 2; // To match the size of a button right control.
+            this.mBuddyCid = Control.stCtlId++;
             this.mBuddyHandle = CreateWindowEx( this.mBuddyExStyle,
-                                                tbClsName.ptr,
+                                                WCNEDIT.ptr,
                                                 null,
                                                 this.mBuddyStyle,
                                                 this.mXpos,
@@ -344,20 +374,6 @@ class NumberPicker: Control
             }
         }
 
-        // void resizeBuddy()  // Private
-        // {
-        //     // Place the edit control at proper coordinates
-        //     if (this.mBtnLeft) {
-        //         this.mLineX = this.mTBRect.left;
-        //         SetWindowPos(this.mBuddyHandle, HWND_TOP,
-        //                         (this.mXpos + this.mUDRect.right), this.mYpos,
-        //                         this.mTBRect.right, this.mTBRect.bottom, swp_flag);
-        //     } else {
-        //         this.mLineX = this.mTBRect.right - 3;
-        //         SetWindowPos(this.mBuddyHandle, HWND_TOP, this.mXpos, this.mYpos,
-        //                         (this.mTBRect.right - 2), this.mTBRect.bottom, swp_flag);
-        //     }
-        // }
 
         void setValueInternal(int delta)  // Private
         {
@@ -386,35 +402,7 @@ class NumberPicker: Control
             }
             SetWindowTextW(this.mBuddyHandle, newStr.toUTF16z);
         }
-
-        // bool isMouseOnMe()  // Private
-        // {
-        //     /*---------------------------------------------------------------------- 
-        //     If this returns False, mouse_leave event will triggered
-        //     Since, updown control is a combo of an edit and button controls...
-        //     we have no better options to control the mouse enter & leave mechanism.
-        //     Now, we create an imaginary rect over the bondaries of these two controls.
-        //     If mouse is inside that rect, there is no mouse leave. Perfect hack. 
-        //     ---------------------------------------------------------------------------*/
-        //     POINT pt;
-        //     GetCursorPos(&pt);
-        //     ScreenToClient(this.mParent.handle, &pt);
-        //     auto res = PtInRect(&this.mMyRect, pt);
-        //     return cast(bool) res;
-        // }
-
-        // void npMouseMoveHandler(UINT msg, WPARAM wp, LPARAM lp)  // Private
-        // {
-        //     if (this.isMouseEntered) {
-        //         if (this.mOnMouseMove) {
-        //             auto mea = new MouseEventArgs(msg, wp, lp);
-        //             this.mOnMouseMove(this, mea);
-        //         }
-        //     } else {
-        //         this.isMouseEntered = true;
-        //         if (this.mOnMouseEnter) this.mOnMouseEnter(this, new EventArgs());
-        //     }
-        // }
+        
 
         void finalize(UINT_PTR subClsId) // Private
         {
@@ -457,6 +445,13 @@ private LRESULT npWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             break;
             case WM_PAINT: 
                 self.paintHandler(); 
+            break;
+            case WM_TIMER:
+                if (self.mOnMouseHover) {
+                    self.mHoverTimer.stop();
+                    self.mOnMouseHover(self, gea);
+                }
+                return 0;
             break;
             default: return DefSubclassProc(hWnd, message, wParam, lParam);
         }

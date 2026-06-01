@@ -38,7 +38,7 @@ package {
     alias intArray = int[];
     alias wsArray = wstring[];
 
-    
+    EventArgs gea = EventArgs.init;
 
     union StringOrInt
     {
@@ -211,28 +211,6 @@ package {
 
     }
 
-    mixin template SpecialMouseLeaveHandler() {
-        override MsgHandlerResult mouseLeaveHandler()
-        {
-            bool needsLeave = (this.onMouseEnter !is null || this.onMouseLeave !is null);
-            bool needsHover = (this.onMouseHover !is null);
-            if (needsLeave || needsHover) {                        
-                POINT pt;
-                GetCursorPos(&pt);
-                ScreenToClient(this.mParent.mHandle, &pt);        
-                BOOL inside = PtInRect(&this.mSpRect, pt);                        
-                if (inside) {     
-                    // printRct(this.mSpRect, pt, inside);   
-                    return MsgHandlerResult.returnOne;
-                } else {
-                    this.mIsMouseTracking = false;
-                    this.onMouseLeave(this, new EventArgs());
-                    return MsgHandlerResult.returnZero;
-                }
-            }
-            return MsgHandlerResult.callDefProc;
-        }
-    }
 
     // Message Constants - Wing's own messages
         enum uint MSG_BASE = WM_APP + 1; // 32768 + 1
@@ -388,6 +366,42 @@ void drawVLine(HDC hdc, int x, int y, int endp, COLORREF clrref, int penWid = 1)
     MoveToEx(hdc, x, y, null);
     SelectObject(hdc, pen);
     LineTo(hdc, x, endp);
+}
+
+template HasMouseLeaveMembers(T)
+{
+    enum HasMouseLeaveMembers =
+        __traits(hasMember, T, "mHoverTriggered") &&
+        __traits(hasMember, T, "mMLRect") &&
+        __traits(hasMember, T, "mHoverTimer");
+}
+
+void specialMouseLeaveHandler(T)(T ctrl, HWND clientHwnd) if (HasMouseLeaveMembers!T)
+{
+    /* Since ComboBox & NumberPicker are a combination of two controls 
+    * we need special treatment for mouse leave event.
+    * We need to check if the mouse pointer is inside our control
+    * rect each time we get a mouse leave message. Some times, user
+    * moves the mouse from one control to it's sibling.*/
+    if (ctrl.mTMEFlags.leave || ctrl.mTMEFlags.hover) {
+        if (ctrl.mIsMouseTracking || ctrl.mIsMouseEntered || ctrl.mHoverTriggered) {
+            POINT pt;
+            GetCursorPos(&pt);
+            ScreenToClient(clientHwnd, &pt);        
+            bool inside = PtInRect(&ctrl.mMLRect, pt) != 0;
+            if (!inside) {        
+                ctrl.mIsMouseEntered = false;
+                ctrl.mIsMouseTracking = false;
+                if (ctrl.mHoverTriggered) {
+                    ctrl.mHoverTriggered = false;
+                    ctrl.mHoverTimer.stop();
+                }
+
+                if (ctrl.mOnMouseLeave) ctrl.mOnMouseLeave(ctrl, gea);
+            }
+        }			
+    } 
+
 }
 
 

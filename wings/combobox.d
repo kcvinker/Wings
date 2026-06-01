@@ -53,6 +53,8 @@ import std.stdio;
 import std.algorithm.mutation; // We have a function called 'remove'. So this must be renamed.
 import wings.wings_essentials;
 import wings.controls : specialMouseLeaveMsgHanlder;
+import wings.timer: Timer;
+
 
 
 // private int cmbNumber = 1;
@@ -214,6 +216,13 @@ class ComboBox: Control
     /// Get the count of items in ComboBox.
     final int itemCount() {return cast(int) this.mItems.length;}
 
+    override void onMouseHover(EventHandler func)
+    {
+        super.onMouseHover(func);
+        if (this.mHoverTimer !is null) this.mHoverTimer.destroy();
+        this.mHoverTimer = new Timer(this.mHandle, 400);
+    }
+
 
     EventHandler onSelectionChanged;
     EventHandler onSelectionCommitted;
@@ -249,7 +258,39 @@ class ComboBox: Control
 
     protected:
         RECT mSpRect;
-        mixin SpecialMouseLeaveHandler;
+        // mixin SpecialMouseLeaveHandler;
+
+        override void mouseMoveHandler(HWND hw, UINT msg, WPARAM wp, LPARAM lp)
+        {
+            this.fireMouseMoveEvent(msg, wp, lp);    
+            if (this.mMouseEventFlags.hover && !this.mHoverTriggered) {
+                this.mLastMousePt.x = cast(int)(LOWORD(lp));
+			    this.mLastMousePt.y = cast(int)(HIWORD(lp));
+                this.mHoverTimer.restart();
+                this.mHoverTriggered = true;
+            }
+            this.fireMouseEnterEvent();
+        }
+
+        override void mouseLeaveHandler()
+        {
+            specialMouseLeaveHandler!(ComboBox)(this, this.mHandle);
+        }
+
+    package:
+        Timer mHoverTimer;
+        bool mHoverTriggered;
+        RECT mMLRect;
+        POINT mLastMousePt;
+
+        
+
+        void finalize(UINT_PTR scID) // Private
+        { 
+            if (!this.mRecreateEnabled) DeleteObject(this.mBkBrush);
+            RemoveWindowSubclass(this.mHandle, &cmbWndProc, scID);
+            // print("Combo finalizer worked");
+    	}
 
 	private:
     // Variables
@@ -283,6 +324,7 @@ class ComboBox: Control
             GetClientRect(this.mHandle, &r);
             printRct(r, POINT(1, 1), false);
             SetRect(&this.mSpRect, this.mXpos, this.mYpos, this.mXpos + r.right, this.mYpos + r.bottom);
+            GetClientRect(this.mHandle, &this.mMLRect);
             // printRct(this.mSpRect, POINT(0, 0), false);
 		}
 
@@ -330,12 +372,7 @@ class ComboBox: Control
             this.mBkBrush = this.mBackColor.getBrush();
         }
 
-        void finalize(UINT_PTR scID) // Private
-        { 
-            if (!this.mRecreateEnabled) DeleteObject(this.mBkBrush);
-            RemoveWindowSubclass(this.mHandle, &cmbWndProc, scID);
-            // print("Combo finalizer worked");
-    	}
+        
 
 } // End class ComboBox...........................................
 
@@ -428,6 +465,12 @@ private LRESULT cmbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     default: break;
                 }
             break;
+            case WM_TIMER:
+                if (self.mOnMouseHover) {
+                    self.mHoverTimer.stop();
+                    self.mOnMouseHover(self, gea);
+                }
+                return 0;
             default: 
                 return DefSubclassProc(hWnd, message, wParam, lParam); 
             break;

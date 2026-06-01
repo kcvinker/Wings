@@ -166,10 +166,10 @@ class App {
 		print("Gradient button clicked");
 	}
 	void menter(Object c, EventArgs e) {
-		writeln("Mouse entered combo");
+		writeln("Mouse entered nump");
 	}
 	void mleave(Object c, EventArgs e) {
-		writeln("Mouse leave from combo");
+		writeln("Mouse leave from numpi");
 	}
 
 	private:

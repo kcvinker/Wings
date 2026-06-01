@@ -21,16 +21,28 @@ import wings.colors;
 import wings.contextmenu;
 
 
-// alias SpecialMouseMoveHandler = MsgHandlerResult function(Control sender, HWND hw, UINT message, 
-//                                                             WPARAM wParam, LPARAM lParam);
-// alias SpecialMouseLeaveHandler = MsgHandlerResult delegate(Control sender);
-
 
 
 mixin template finalProperty(string pName, alias obj) {
     mixin(`final typeof(obj) `, pName, `() { return obj; }`);
     mixin(`final void `, pName, `(typeof(obj) value) { obj = value; }`);
 }
+
+struct TMEFlags { 
+    bool hover; 
+    bool leave; 
+    enum DWORD HOVER = 1u << 0;
+    enum DWORD LEAVE = 1u << 1;
+    alias value this;    
+    DWORD value()
+    {
+        DWORD flags = 0;
+        if (this.hover) flags |= HOVER;
+        if (this.leave) flags |= LEAVE;
+        return flags;
+    }
+}
+struct MouseEventFlags { bool enter; bool hover; bool leave; }
 
 
 /// A base class for all controls
@@ -251,8 +263,9 @@ class Control {
     //-------------------------------------------------------------------
 
     ///EventHandler onLeftDown;
-    EventHandler onMouseEnter, onClick, onMouseLeave, onRightClick, onDoubleClick;
-    MouseEventHandler onMouseWheel, onMouseHover, onMouseMove, onMouseDown, onMouseUp;
+    EventHandler mOnMouseEnter, onClick, mOnMouseLeave;
+    EventHandler mOnMouseHover, onRightClick, onDoubleClick;
+    MouseEventHandler onMouseWheel, onMouseMove, onMouseDown, onMouseUp;
     MouseEventHandler onRightMouseDown, onRightMouseUp;
     KeyEventHandler onKeyDown, onKeyUp;
     PaintEventHandler onPaint;
@@ -262,19 +275,42 @@ class Control {
     void hide() { ShowWindow(this.mHandle, SW_HIDE);}
 
 
-    final ContextMenu contextMenu() {return this.mCmenu;}
-    final void contextMenu(ContextMenu value)
+    ContextMenu contextMenu() {return this.mCmenu;}
+    void contextMenu(ContextMenu value)
     {
         this.mCmenu = value;
         if (!this.mCmenu.mParent) this.mCmenu.mParent = this;
         // this.mCmenu.setDummyControl();
     }
-    final void addContextMenu(string[] menuNames ...)
+    void addContextMenu(string[] menuNames ...)
     {
         this.mCmenu = new ContextMenu(this, menuNames);
         // this.mCmenu.setDummyControl();
     }
 
+    void onMouseEnter(EventHandler func)
+    {
+        this.mMouseEventFlags.enter = true;
+        this.mTMEFlags.leave = true;
+        this.mOnMouseEnter = func;
+    }
+    EventHandler onMouseEnter() {return this.mOnMouseEnter;}
+
+    void onMouseHover(EventHandler func)
+    {
+        this.mMouseEventFlags.hover = true;
+        this.mTMEFlags.hover = true;
+        this.mOnMouseHover = func;
+    }
+    EventHandler onMouseHover() {return this.mOnMouseHover;}
+    
+    void onMouseLeave(EventHandler func)
+    {
+        this.mMouseEventFlags.leave = true;
+        this.mTMEFlags.leave = true;
+        this.mOnMouseLeave = func;
+    }
+    EventHandler onMouseLeave() {return this.mOnMouseLeave;}
 
 
 
@@ -306,17 +342,22 @@ class Control {
             return !this.mIsMouseTracking;
         }
 
-        // ComboBox & NumberPicker needs to override this.
-        MsgHandlerResult mouseLeaveHandler()
+        void mouseMoveHandler(HWND hw, UINT msg, WPARAM wp, LPARAM lp)
         {
+            this.fireMouseMoveEvent(msg, wp, lp);
+            this.startMouseTracking();
+            this.fireMouseEnterEvent();	
+        }    
+
+        // ComboBox & NumberPicker needs to override this.
+        void mouseLeaveHandler()
+        {
+            this.mIsMouseEntered = false;
             if (this.mIsMouseTracking) {                
                 this.mIsMouseTracking = false;
-                this.onMouseLeave(this, new EventArgs());
-                return MsgHandlerResult.returnZero;
-            }
-            return MsgHandlerResult.callDefProc;                
-        }
-
+                if (this.mOnMouseLeave) this.mOnMouseLeave(this, gea);
+            }                
+        }   
         
 
     package:
@@ -324,7 +365,7 @@ class Control {
         ControlType mControlType;
         bool lDownHappened;
         bool rDownHappened;
-        bool isMouseEntered;
+        bool mIsMouseEntered;
         bool mIsMouseTracking;
         bool mDisabled;
         bool mHasFont;
@@ -344,6 +385,8 @@ class Control {
         WideString mWtext;
         static int mSubClassId = 1000;
         int mRight, mBottom;
+        MouseEventFlags mMouseEventFlags;
+        TMEFlags mTMEFlags;
 
         // Initializing common members of controls. This will be called in each control's constructor.
         void initControl(Control parent, int x, int y, int w, int h, int* ctlCounter, string txt = "" )
@@ -631,32 +674,38 @@ class Control {
                 }
             }
 
-            void mouseMoveHandler(HWND hw, UINT msg, WPARAM wp, LPARAM lp)
+            pragma(inline, true) 
+            protected void fireMouseMoveEvent(UINT msg, WPARAM wp, LPARAM lp)
             {
                 if (this.onMouseMove) {
                     auto mea = new MouseEventArgs(msg, wp, lp);
                     this.onMouseMove(this, mea);
                 }
+            }
 
-                // 2. Determine if we need to start/restart tracking
-                bool needsLeave = (this.onMouseEnter != null || this.onMouseLeave != null);
-                bool needsHover = (this.onMouseHover != null);
-
-                if (needsLeave || needsHover) {
-                    if (this.shouldTrackMouse(hw)) {
-                        uint flags = 0;
-                        if (needsLeave) flags |= TME_LEAVE;
-                        if (needsHover) flags |= TME_HOVER;
-
+            pragma(inline, true)
+            protected void startMouseTracking()
+            {
+                if (this.mTMEFlags.leave || this.mTMEFlags.hover) {
+                    if (this.mIsMouseTracking) {   
                         // Start tracking with combined flags
-                        this.mIsMouseTracking = cast(bool) trackMouseMove(this.mHandle, flags);                         
+                        this.mIsMouseTracking = cast(bool)trackMouseMove(this.mHandle, 
+                                                                        this.mTMEFlags);                         
+                    }                    
+                }
+            }
 
-                        // Fire Mouse Enter immediately on transition
-                        if (this.onMouseEnter) this.onMouseEnter(this, new EventArgs()); 
-                    }
-                    // if (this.name.str_view() == "ComboBox_1") ptf("combo mouse enter 525 = %s", this._isMouseTracking);
+            pragma(inline, true)
+            protected void fireMouseEnterEvent()
+            {
+                // Fire Mouse Enter immediately on transition
+                if (!this.mIsMouseEntered) {
+                    this.mIsMouseEntered = true;
+                    if (this.mOnMouseEnter) this.mOnMouseEnter(this, gea); 
                 } 	
-            }            
+            }
+
+                 
 
             void keyDownHandler(WPARAM wpm)
             {
@@ -704,7 +753,10 @@ class Control {
                         this.mouseMoveHandler(hw, msg, wpm, lpm);                         
                     break;
                     case WM_MOUSELEAVE : 
-                        return this.mouseLeaveHandler(); 
+                        this.mouseLeaveHandler();                         
+                    break;
+                    case WM_MOUSEHOVER:
+			            if (this.mOnMouseHover) this.mOnMouseHover(this, gea);
                     break;
                     case WM_KEYDOWN:
                         if (this.onKeyDown) {

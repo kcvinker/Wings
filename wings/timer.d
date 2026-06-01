@@ -30,11 +30,11 @@ class Timer {
     UINT interval;
     EventHandler onTick;
 
-    this(HWND parentHwnd, UINT interval, EventHandler handler)
+    this(HWND parentHwnd, UINT interval, EventHandler handler = null)
     {
         this.mParentHwnd = parentHwnd;
         this.interval = interval;
-        this.onTick = handler;
+        if (handler) this.onTick = handler;
         this.mIdNum = cast(UINT_PTR)(cast(void*)this);
     }
 
@@ -51,6 +51,13 @@ class Timer {
     {
         this.mIsEnabled = true;
         SetTimer(this.mParentHwnd, this.mIdNum, this.interval, null);
+    }
+
+    void restart()
+    {
+        if (this.mIsEnabled) KillTimer(this.mParentHwnd, this.mIdNum);
+        SetTimer(this.mParentHwnd, this.mIdNum, this.interval, null);
+        this.mIsEnabled = true;
     }
 
     void stop()
@@ -78,9 +85,11 @@ class Timer {
 
     package:
     UINT_PTR mIdNum;
+    bool mIsEnabled;
+
     private:    
     HWND mParentHwnd;
-    bool mIsEnabled;
+    
 }
 
 
