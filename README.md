@@ -35,17 +35,12 @@ class App {
 		// First of all, create the form aka window.
 		frm = new Form("Wing window in D Lang", 900, 500);
 		frm.enablePrintPoint();
-		// frm.createHandle();
 
 		//Let's create a tray icon for this program.
 		tic = new TrayIcon("Wings tray icon!", "wings_icon.ico");
 
 		// Now, add a context menu to our tray. '|' is for separator.
-		tic.addContextMenu(true, TrayMenuTrigger.anyClick, "Windows_ti", "Linux_ti", "|", "MacOS_ti");
-
-		// // If this set to true, all control handles will be
-		// // created right after the class ctor finished.
-		frm.createChildHandles = true; 
+		tic.addContextMenu(true, TrayMenuTrigger.anyClick, "Windows_ti", "Linux_ti", "|", "MacOS_ti"); 
 
 		//Let's add a menu bar and some menu items
 		mb = frm.addMenuBar(true, "Windows", "Linux", "MacOS");
@@ -59,7 +54,7 @@ class App {
 		dtp = new DateTimePicker(frm, cmb.right!10, 10); 
 
 		gb1 = new GroupBox(frm, "Compiler Options", 10, btn1.bottom!10, 200, 170);
-		cb1 = new CheckBox(gb1, "Profile", 15, 35);
+		cb1 = new CheckBox(gb1, "Profile", 15, 35); // Parent is gb1.
 		cb2 = new CheckBox(gb1, "Low Mem", 15, 65);
 		rb1 = new RadioButton(gb1, "Console App", 15, 95);
 		rb2 = new RadioButton(gb1, "Windowed App", 15, 125);
@@ -127,7 +122,7 @@ class App {
 		lv.addRow("Win8", "Catalina", "Debian");
 		lv.addRow("Win10", "Big Sur", "Kali");
 
-		// lv.createHandle();
+		// Add a context menu to ListView
 		lv.addContextMenu("Windows", "Linux", "|", "MacOS");
 
 
@@ -135,7 +130,7 @@ class App {
 		tv.addNodeWithChildren("Windows", "Win 11", "Win 10", "Win 8");
 		tv.addNodeWithChildren("Linux", "Ubuntu", "Debian", "Fedora");
 		tv.addNodeWithChildren("MacOS", "Monterey", "Catalina", "Big Sur");
-		// tv.createHandle();
+
 		// Add menu items for our main menus.
 		mb["Windows"].addItems("Windows 8", "|", "Windows 10",  "Windows 11");
 		mb["Linux"].addItems("Ubuntu", "Debian", "Kali");

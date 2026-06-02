@@ -25,34 +25,43 @@ import wings.enums: Key;
 class Timer {
     import wings.events: EventHandler;
     import wings.commons: CM_TIMER_DESTROY;
+    import wings.commons: print;
+    
     
     
     UINT interval;
     EventHandler onTick;
 
-    this(HWND parentHwnd, UINT interval, EventHandler handler = null)
+    /// Creates new timer. If notifyOnDestroy is true, it will send a message to parentHwnd...
+    /// when the timer is destroyed, with wParam = timer's id and lParam = 0. 
+    this(HWND parentHwnd, UINT interval, EventHandler handler = null, bool notifyOnDestroy = false)
     {
         this.mParentHwnd = parentHwnd;
         this.interval = interval;
         if (handler) this.onTick = handler;
         this.mIdNum = cast(UINT_PTR)(cast(void*)this);
+        this.mNotifyOnDestroy = notifyOnDestroy;
     }
 
     ~this()
     {        
         if (this.mIsEnabled) {
             KillTimer(this.mParentHwnd, this.mIdNum);
+            print("Timer destructor killed the timer");
         }
-        SendMessageW(this.mParentHwnd, CM_TIMER_DESTROY, this.mIdNum, 0);
-        
+        if (this.mNotifyOnDestroy) {
+            SendMessageW(this.mParentHwnd, CM_TIMER_DESTROY, this.mIdNum, 0);
+        }
     }
 
+    /// Starts the timer. If it's already running, it will be restarted.
     void start()
     {
         this.mIsEnabled = true;
         SetTimer(this.mParentHwnd, this.mIdNum, this.interval, null);
     }
 
+    /// Restarts the timer. If it's not running, it will be started.
     void restart()
     {
         if (this.mIsEnabled) KillTimer(this.mParentHwnd, this.mIdNum);
@@ -60,24 +69,21 @@ class Timer {
         this.mIsEnabled = true;
     }
 
+    /// Stops the timer. It can be restarted with start or restart method.
     void stop()
     {
         KillTimer(this.mParentHwnd, this.mIdNum);
         this.mIsEnabled = false;
     }
 
+    /// Destroys the timer. It cannot be restarted after this.
     void destroy()
     {
         if (this.mIsEnabled) {
             KillTimer(this.mParentHwnd, this.mIdNum);
         }
-        SendMessageW(this.mParentHwnd, CM_TIMER_DESTROY, this.mIdNum, 0);
-    }
-
-    package void dtor()
-    {
-        if (this.mIsEnabled) {
-            KillTimer(this.mParentHwnd, this.mIdNum);
+        if (this.mNotifyOnDestroy) {
+            SendMessageW(this.mParentHwnd, CM_TIMER_DESTROY, this.mIdNum, 0);
         }
     }
 
@@ -89,6 +95,7 @@ class Timer {
 
     private:    
     HWND mParentHwnd;
+    bool mNotifyOnDestroy;
     
 }
 

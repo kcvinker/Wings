@@ -287,6 +287,7 @@ class ComboBox: Control
 
         void finalize(UINT_PTR scID) // Private
         { 
+            if (this.mHoverTimer !is null) this.mHoverTimer.destroy();
             if (!this.mRecreateEnabled) DeleteObject(this.mBkBrush);
             RemoveWindowSubclass(this.mHandle, &cmbWndProc, scID);
             // print("Combo finalizer worked");

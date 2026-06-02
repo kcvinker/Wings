@@ -1,5 +1,10 @@
 Wings changelog
 
+Version 1.2.075 (Jun-2026)
+    Fixed minor bug in MouseHover event in ComboBox and NumberPicker.
+    Added some doc comments.
+    Readme file updated.
+
 Version 1.2.074 (01-Jun-2026) 
     Improved MouseEnter/MouseHover/MouseLeave event mechanism.
     Added restart function to Timer class.

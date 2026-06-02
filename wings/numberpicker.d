@@ -118,6 +118,7 @@ class NumberPicker: Control
 
     //region properties
 
+        /// Sets the minimum range of the number picker. 
         final void minRange(double value)
         {
             this.mMinRange = value;
@@ -126,8 +127,11 @@ class NumberPicker: Control
                 this.sendMsg(UDM_SETRANGE32, this.mMinRange, this.mMaxRange);
             }
         }
+
+        /// Returns the minimum range of the number picker.
         final double minRange() {return this.mMinRange;}
 
+        /// Sets the maximum range of the number picker.
         final void maxRange(double value)
         {
             this.mMaxRange = value;
@@ -135,9 +139,14 @@ class NumberPicker: Control
                 this.sendMsg(UDM_SETRANGE32, this.mMinRange, this.mMaxRange);
             }
         }
+
+        /// Returns the maximum range of the number picker.
         final double maxRange() {return this.mMaxRange;}
 
+        /// Returns whether the text selection in the buddy edit control is hidden.
         final bool hideSelection() {return this.mHideSel;}
+        
+        /// Sets whether the text selection in the buddy edit control is hidden.
         final void hideSelection(bool value)
         {
             this.mHideSel = value;
@@ -146,17 +155,22 @@ class NumberPicker: Control
             }
         }
 
+        /// Returns whether the up/down buttons are on the left side of the number picker.
         final bool buttonOnLeft() {return this.mBtnLeft;}
+        
+        /// Sets whether the up/down buttons are on the left side of the number picker.
         final void buttonOnLeft(bool value)
         {
             this.mBtnLeft = value;
             if (this.mIsCreated) {
                 // TODO - change window style using SetWindowLong function.
             }
-
         }
 
+        /// Returns the text alignment in the buddy edit control.
         final Alignment textAlign() {return this.mTxtPos;}
+        
+        /// Sets the text alignment in the buddy edit control.
         final void textAlign(Alignment value)
         {
             this.mTxtPos = value;
@@ -166,7 +180,10 @@ class NumberPicker: Control
 
         }
 
+        /// Returns whether there is a separator line between the up/down buttons and the buddy edit control.
         final bool hasSeperator() {return this.mHasSep;}
+        
+        /// Sets whether there is a separator line between the up/down buttons and the buddy edit control.
         final void hasSeperator(bool value)
         {
             this.mHasSep = value;
@@ -175,7 +192,10 @@ class NumberPicker: Control
             }
         }
 
+        /// Returns whether the value will rotate when it exceeds the range.
         final bool rotateValue() {return this.mAutoRotate;}
+
+        /// Sets whether the value will rotate when it exceeds the range.
         final void rotateValue(bool value)
         {
             this.mAutoRotate = value;
@@ -184,14 +204,20 @@ class NumberPicker: Control
             }
         }
 
+        /// Returns the current value of the number picker.
         final double value() {return this.mValue;}
+
+        /// Sets the current value of the number picker. 
         final void value(double value)
         {
             this.mValue = value;
             if (this.mIsCreated) this.displayValue();
         }
 
+        /// Returns the step value of the number picker.
         final double step() {return this.mStep;}
+
+        /// Sets the step value of the number picker.
         final void step(double value)
         {
             this.mStep = value;
@@ -200,14 +226,20 @@ class NumberPicker: Control
             }
         }
 
+        /// Returns the format string for displaying the value in the buddy edit control.
         final string formatString() {return this.mFmtStr;}
+
+        /// Sets the format string for displaying the value in the buddy edit control.
         final void formatString(string value)
         {
             this.mFmtStr = value;
             if (this.mIsCreated) this.displayValue();
         }
-
+    
+        /// Returns the decimal precision for displaying the value in the buddy edit control.
         final int decimalPrecision() {return this.mDeciPrec;}
+
+        /// Sets the decimal precision for displaying the value in the buddy edit control.
         final void decimalPrecision(int value)
         {
             this.mDeciPrec = value;
@@ -220,13 +252,16 @@ class NumberPicker: Control
             if (this.mIsCreated) this.displayValue();
         }
 
+        /// Set and get whether the caret in the buddy edit control is hidden.
         mixin finalProperty!("hideCaret", this.mHideCaret);
 
+    
         override bool shouldTrackMouse(HWND hWnd)
         {
             return !this.mIsMouseTracking && hWnd == this.mBuddyHandle;
         }
 
+        /// Overrides the onMouseHover event handler 
         override void onMouseHover(EventHandler func)
         {
             super.onMouseHover(func);
@@ -406,6 +441,7 @@ class NumberPicker: Control
 
         void finalize(UINT_PTR subClsId) // Private
         {
+            if (this.mHoverTimer !is null) this.mHoverTimer.destroy();
             if (this.mBkBrush) DeleteObject(this.mBkBrush);
             DeleteObject(this.mBorderPen);
             RemoveWindowSubclass(this.mHandle, &npWndProc, subClsId);
