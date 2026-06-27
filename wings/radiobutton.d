@@ -133,9 +133,9 @@ private LRESULT rbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
             case CM_NOTIFY:
                 auto nmcd = getNmcdPtr(lParam);
                 switch (nmcd.dwDrawStage) {
-                    case CDDS_PREERASE:
-                        return CDRF_NOTIFYPOSTERASE;
-                    break;
+                    // case CDDS_PREERASE:
+                    //     return CDRF_NOTIFYPOSTERASE;
+                    // break;
                     case CDDS_PREPAINT:
                         RECT rct = nmcd.rc;
                         if (self.mRightAlign) { rct.right -= 18;} else {rct.left += 18;}

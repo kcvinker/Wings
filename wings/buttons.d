@@ -174,19 +174,16 @@ class Button : Control
         LRESULT drawBackColor(NMCUSTOMDRAW* ncd)
         {
             switch (ncd.dwDrawStage) {
-                case CDDS_PREERASE : // This happens when the paint starts
-                    return CDRF_NOTIFYPOSTERASE; break; // Telling the program to inform us after erase
+                // case CDDS_PREERASE : // This happens when the paint starts
+                //     return CDRF_NOTIFYPOSTERASE; break; // Telling the program to inform us after erase
                 case CDDS_PREPAINT: // We get the notification after erase happened.
-                    switch (ncd.uItemState) { // We check the control state and draw
-                        case mMouseClickFlag:
-                            this.paintFlatBtnRoundRect(ncd.hdc, ncd.rc, mFDraw.defBrush, mFDraw.hotPen);
-                        break;
-                        case mMouseOverFlag:
-                            this.paintFlatBtnRoundRect(ncd.hdc, ncd.rc, mFDraw.hotBrush, mFDraw.hotPen);
-                        break;
-                        default:
-                            this.paintFlatBtnRoundRect(ncd.hdc, ncd.rc, mFDraw.defBrush, mFDraw.defPen);
-                        break;
+                    if (ncd.uItemState & mMouseClickFlag) { // We check the control state and draw
+                        this.paintFlatBtnRoundRect(ncd.hdc, ncd.rc, mFDraw.defBrush, mFDraw.hotPen);
+                        
+                    } else if (ncd.uItemState & mMouseOverFlag) {
+                        this.paintFlatBtnRoundRect(ncd.hdc, ncd.rc, mFDraw.hotBrush, mFDraw.hotPen);
+                    } else {
+                        this.paintFlatBtnRoundRect(ncd.hdc, ncd.rc, mFDraw.defBrush, mFDraw.defPen);
                     }
                     return CDRF_NOTIFYPOSTPAINT;
                 break;
@@ -199,21 +196,16 @@ class Button : Control
         LRESULT drawGradientBackColor(NMCUSTOMDRAW * ncd)
         {
             switch (ncd.dwDrawStage) {
-                case CDDS_PREERASE: // This happens when the paint starts
-                    return CDRF_NOTIFYPOSTERASE; // Telling the program to inform us after erase
-                break;
+                // case CDDS_PREERASE: // This happens when the paint starts
+                //     return CDRF_NOTIFYPOSTERASE; // Telling the program to inform us after erase
+                // break;
                 case CDDS_PREPAINT: // We get the notification after erase happened.
-                    switch (ncd.uItemState) { // We check the control state and draw
-                        case mMouseClickFlag:
+                    if (ncd.uItemState & mMouseClickFlag) {
                             this.paintRoundGradient(ncd.hdc, ncd.rc, this.mGDraw.gcDef, this.mGDraw.hotPen);
-                        break;
-                        case mMouseOverFlag:
-                            this.paintRoundGradient(ncd.hdc, ncd.rc, this.mGDraw.gcHot, this.mGDraw.hotPen);
-                        break;
-                        default:
-                            // print("def pen when used ", this.mGDraw.defPen);
-                            this.paintRoundGradient(ncd.hdc, ncd.rc, this.mGDraw.gcDef, this.mGDraw.defPen);
-                        break;
+                    } else if (ncd.uItemState & mMouseOverFlag) {
+                        this.paintRoundGradient(ncd.hdc, ncd.rc, this.mGDraw.gcHot, this.mGDraw.hotPen);
+                    } else {
+                        this.paintRoundGradient(ncd.hdc, ncd.rc, this.mGDraw.gcDef, this.mGDraw.defPen);
                     }
                     return CDRF_NOTIFYPOSTPAINT;
                     break;
@@ -228,7 +220,7 @@ class Button : Control
             SelectObject(dc, pen);
             SelectObject(dc, hbr);
             RoundRect(dc, rc.left, rc.top, rc.right, rc.bottom, roundCurve, roundCurve);
-            FillPath(dc);
+            // FillPath(dc);
         }
 
 
@@ -239,7 +231,7 @@ class Button : Control
             SelectObject(dc, pen);
             SelectObject(dc, gradBrush);
             RoundRect(dc, rc.left, rc.top, rc.right, rc.bottom, roundCurve, roundCurve);
-            FillPath(dc);
+            // FillPath(dc);
         }
 
         LRESULT wmNotifyHandler(LPARAM lpm)

@@ -530,7 +530,7 @@ LRESULT mainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) nothr
                 self = cast(Form) cs.lpCreateParams;
                 self.mHandle = hWnd;			
                 SetWindowLongPtr(hWnd, GWLP_USERDATA,  cast(LONG_PTR) cast(void*)self);                
-                return 1; // Continue window creation
+                
             }
             return DefWindowProc(hWnd, message, wParam, lParam);
         }

@@ -163,9 +163,9 @@ private LRESULT cbWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
                 // There is no other ways to change the text color.
                 auto nmc = cast(NMCUSTOMDRAW *) lParam;
                 switch (nmc.dwDrawStage) {
-                    case CDDS_PREERASE :
-                        return CDRF_NOTIFYPOSTERASE;
-                    break;
+                    // case CDDS_PREERASE :
+                    //     return CDRF_NOTIFYPOSTERASE;
+                    // break;
                     case CDDS_PREPAINT :
                         auto rct = nmc.rc;
                         if (!self.mRightAlign) { // Adjusing rect. Otherwise, text will be drawn upon the check area

@@ -1,5 +1,9 @@
 Wings changelog
 
+Version 1.2.076 (27-Jun-2026)
+    Fixed bug when handling the WM_NCCREATE message in Form & PictureBox.
+    Improved custom draw code for Button, CheckBox and RadioButton.
+
 Version 1.2.075 (Jun-2026)
     Fixed minor bug in MouseHover event in ComboBox and NumberPicker.
     Added some doc comments.
